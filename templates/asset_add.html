@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Asset</title>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <style>
+        /* Adds a red asterisk to required fields */
+        .required-field::after {
+            content: "*";
+            color: red;
+        }
+
+        #image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+{% extends 'base.html' %}
+{% block title %}Add Asset{% endblock %}
+{% block content %}
+<h1>Add Asset</h1>
+<!-- Form for adding a new asset -->
+    <!-- Image preview container -->
+    <div id="image-preview"></div><br>
+
+<form action="/asset_add" method="post" enctype="multipart/form-data">
+    <label for="name" class="required-field">Asset Name:</label><br>
+    <input type="text" id="name" name="name" required><br><br>
+
+    <label for="asset-sn" class="required-field">Asset Serial Number:</label><br>
+    <input type="text" id="asset-sn" name="asset_sn" required><br><br>
+
+    <label for="description">Asset Description:</label><br>
+    <textarea id="description" name="description"></textarea><br><br>
+
+    <label for="acquired-date">Acquired Date:</label><br>
+    <input type="date" id="acquired-date" name="acquired_date">
+    <br><br>
+
+    <!-- New input field for file upload -->
+    <label for="image">Select image:</label><br>
+    <input type="file" class="standard-btn" id="image" name="image" onchange="previewImage(event)">
+    <br><br>
+
+    <input type="submit" class="standard-btn" value="Add Asset">
+</form>
+<!-- Button for navigating back -->
+<button type="button" class="standard-btn" onclick="goBack()">Back</button>
+<button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
+
+<script>
+    // Function to navigate back to the previous page
+    function goBack() {
+        window.history.back();
+    }
+    function redirectToAssetAll() {
+        window.location.href = "/asset_all";
+    }
+
+    // Function to display a preview of the selected image
+    function previewImage(event) {
+        var image = document.getElementById('image-preview');
+        image.innerHTML = '';
+        var reader = new FileReader();
+        reader.onload = function () {
+            var img = document.createElement('img');
+            img.src = reader.result;
+            img.style.maxWidth = '200px'; // Limiting the width of the image to 200px
+            img.style.maxHeight = '200px'; // Limiting the height of the image to 200px
+            img.style.border = '3px solid green'; // Adding a black border around the image
+            img.style.marginBottom = '10px'; // Adding space below the image
+            image.appendChild(img);
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    // Function to display a toast message
+    function showToast() {
+        Toastify({
+            text: "Asset successfully added!",
+            duration: 3000, // 3 seconds
+            gravity: "top", // 'top' or 'bottom'
+            position: 'right', // 'left', 'center' or 'right'
+            backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
+            stopOnFocus: true // Prevents dismissing of toast on hover
+        }).showToast();
+    }
+</script>
+
+{% if toast %}
+    <!-- Display the toast message when necessary -->
+    <script>
+        showToast();
+    </script>
+{% endif %}
+{% endblock %}
+
+</html>

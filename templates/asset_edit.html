@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Asset</title>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+{% extends 'base.html' %}
+
+{% block title %}Add Asset{% endblock %}
+
+{% block content %}
+<body>
+    <h1>Edit Asset</h1>
+
+<!-- Display the image for the asset -->
+{% if asset.image_path %}
+    <img src="{{ url_for('serve_image', image_name=asset.image_path) }}" alt="Asset Image" style="max-width: 200px; max-height: 200px; border: 3px solid green;">
+{% endif %}
+<br>
+    <form action="/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
+        <label for="name">Asset Name:</label><br>
+        <input type="text" id="name" name="name" value="{{ asset.name }}"><br><br>
+
+        <label for="asset-sn">Asset Serial Number:</label><br>
+        <input type="text" id="asset-sn" name="asset_sn" value="{{ asset.asset_sn }}" required><br><br>      
+
+        <label for="description">Asset Description:</label><br>
+        <textarea id="description" name="description">{{ asset.description }}</textarea><br><br>
+
+        <label for="acquired-date">Acquired Date:</label><br>
+        <input type="date" id="acquired-date" name="acquired_date" value="{{ asset.acquired_date }}">
+        <br><br>
+
+        <label for="image">Upload Image:</label><br>
+        <input type="file" id="image" class="standard-btn" name="image">
+        <br><br>
+
+        <input type="submit" class="standard-btn" value="Save Changes">
+        <br>
+    </form>
+
+    <form action="/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirm('Are you sure you want to delete this asset?')">
+        <button type="button" class="standard-btn" onclick="goBack()">Back</button>
+        <button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
+        <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
+    </form>
+
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+        function redirectToAssetAll() {
+        window.location.href = "/asset_all";
+        }
+        function showToast() {
+            Toastify({
+                text: "Asset successfully updated!",
+                duration: 3000, // 3 seconds
+                gravity: "top", // `top` or `bottom`
+                position: 'right', // `left`, `center` or `right`
+                backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
+                stopOnFocus: true // Prevents dismissing of toast on hover
+            }).showToast();
+        }
+    </script>
+    
+        {% if toast %}
+            <script>
+                showToast();
+            </script>
+        {% endif %}
+    
+</body>
+{% endblock %}
+</html>

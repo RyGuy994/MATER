@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div id="navbar" class="navbar">
+    <a href="/">Home</a>
+    <div class="dropdown">
+        <button class="dropbtn">Assets</button>
+        <div class="dropdown-content">
+            <a href="/asset_add">Add Asset</a>
+            <a href="/asset_edit/1">Edit Asset</a>
+            <a href="/asset_all">All Assets</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <button class="dropbtn">Services</button>
+        <div class="dropdown-content">
+            <a href="/service_add">Add Service</a>
+            <a href="/service_edit/1">Edit Service</a>
+            <a href="/service_all">All Services</a>
+        </div>
+    </div>
+    <a href="/settings">Settings</a>
+</div>
+
+<div id="content">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

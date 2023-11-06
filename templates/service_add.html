@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Service</title>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <style>
+        .required-field::after {
+            content: "*";
+            color: red;
+        }
+    </style>
+</head>
+{% extends 'base.html' %}
+
+{% block title %}Add Service{% endblock %}
+
+{% block content %}
+<h1>Add Service</h1>
+<form action="/service_add" method="post">
+    <label for="asset_name" class="required-field">Asset Name:</label><br>
+    <input type="text" id="asset_name_input" name="asset_name" oninput="updateAssetId()" required><br><br>
+    <input type="hidden" id="asset_id_input" name="asset_id" value="">
+
+    <label for="service_type" class="required-field">Service Type:</label><br>
+    <input type="text" id="service_type" name="service_type" required><br><br>
+
+    <label for="service_date" class="required-field">Service Date:</label><br>
+    <input type="date" id="service_date" name="service_date" required><br><br>
+
+    <label for="service_cost">Service Cost:</label><br>
+    <input type="number" id="service_cost" name="service_cost"><br><br>
+
+    <label for="service_complete">Service Complete:</label><br>
+    <input type="checkbox" id="service_complete" name="service_complete" onchange="showSecondaryCheckbox()"><br><br>
+
+    <div id="serivce_add_again" style="display: none;">
+        <label for="service_add_again">Add Service again?</label><br>
+        <input type="checkbox" name="service_add_again_check" id="service_add_again_check"onchange="showSecondaryDays()"><br>
+        <div id="serivce_add_again_days" style="display: none;"><br>
+            <label for="service_add_again">What Date will this be due?</label><br>
+            <input type="date" name="service_add_again_days_cal" id="service_add_again_days_cal"><br><br>
+            <div class="dropdown1">
+                <button class="standard-btn">Add Days</button>
+                <div class="dropdown-content1">
+                    <a onclick="addDaysToDate(7)">7 Days</a>
+                    <a onclick="addDaysToDate(14)">14 Days</a>
+                    <a onclick="addDaysToDate(30)">30 Days</a>
+                    <a onclick="addDaysToDate(60)">60 Days</a>
+                    <a onclick="addDaysToDate(90)">90 Days</a>
+                    <a onclick="addDaysToDate(120)">180 Days</a>
+                    <a onclick="addDaysToDate(365)">365 Days</a>
+                    <a onclick="addDaysToDate(720)">730 Days</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <label for="service_notes">Service Notes:</label><br>
+    <textarea id="service_notes" name="service_notes"></textarea><br><br>
+
+    <input type="submit" class="standard-btn" value="Add Service">
+</form>
+
+<button type="button" class="standard-btn" onclick="goBack()">Back</button>
+<button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+    function redirectToServiceAll() {
+    window.location.href = "/service_all";
+    }
+    function showToast() {
+        Toastify({
+            text: "Service successfully added!",
+            duration: 3000, // 3 seconds
+            gravity: "top", // `top` or `bottom`
+            position: 'right', // `left`, `center` or `right`
+            backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
+            stopOnFocus: true // Prevents dismissing of toast on hover
+        }).showToast();
+    }
+    $(function() {
+        var assetData = [
+            // Array of asset data containing both ID and name
+            {% for asset in assets %}
+                { label: "{{ asset.name | safe }}", value: "{{ asset.id }}" },
+            {% endfor %}
+        ];
+        $("#asset_name_input").autocomplete({
+            source: assetData,
+            select: function(event, ui) {
+                $("#asset_name_input").val(ui.item.label);
+                $("#asset_id_input").val(ui.item.value);
+                return false;
+            }
+        }).data("ui-autocomplete")._renderItem = function(ul, item) {
+            return $("<li>")
+                .append("<div>" + item.label + "</div>")
+                .appendTo(ul);
+        };
+    });
+    function showSecondaryCheckbox() {
+        var serviceCompleteCheckbox = document.getElementById("service_complete");
+        var secondaryCheckbox = document.getElementById("serivce_add_again");
+        if (serviceCompleteCheckbox.checked) {
+            secondaryCheckbox.style.display = "block";
+        } else {
+            secondaryCheckbox.style.display = "none";
+        }
+    }
+    function showSecondaryDays() {
+        var serviceCompleteCheckbox = document.getElementById("service_complete");
+        var secondaryCheckbox = document.getElementById("serivce_add_again_days");
+        if (serviceCompleteCheckbox.checked) {
+            secondaryCheckbox.style.display = "block";
+        } else {
+            secondaryCheckbox.style.display = "none";
+        }
+    }
+    function addDaysToDate(addDays) {
+        console.log("Adding days:", addDays); // Log to check if the function is being triggered
+        var today = new Date();
+        var serviceAddAgainDays = new Date(today.setDate(today.getDate() + addDays));
+        var formattedDate = formatDate(serviceAddAgainDays);
+        console.log("Formatted date:", formattedDate); // Log the formatted date
+        document.getElementById("service_add_again_days_cal").value = formattedDate;
+    }
+
+    function formatDate(date) {
+        var year = date.getFullYear();
+        var month = (date.getMonth() + 1).toString().padStart(2, '0');
+        var day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+</script>
+    </body>
+
+    {% if toast %}
+        <script>
+            showToast();
+        </script>
+    {% endif %}
+
+
+{% endblock %}
+</html>

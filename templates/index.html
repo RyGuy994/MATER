@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- CSS for the heading text -->
+    <style>
+        .cool-text {
+            font-family: 'Arial Black', Gadget, sans-serif;
+            font-size: 60px;
+            color: #4CAF50;
+            text-shadow: 2px 2px 4px #000000;
+            letter-spacing: 0.1em;
+            text-align: center;
+            position: relative;
+        }
+        .center {
+            display: block;
+            margin: auto;
+        }
+
+        .cool-text::after {
+            content: 'Maintenance. Asset. Tracking. Equipment. Registry.';
+            font-family: 'Arial', sans-serif;
+            font-size: 18px;
+            color: #000;
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #f2f2f2; /* light grey */
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #nameFilter {
+            padding: 10px;
+            margin-bottom: 15px;
+            width: 30%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Extending the base template -->
+    {% extends 'base.html' %}
+
+    <!-- Setting the title -->
+    {% block title %}MATER{% endblock %}
+
+    <!-- Content block -->
+    {% block content %}
+    <!-- Heading -->
+    <h1 class="cool-text" data-text="MATER">
+        MATER
+    </h1>
+    <c><img src="/static/MATER.png" alt="MATER Image" class="center"></c>
+    <!-- Subheading -->
+    <h2>Services due in the next 30 days</h2>
+
+    <!-- Input for filtering -->
+    <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
+
+    <!-- Table to display services -->
+    <table id="service-table">
+        <tr>
+            <th>Asset Name</th>
+            <th>Service Type</th>
+            <th>Service Date</th>
+            <th>Service Cost</th>
+            <th>Service Complete</th>
+            <th>Service Notes</th>
+        </tr>
+        {% for service in upcoming_services %}
+        <tr>
+            <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+            <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+            <td>{{ service.service_date }}</td>
+            <td>{{ service.service_cost }}</td>
+            <td>{{ service.service_complete }}</td>
+            <td>{{ service.service_notes }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <ul>
+        {% for asset in assets %}
+            <li>
+                <h2>{{ asset.name }}</h2>
+                {% if asset.image_path %}
+                    <img src="{{ asset.image_path }}" alt="Asset Image" style="max-width: 200px; max-height: 200px;">
+                {% endif %}
+                <p>{{ asset.description }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- JavaScript function for filtering the table -->
+    <script>
+        function filterNames() {
+            var input, filter, table, tr, td, i, txtValue;
+            var counter = 0;
+            var maxItems = 50;
+
+            input = document.getElementById("nameFilter");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("service-table");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        if (counter < maxItems) {
+                            tr[i].style.display = "";
+                            counter++;
+                        } else {
+                            tr[i].style.display = "none";
+                        }
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+
+    {% endblock %}
+</body>
+
+</html>

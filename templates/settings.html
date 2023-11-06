@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Settings</title>
+</head>
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+<form action="/settings" method="post">
+    <label class="switch">
+        <input type="checkbox" id="toggle-dark-mode" name="dark_mode" {% if dark_mode %}checked{% endif %}>
+        <span class="slider round"></span>
+    </label>
+    <br><br>
+    <input type="submit" value="Save Settings">
+</form>
+
+<script>
+    var toggleSwitch = document.getElementById('toggle-dark-mode');
+
+    // Load the saved mode from local storage
+    var savedMode = localStorage.getItem('mode');
+    if (savedMode === 'dark') {
+        document.body.classList.add('dark-mode');
+        toggleSwitch.checked = true;
+    }
+
+    // Handle the toggle switch change event
+    toggleSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('mode', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('mode', 'light');
+        }
+    });
+</script>
+{% endblock %}
+
+</div>
+
+</body>
+</html>

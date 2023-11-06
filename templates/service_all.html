@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Styling for the table -->
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #f2f2f2; /* light grey */
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #nameFilter {
+            padding: 10px;
+            margin-bottom: 15px;
+            width: 30%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Extending the base template -->
+    {% extends 'base.html' %}
+
+    <!-- Setting the title -->
+    {% block title %}Service Records{% endblock %}
+
+    <!-- Content block -->
+    {% block content %}
+    <!-- First Heading -->
+    <h1>Service List</h1>
+    <!-- Input for filtering -->
+    <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
+    <!-- Table to display services -->
+    <table id="service-table">
+        <tr>
+            <th>Asset Name</th>
+            <th>Service Type</th>
+            <th>Service Date</th>
+            <th>Service Cost</th>
+            <th>Service Complete</th>
+            <th>Service Notes</th>
+        </tr>
+        {% for service in services %}
+        <tr>
+            <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+            <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+            <td>{{ service.service_date }}</td>
+            <td>{{ service.service_cost }}</td>
+            <td>{{ service.service_complete }}</td>
+            <td>{{ service.service_notes }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <!-- JavaScript function for filtering the table -->
+    <script>
+        function filterNames() {
+            var input, filter, table, tr, td, i, txtValue;
+            var counter = 0;
+            var maxItems = 50;
+
+            input = document.getElementById("nameFilter");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("service-table");
+            tr = table.getElementsByTagName("tr");
+
+            // Loop through all table rows, and hide those that don't match the search query or exceed the maximum number of items
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        if (counter < maxItems) {
+                            tr[i].style.display = "";
+                            counter++;
+                        } else {
+                            tr[i].style.display = "none";
+                        }
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+
+    {% endblock %}
+</body>
+
+</html>
