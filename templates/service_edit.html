@@ -59,12 +59,15 @@
     </div>
 
     <label for="service_notes">Service Notes:</label><br>
-    <textarea id="service_notes" class="standard-btn" name="service_notes">{{ service.service_notes }}</textarea><br><br>
+    <textarea id="service_notes" name="service_notes">{{ service.service_notes }}</textarea><br><br>
+    <!-- Add multiple attachment upload field -->
+    <label for="attachments">Attachments:</label><br>
+    <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
 
     <h2>Attachments</h2>
-{% if service.service_attachments %}
+{% if service.serviceattachments %}
     <ul>
-        {% for attachment in service.service_attachments %}
+        {% for attachment in service.serviceattachments %}
             <li>
                 <a href="{{ url_for('uploaded_file', filename=attachment.attachment_path) }}" target="_blank">{{ attachment.attachment_path }}</a>
             </li>
