@@ -19,7 +19,7 @@
 
 {% block content %}
 <h1>Add Service</h1>
-<form action="/service_add" method="post">
+<form action="/service_add" method="post" enctype="multipart/form-data"> <!-- Add enctype attribute for file upload -->
     <label for="asset_name" class="required-field">Asset Name:</label><br>
     <input type="text" id="asset_name_input" name="asset_name" oninput="updateAssetId()" required><br><br>
     <input type="hidden" id="asset_id_input" name="asset_id" value="">
@@ -31,7 +31,7 @@
     <input type="date" id="service_date" name="service_date" required><br><br>
 
     <label for="service_cost">Service Cost:</label><br>
-    <input type="number" id="service_cost" name="service_cost"><br><br>
+    <input type="number" id="service_cost" name="service_cost" step="any"><br><br> <!--added step any to accept decimal -->
 
     <label for="service_complete">Service Complete:</label><br>
     <input type="checkbox" id="service_complete" name="service_complete" onchange="showSecondaryCheckbox()"><br><br>
@@ -59,6 +59,9 @@
     </div>
     <label for="service_notes">Service Notes:</label><br>
     <textarea id="service_notes" name="service_notes"></textarea><br><br>
+    <!-- Add multiple attachment upload field -->
+    <label for="attachments">Attachments:</label><br>
+    <input type="file" id="attachments" name="attachments" multiple><br><br>
 
     <input type="submit" class="standard-btn" value="Add Service">
 </form>

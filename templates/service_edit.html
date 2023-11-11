@@ -31,7 +31,7 @@
     <input type="date" id="service_date" name="service_date" value="{{ service.service_date }}" required><br><br>
 
     <label for="service_cost">Service Cost:</label><br>
-    <input type="number" id="service_cost" name="service_cost" value="{{ service.service_cost }}"><br><br>
+    <input type="number" id="service_cost" name="service_cost" value="{{ service.service_cost }}" step="any"><br><br> <!--added any to accept decimal -->
 
     <label for="service_complete">Service Complete:</label><br>
     <input type="checkbox" id="service_complete" name="service_complete" {% if service.service_complete %}checked{% endif %} onchange="showSecondaryCheckbox()"><br><br>
@@ -60,6 +60,19 @@
 
     <label for="service_notes">Service Notes:</label><br>
     <textarea id="service_notes" name="service_notes">{{ service.service_notes }}</textarea><br><br>
+
+    <h2>Attachments</h2>
+{% if service.service_attachments %}
+    <ul>
+        {% for attachment in service.service_attachments %}
+            <li>
+                <a href="{{ url_for('uploaded_file', filename=attachment.attachment_path) }}" target="_blank">{{ attachment.attachment_path }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No attachments for this service.</p>
+{% endif %}
 
     <input type="submit" class="standard-btn" value="Save Changes">
 </form>

@@ -94,18 +94,6 @@
         {% endfor %}
     </table>
 
-    <ul>
-        {% for asset in assets %}
-            <li>
-                <h2>{{ asset.name }}</h2>
-                {% if asset.image_path %}
-                    <img src="{{ asset.image_path }}" alt="Asset Image" style="max-width: 200px; max-height: 200px;">
-                {% endif %}
-                <p>{{ asset.description }}</p>
-            </li>
-        {% endfor %}
-    </ul>
-
     <!-- JavaScript function for filtering the table -->
     <script>
         function filterNames() {

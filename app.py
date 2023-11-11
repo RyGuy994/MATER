@@ -1,23 +1,25 @@
-from flask import Flask, render_template, request, redirect, send_file, abort #import from flask for calling if greyed out means not in use
-from flask_sqlalchemy import SQLAlchemy #import SQL for SQLite
-from datetime import datetime, timedelta #import datetime and timedelta for date and service calculations
+from flask import Flask, render_template, request, redirect, send_file, abort, Response # import from flask for calling if greyed out means not in use
+from flask_sqlalchemy import SQLAlchemy # import SQL for SQLite
+from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
 from werkzeug.utils import secure_filename # import filename
-import os #import the OS
+import os # import the OS
+import csv # import csv
+from sqlalchemy import create_engine #import create_engine
+
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/pictures
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
 
+UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  # images Folder root/static/serviceattachments
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db' # path to database for app to use
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER #path to images folder for app to use
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to use
+app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
 db = SQLAlchemy(app) #db app
 
 # Set the secret key
 app.secret_key = 'kSyAS5$d76fnyas7cc6ASi#und6A&S56d!nf9qlA01'
-
-class UserSettings(db.Model): # UserSettings table
-    id = db.Column(db.Integer, primary_key=True) 
-    dark_mode = db.Column(db.Boolean, default=False)
 
 class Asset(db.Model): # Asset table
     id = db.Column(db.Integer, primary_key=True) # id of asset
@@ -28,9 +30,10 @@ class Asset(db.Model): # Asset table
     image_path = db.Column(db.String(255), nullable=True)  # image path of asset
 
 class ServiceAttachment(db.Model): # ServiceAttachment table
+    __tablename__ = 'serviceattachment'  # Add this line to specify the table name
     id = db.Column(db.Integer, primary_key=True) #id of attachment
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False) #Service ID this goes to in class Service
-    service = db.relationship('Service', backref=db.backref('service_attachments', lazy=True)) #relationship to service
+    service = db.relationship('Service', backref=db.backref('serviceattachments', lazy=True)) #relationship to service
     attachment_path = db.Column(db.String(255)) #attachment path
 
 class Service(db.Model): # Service table
@@ -91,39 +94,39 @@ def add():
     return render_template('asset_add.html') # display asset_add.html
 
 
-@app.route('/asset_edit/<int:asset_id>', methods=['GET', 'POST']) # asset_edit.html route
+@app.route('/asset_edit/<int:asset_id>', methods=['GET', 'POST'])  # asset_edit.html route
 def edit(asset_id):
-    asset = Asset.query.get_or_404(asset_id) # query or get 404
-    image_path = asset.image_path # get the image path
-    if request.method == 'POST': # if write
-        name = request.form.get('name') # get the name 
-        asset_sn = request.form.get('asset_sn') # get the sn
-        description = request.form.get('description') # get description
-        acquired_date = request.form.get('acquired_date') # get the acquired date
+    asset = Asset.query.get_or_404(asset_id)  # query or get 404
+    services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
+    image_path = asset.image_path  # get the image path
+    if request.method == 'POST':  # if write
+        name = request.form.get('name')  # get the name
+        asset_sn = request.form.get('asset_sn')  # get the sn
+        description = request.form.get('description')  # get description
+        acquired_date = request.form.get('acquired_date')  # get the acquired date
         # Check if the necessary fields are provided
-        if name and asset_sn: # required fields
-            if acquired_date: # optional
-                acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date() #change to python
+        if name and asset_sn:  # required fields
+            if acquired_date:  # optional
+                acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date()  # change to python
             else:
                 acquired_date = None  # change to None
-            asset.name = name # set name
-            asset.asset_sn = asset_sn # set sn
-            asset.description = description #set asset
+            asset.name = name  # set name
+            asset.asset_sn = asset_sn  # set sn
+            asset.description = description  # set asset
 
             # Handle image upload
             if 'image' in request.files:
-                file = request.files['image'] # get the file from element 'image'
+                file = request.files['image']  # get the file from element 'image'
                 # If the user does not select a file, the browser submits an empty file without a filename
                 if file.filename == '':  # Check if the name is blank
-                    print('No selected file') # no selected file
-                if file and allowed_file(file.filename): # if there is a file and it passes the allowed_file function
-                    filename = secure_filename(file.filename) #get filename
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename)) #place file in folder
-                    asset.image_path = filename # Save the image path to the database
-
-            db.session.commit() #commit changes
-        return render_template('asset_edit.html', asset=asset, toast=True)  # if commited load asset_edit.html and send asset and call toast
-    return render_template('asset_edit.html', asset=asset, toast=False)
+                    print('No selected file')  # no selected file
+                if file and allowed_file(file.filename):  # if there is a file and it passes the allowed_file function
+                    filename = secure_filename(file.filename)  # get filename
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # place file in folder
+                    asset.image_path = filename  # Save the image path to the database
+            db.session.commit()  # commit changes
+        return render_template('asset_edit.html', asset=asset, services=services, toast=True)  # if committed load asset_edit.html and send asset and services and call toast
+    return render_template('asset_edit.html', asset=asset, services=services, toast=False)  # if committed load asset_edit.html and send asset and services and NO BUTTER TOAST
 
 
 @app.route('/asset_all') # asset_all.html route
@@ -169,9 +172,27 @@ def service_add():
             db.session.add(new_service2) # add to DB
         new_service = Service(asset_id=asset_id,service_type=service_type, service_date=service_date, #new_service is frist service
                               service_cost=service_cost, service_complete=service_complete, service_notes=service_notes)
+                # Handle multiple attachment uploads
+        attachments = request.files.getlist('attachments')
+        attachment_paths = []
+
+        for attachment in attachments:
+            if attachment:
+                attachment_path = os.path.join('static/serviceattachments', attachment.filename)
+                attachment.save(attachment_path)
+                attachment_paths.append(attachment_path)
+
         db.session.add(new_service) # add to DB
+        
         db.session.commit() #commit all changes
 
+        if new_service is not None:
+            # Now, you can store the attachment paths in the database
+            for attachment_path in attachment_paths:
+                new_attachment = ServiceAttachment(service_id=new_service.id, attachment_path=attachment_path)
+                db.session.add(new_attachment)
+
+        db.session.commit()
         return render_template('service_add.html', assets=assets, toast=True) # if commit then return service_add.html pass asset and toast
     return render_template('service_add.html', assets=assets, toast=False) # on load display  service_add.html pass asset and don't pass toast
 
@@ -215,10 +236,24 @@ def service_edit(service_id):
         return render_template('service_edit.html', service=service, assets=Asset.query.all(), toast=True) # if commit then return service_add.html pass service and toast
     return render_template('service_edit.html', service=service, assets=Asset.query.all(), toast=False) # on load display service_add.html pass service and don't pass toast
 
-@app.route('/service_all') # service_all.html route
+@app.route('/service_all', methods=['GET'])
 def all_services():
-    services = Service.query.all() # queries for all serivces
-    return render_template('service_all.html', services=services) # displays service_all.html and passes services
+    # Query all services
+    all_services = Service.query.all()
+
+    # Filter services based on your criteria (if any)
+    # For example, you can filter services based on asset name
+    filter_asset_name = request.args.get('filter_asset_name')
+    if filter_asset_name:
+        services = Service.query.filter_by(asset_name=filter_asset_name).all()
+    else:
+        services = all_services
+
+    # Calculate total service cost based on the filtered services
+    total_service_cost = sum(service.service_cost for service in services)
+
+    return render_template('service_all.html', services=services, total_service_cost=total_service_cost)
+
 
 @app.route('/service_delete/<int:service_id>', methods=['POST']) # service delete route
 def delete_service(service_id): # get service_id to delete
@@ -235,18 +270,51 @@ def serve_image(image_name):
     else:
         abort(404)
 
+@app.route('/<filename>', methods=['GET']) # get attachment name
+def uploaded_file(filename):
+    image_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER_DOCS'], filename)) # get the pull doc path
+    if os.path.exists(filename): # if that path exists 
+        return send_file(filename)  # return the doc path
+    else:
+        abort(404)
 
+# Route to handle the settings page
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    user_settings = UserSettings.query.first()
-    if not user_settings:
-        user_settings = UserSettings()
-        db.session.add(user_settings)
-        db.session.commit()
-    if request.method == 'POST':
-        user_settings.dark_mode = bool(request.form.get('dark_mode'))
-        db.session.commit()
-    return render_template('settings.html', dark_mode=user_settings.dark_mode)
+    # Get a list of table names from the database
+    table_names = db.metadata.tables.keys()
+    return render_template('settings.html', table_names=table_names) # return setting.html and pass table_names
+
+# Route to handle the form submission and export data to CSV
+@app.route('/export_csv', methods=['POST'])
+def export_csv():
+    table_name = request.form['table'] # get table_name
+
+    # Get data from the selected table
+    model_class = globals().get(table_name.capitalize()) or globals().get(table_name.title())
+    
+    if not model_class:
+        return abort(404)  # Table not found
+
+    data = model_class.query.all()
+
+    # Prepare CSV data
+    column_names = [column.key for column in model_class.__table__.columns]
+    csv_data = [column_names]
+
+    for row in data:
+        csv_data.append([str(getattr(row, column)) for column in column_names])
+
+    # Create a CSV response
+    response = Response(csv_generator(csv_data), content_type='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename={table_name}.csv'
+
+    return response
+
+# Generator function for streaming CSV data
+def csv_generator(data):
+    for row in data:
+        yield ','.join(map(str, row)) + '\n'
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

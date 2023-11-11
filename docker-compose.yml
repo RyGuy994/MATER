@@ -10,13 +10,3 @@ services:
     environment:
       FLASK_APP: app.py
       FLASK_ENV: development
-    depends_on:
-      - db
-  db:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: exampleuser
-      POSTGRES_PASSWORD: examplepassword
-      POSTGRES_DB: assetmaintenance
-    ports:
-      - "5432:5432"

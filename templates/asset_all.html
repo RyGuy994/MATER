@@ -3,6 +3,9 @@
 
 <head>
     <!-- Styling for the table -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
     <style>
         table {
             border-collapse: collapse;
@@ -36,15 +39,16 @@
         }
 
         .mySlides {
-            flex: 0 0 200px;
-            margin: 5px;
-            text-align: center;
-            position: relative;
-        }
+        flex: 0 0 200px;
+        margin: 5px auto; /* Added margin to center the pictures */
+        text-align: center;
+        position: relative;
+    }
 
         .mySlides img {
             width: 200px;
             height: 200px;
+            margin: 5px auto; /* Added margin to center the pictures */
             object-fit: cover;
         }
 
@@ -53,37 +57,39 @@
             bottom: 0;
             width: 100%;
             text-align: center;
-            color: white; /* Adjust text color as needed */
-            font-size: 18px; /* Adjust font size as needed */
+            color: white;
+            font-size: 18px;
             background-color: rgba(0, 0, 0, 0.5);
             padding: 5px 0;
         }   
 
         .prev, .next {
-            cursor: pointer;
-            position: absolute;
-            top: 50%;
-            width: auto;
-            padding: 16px;
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
-            transition: 0.6s ease;
-            user-select: none;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
+        cursor: pointer;
+        position: absolute;
+        top: 50%;
+        width: auto;
+        padding: 16px;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        transition: 0.6s ease;
+        user-select: none;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1; /* Adjusted the z-index value to bring the buttons to the front */
+    }
 
-        .prev {
-            left: 0;
-        }
+    .prev {
+        left: 0;
+    }
 
-        .next {
-            right: 0;
-        }
+    .next {
+        right: 0;
+    }
 
         .prev:hover, .next:hover {
             background-color: rgba(0, 0, 0, 0.8);
         }
+        
     </style>
 </head>
 
@@ -120,80 +126,70 @@
         {% for asset in assets %}
         <div class="mySlides">
             {% if asset.image_path %}
-                <img src="{{ asset.image_path }}" alt="{{ asset.name }}">
+                <a href="/asset_edit/{{ asset.id }}">
+                    <c><img src="{{ asset.image_path }}" alt="{{ asset.name }}"></c>
+                </a>
             {% else %}
-                <img src="static/images/default.png" alt="{{ asset.name }}">
+                <a href="/asset_edit/{{ asset.id }}">
+                    <c><img src="static/images/default.png" alt="{{ asset.name }}"></c>
+                </a>
             {% endif %}
             <div class="text">{{ asset.name }}</div>
-            <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
-            <a class="next" onclick="plusSlides(1)">&#10095;</a>
         </div>
     {% endfor %}
+
     </div>
 
     <!-- JavaScript function for filtering the table -->
     <script>
-        function filterNames() {
-            var input, filter, table, tr, td, i, txtValue;
-            var counter = 0;
-            var maxItems = 50; // Set the maximum number of items to display
+    function filterNames() {
+        var input, filter, table, tr, td, i, txtValue;
+        var counter = 0;
+        var maxItems = 50; // Set the maximum number of items to display
 
-            input = document.getElementById("nameFilter");
-            filter = input.value.toUpperCase();
-            table = document.getElementById("asset-table");
-            tr = table.getElementsByTagName("tr");
+        input = document.getElementById("nameFilter");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("asset-table");
+        tr = table.getElementsByTagName("tr");
 
-            // Loop through all table rows, and hide those that don't match the search query or exceed the maximum number of items
-            for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[0]; // Index 0 corresponds to the first column (Name)
-                if (td) {
-                    txtValue = td.textContent || td.innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        if (counter < maxItems) {
-                            tr[i].style.display = "";
-                            counter++;
-                        } else {
-                            tr[i].style.display = "none";
-                        }
+        // Loop through all table rows, and hide those that don't match the search query or exceed the maximum number of items
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0]; // Index 0 corresponds to the first column (Name)
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    if (counter < maxItems) {
+                        tr[i].style.display = "";
+                        counter++;
                     } else {
                         tr[i].style.display = "none";
                     }
+                } else {
+                    tr[i].style.display = "none";
                 }
             }
         }
-    var slideIndex = 1;
-    showSlides(slideIndex);
-
-    function plusSlides(n) {
-        showSlides(slideIndex += n);
     }
 
-    function showSlides(n) {
-        var i;
-        var slides = document.getElementsByClassName("mySlides");
-        if (n > slides.length) { slideIndex = 1; }
-        if (n < 1) { slideIndex = slides.length; }
-        for (i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
+    $(document).ready(function(){
+        var slideshowContainer = $('.slideshow-container');
+        slideshowContainer.slick({
+            centerMode: true,
+            centerPadding: '60px',
+            slidesToShow: 3,
+            prevArrow: '<a class="prev" onclick="plusSlides(-1)">&#10094;</a>',
+            nextArrow: '<a class="next" onclick="plusSlides(1)">&#10095;</a>'
+        });
+
+        function plusSlides(n) {
+            if (n > 0) {
+                slideshowContainer.slick('slickNext');
+            } else {
+                slideshowContainer.slick('slickPrev');
+            }
         }
-        slides[slideIndex - 1].style.display = "flex";
-    }    var slideIndex = 1;
-    showSlides(slideIndex);
-
-    function plusSlides(n) {
-        showSlides(slideIndex += n);
-    }
-
-    function showSlides(n) {
-        var i;
-        var slides = document.getElementsByClassName("mySlides");
-        if (n > slides.length) { slideIndex = 1; }
-        if (n < 1) { slideIndex = slides.length; }
-        for (i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-        }
-        slides[slideIndex - 1].style.display = "flex";
-    }
+    });
+    
     </script>
     {% endblock %}
 </body>

@@ -6,7 +6,7 @@
 </head>
 {% extends 'base.html' %}
 
-{% block title %}Add Asset{% endblock %}
+{% block title %}Edit Asset{% endblock %}
 
 {% block content %}
 <body>
@@ -31,6 +31,18 @@
         <input type="date" id="acquired-date" name="acquired_date" value="{{ asset.acquired_date }}">
         <br><br>
 
+        <!-- Display all services associated with the asset -->
+        <div class="dropdown1">
+            <button class="standard-btn">View Services for Asset</button>
+            <div class="dropdown-content1">
+                <!-- Loop through services and create links to edit each service -->
+                {% for service in services %}
+                    <a href="/service_edit/{{ service.id }}">{{ service.service_type }} - {{ service.service_date }}</a></li>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <br><br>
         <label for="image">Upload Image:</label><br>
         <input type="file" id="image" class="standard-btn" name="image">
         <br><br>
@@ -45,13 +57,19 @@
         <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
     </form>
 
+    <!-- JavaScript functions -->
     <script>
+        // Function to go back in history
         function goBack() {
             window.history.back();
         }
+
+        // Function to redirect to the page displaying all assets
         function redirectToAssetAll() {
-        window.location.href = "/asset_all";
+            window.location.href = "/asset_all";
         }
+
+        // Function to show a toast notification for successful update
         function showToast() {
             Toastify({
                 text: "Asset successfully updated!",
@@ -64,11 +82,12 @@
         }
     </script>
     
-        {% if toast %}
-            <script>
-                showToast();
-            </script>
-        {% endif %}
+    <!-- Conditionally show the toast notification -->
+    {% if toast %}
+        <script>
+            showToast();
+        </script>
+    {% endif %}
     
 </body>
 {% endblock %}
