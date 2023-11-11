@@ -19,7 +19,7 @@ The current primary goals for the MATER project include:
 
 - **Calendar Integration:** Integrate calendar features for scheduling and managing maintenance activities and syncing to various calendar systems.
 
-- **Intergration with apps that house asset information (i.e Home assistant)
+- **API: Intergration with apps that house asset information (i.e Home assistant)**
 
 ## About the Code
 
