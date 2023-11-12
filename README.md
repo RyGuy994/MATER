@@ -2,7 +2,7 @@
 
 ## Maintenance. Asset. Tracking. Equipment. Registry.
 <p align="center">
-  <img src="https://github.com/RyGuy994/MATER/blob/main/static/MATER.png?raw=true" alt="MATER Logo" />
+  <img src="https://github.com/RyGuy994/MATER/blob/main/MATER.png?raw=true" alt="MATER Logo" />
 </p>
 
 ## Introduction
