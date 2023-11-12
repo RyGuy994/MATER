@@ -9,14 +9,7 @@
 ## Introduction
 
 Welcome to MATER, short for Maintenance, Asset, Tracking, Equipment, Registry. This project is a personal endeavor by a coding newbie, designed to provide a self-hosted solution for tracking various assets such as hardware, computers, software, cars, or any item that requires maintenance or service.
-<p align="center">
-  
-<img src=https://github.com/RyGuy994/MATER/assets/92389688/9f8fd784-f2a3-44e3-ab73-02907e9b6e6c>
-<br>
-<img src=https://github.com/RyGuy994/MATER/assets/92389688/7b06aeb6-21b8-4d89-8d99-a43db5133dc4>
-<br>
-<img src=https://github.com/RyGuy994/MATER/assets/92389688/1f32295d-7a09-4997-924c-8f7f59058929>
-</p>
+
 ## Project Goals
 
 The current primary goals for the MATER project include:
@@ -29,6 +22,16 @@ The current primary goals for the MATER project include:
 
 - **API: Intergration with apps that house asset information (i.e Home assistant)**
 
+## Showcase
+<details>
+<p align="center">
+<img src=https://github.com/RyGuy994/MATER/assets/92389688/9f8fd784-f2a3-44e3-ab73-02907e9b6e6c>
+<br>
+<img src=https://github.com/RyGuy994/MATER/assets/92389688/7b06aeb6-21b8-4d89-8d99-a43db5133dc4>
+<br>
+<img src=https://github.com/RyGuy994/MATER/assets/92389688/1f32295d-7a09-4997-924c-8f7f59058929>
+</p>
+</details>
 ## About the Code
 
 Apologies for any perceived shortcomings in the code quality. This project is an ongoing learning experience for me who is passionate about creating something valuable. Contributions, suggestions, and improvements are always welcome!
