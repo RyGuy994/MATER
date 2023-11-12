@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Flask-SQLAlchemy
 RUN pip install Flask-SQLAlchemy
 
+# Install icalendar
+RUN pip install icalendar
+
 # Make port 80 available to the world outside this container
 EXPOSE 80
 
