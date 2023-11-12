@@ -5,9 +5,16 @@
   <img src="https://github.com/RyGuy994/MATER/blob/main/MATER.png?raw=true" alt="MATER Logo" />
 </p>
 
+
 ## Introduction
 
 Welcome to MATER, short for Maintenance, Asset, Tracking, Equipment, Registry. This project is a personal endeavor by a coding newbie, designed to provide a self-hosted solution for tracking various assets such as hardware, computers, software, cars, or any item that requires maintenance or service.
+
+![MATER-1](https://github.com/RyGuy994/MATER/assets/92389688/9f8fd784-f2a3-44e3-ab73-02907e9b6e6c)
+
+![MAETR-2](https://github.com/RyGuy994/MATER/assets/92389688/7b06aeb6-21b8-4d89-8d99-a43db5133dc4)
+
+![MATER-Calendar (2)](https://github.com/RyGuy994/MATER/assets/92389688/1f32295d-7a09-4997-924c-8f7f59058929)
 
 ## Project Goals
 
