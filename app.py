@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, send_file, abort, Response # import from flask for calling if greyed out means not in use
+from flask import Flask, render_template, request, redirect, send_file, abort, Response, jsonify # import from flask for calling if greyed out means not in use
 from flask_sqlalchemy import SQLAlchemy # import SQL for SQLite
 from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
 from werkzeug.utils import secure_filename # import filename
 import os # import the OS
 import csv # import csv
-from sqlalchemy import create_engine #import create_engine
+from icalendar import Calendar, Event # import calendar
 
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/pictures
@@ -45,6 +45,23 @@ class Service(db.Model): # Service table
     service_cost = db.Column(db.Float) # cost of service
     service_complete = db.Column(db.Boolean) # if the service is complete
     service_notes = db.Column(db.Text) # notes of service
+    # Inside the Service model class
+    def to_calendar_event(self):
+        return {
+            'title': self.service_type,
+            'start': self.service_date.isoformat(),
+            'end': self.service_date.isoformat(),  # Assuming events are same-day; adjust as needed
+            'description': self.id
+            # Add more fields as needed
+        }
+    def to_icalendar_event(self):
+        event = Event()
+        event.add('summary', self.service_type)
+        event.add('dtstart', self.service_date)
+        event.add('description', self.service_notes)
+        # Add more fields as needed
+
+        return event
 
 with app.app_context(): 
     db.create_all() # create all tables in database
@@ -187,7 +204,7 @@ def service_add():
         db.session.commit() #commit all changes
 
         if new_service is not None:
-            # Now, you can store the attachment paths in the database
+            # Attached saved now store the attachment paths in the database
             for attachment_path in attachment_paths:
                 new_attachment = ServiceAttachment(service_id=new_service.id, attachment_path=attachment_path)
                 db.session.add(new_attachment)
@@ -232,7 +249,24 @@ def service_edit(service_id):
         service.service_cost = service_cost # update service_cost
         service.service_complete = service_complete # update service_complete
         service.service_notes = service_notes # update service_notes
-        db.session.commit() # commit change to DB
+        
+        # Handle multiple attachment uploads
+        attachments = request.files.getlist('attachments')
+        attachment_paths = []
+
+        for attachment in attachments:
+            if attachment:
+                attachment_path = os.path.join('static/serviceattachments', attachment.filename)
+                attachment.save(attachment_path)
+                attachment_paths.append(attachment_path)
+
+        # Attachments saved, now store the attachment paths in the database
+        for attachment_path in attachment_paths:
+            new_attachment = ServiceAttachment(service_id=service.id, attachment_path=attachment_path)
+            db.session.add(new_attachment)
+
+        db.session.commit()  # commit change to DB
+        
         return render_template('service_edit.html', service=service, assets=Asset.query.all(), toast=True) # if commit then return service_add.html pass service and toast
     return render_template('service_edit.html', service=service, assets=Asset.query.all(), toast=False) # on load display service_add.html pass service and don't pass toast
 
@@ -288,11 +322,13 @@ def settings():
 # Route to handle the form submission and export data to CSV
 @app.route('/export_csv', methods=['POST'])
 def export_csv():
-    table_name = request.form['table'] # get table_name
+    print("Export CSV route called.")
+    table_name = request.form['table']
+    print("Selected table:", table_name)
 
     # Get data from the selected table
     model_class = globals().get(table_name.capitalize()) or globals().get(table_name.title())
-    
+
     if not model_class:
         return abort(404)  # Table not found
 
@@ -308,13 +344,78 @@ def export_csv():
     # Create a CSV response
     response = Response(csv_generator(csv_data), content_type='text/csv')
     response.headers['Content-Disposition'] = f'attachment; filename={table_name}.csv'
-
+    print("CSV data:", csv_data)
     return response
 
 # Generator function for streaming CSV data
 def csv_generator(data):
     for row in data:
         yield ','.join(map(str, row)) + '\n'
+
+@app.route('/calendar')
+def calendar():
+    return render_template('calendar.html')
+
+# Normal endpoint for all events
+@app.route('/api/events')
+def api_events():
+    services = Service.query.all()
+    calendar_events = [service.to_calendar_event() for service in services]
+    return jsonify(calendar_events)
+
+# Endpoint for completed events
+@app.route('/api/events/completed')
+def api_events_completed():
+    complete_services = Service.query.filter_by(service_complete=True).all()
+    calendar_events_completed = [service.to_calendar_event() for service in complete_services]
+    return jsonify(calendar_events_completed)
+
+# Endpoint for incomplete events
+@app.route('/api/events/incomplete')
+def api_events_incomplete():
+    incomplete_services = Service.query.filter_by(service_complete=False).all()
+    calendar_events_incomplete = [service.to_calendar_event() for service in incomplete_services]
+    return jsonify(calendar_events_incomplete)
+
+@app.route('/ical/events')
+def ical_events():
+    services = Service.query.all()
+
+    cal = Calendar()
+
+    for service in services:
+        cal_event = service.to_icalendar_event()
+        cal.add_component(cal_event)
+
+    response = Response(cal.to_ical(), content_type='text/calendar; charset=utf-8')
+    response.headers['Content-Disposition'] = 'attachment; filename=events.ics'
+
+    return response
+
+@app.route('/ical/subscribe')
+def ical_subscribe():
+    # Retrieve the base URL of your application
+    base_url = request.url_root
+
+    # Generate iCalendar data for subscription
+    cal = Calendar()
+    services = Service.query.all()
+
+    for service in services:
+        cal_event = service.to_icalendar_event()
+        cal.add_component(cal_event)
+
+    # Generate the full iCalendar URL for subscription
+    ical_url = base_url + 'ical/events'
+
+    # Add the iCalendar URL to the response
+    cal.add('method', 'PUBLISH')
+    cal.add('X-WR-CALNAME', 'MATER')  # Calendar Name
+
+    response = Response(cal.to_ical(), content_type='text/calendar')
+    response.headers['Content-Disposition'] = 'inline; filename=calendar.ics'
+
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
