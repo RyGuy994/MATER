@@ -2,7 +2,42 @@
 <html>
 <head>
     <title>Edit Asset</title>
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #f2f2f2; /* light grey */
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #nameFilter {
+            padding: 10px;
+            margin-bottom: 15px;
+            width: 30%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #total-row {
+            font-weight: bold;
+        }
+
+        #total-row.always-visible {
+            display: table-row !important;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 {% extends 'base.html' %}
 
@@ -12,50 +47,77 @@
 <body>
     <h1>Edit Asset</h1>
 
-<!-- Display the image for the asset -->
-{% if asset.image_path %}
-    <img src="{{ url_for('serve_image', image_name=asset.image_path) }}" alt="Asset Image" style="max-width: 200px; max-height: 200px; border: 3px solid green;">
-{% endif %}
-<br>
-    <form action="/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
-        <label for="name">Asset Name:</label><br>
-        <input type="text" id="name" name="name" value="{{ asset.name }}"><br><br>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="myTabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">General</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="services-tab" data-toggle="tab" href="#services">Services</a>
+        </li>
+        <!-- Add more tabs as needed -->
+    </ul>
 
-        <label for="asset-sn">Asset Serial Number:</label><br>
-        <input type="text" id="asset-sn" name="asset_sn" value="{{ asset.asset_sn }}" required><br><br>      
+    <!-- Tab panes -->
+    <div class="tab-content">
+        <!-- General tab -->
+        <div id="general" class="tab-pane fade show active">
+            {% if asset.image_path %}
+				<img src="{{ url_for('serve_image', image_name=asset.image_path) }}" alt="Asset Image" style="max-width: 200px; max-height: 200px; border: 3px solid green;">
+			{% endif %}
+			<br>
+		<form action="/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
+			<label for="name">Asset Name:</label><br>
+			<input type="text" id="name" name="name" value="{{ asset.name }}"><br><br>
 
-        <label for="description">Asset Description:</label><br>
-        <textarea id="description" name="description">{{ asset.description }}</textarea><br><br>
+			<label for="asset-sn">Asset Serial Number:</label><br>
+			<input type="text" id="asset-sn" name="asset_sn" value="{{ asset.asset_sn }}" required><br><br>      
 
-        <label for="acquired-date">Acquired Date:</label><br>
-        <input type="date" id="acquired-date" name="acquired_date" value="{{ asset.acquired_date }}">
-        <br><br>
+			<label for="description">Asset Description:</label><br>
+			<textarea id="description" name="description">{{ asset.description }}</textarea><br><br>
 
-        <!-- Display all services associated with the asset -->
-        <div class="dropdown1">
-            <button class="standard-btn">View Services for Asset</button>
-            <div class="dropdown-content1">
-                <!-- Loop through services and create links to edit each service -->
-                {% for service in services %}
-                    <a href="/service_edit/{{ service.id }}">{{ service.service_type }} - {{ service.service_date }}</a></li>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <br><br>
-        <label for="image">Upload Image:</label><br>
-        <input type="file" id="image" class="standard-btn" name="image">
-        <br><br>
-
-        <input type="submit" class="standard-btn" value="Save Changes">
-        <br>
+			<label for="acquired-date">Acquired Date:</label><br>
+			<input type="date" id="acquired-date" name="acquired_date" value="{{ asset.acquired_date }}">
+		
+			<br><br>
+			<label for="image">Upload Image:</label><br>
+			<input type="file" id="image" class="standard-btn" name="image">
+			<br><br>
+			<input type="submit" class="standard-btn" value="Update Asset"><br>
     </form>
-
-    <form action="/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirm('Are you sure you want to delete this asset?')">
+    <form action="/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirmDelete()">
         <button type="button" class="standard-btn" onclick="goBack()">Back</button>
         <button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
         <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
     </form>
+        </div>
+
+        <!-- Services tab -->
+        <div id="services" class="tab-pane fade">
+            <!-- Search input -->
+            <input type="text" id="nameFilter" placeholder="Search by Service Type" oninput="filterServices()">
+            <!-- Table to display services -->
+            <table id="service-table">
+                <tr>
+                    <th>Service Type</th>
+                    <th>Service Date</th>
+                    <th>Service Cost</th>
+                    <th>Service Complete</th>
+                    <th>Service Notes</th>
+                </tr>
+                {% for service in services %}
+                <tr class="visible-row"> <!-- Add the "visible-row" class to all rows -->
+                    <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                    <td>{{ service.service_date }}</td>
+                    <td>{{ service.service_cost }}</td>
+                    <td>{{ service.service_complete }}</td>
+                    <td>{{ service.service_notes }}</td>
+                </tr>
+                {% endfor %}
+        </div>
+
+        <!-- Add more tab panes as needed -->
+    </div>
 
     <!-- JavaScript functions -->
     <script>
@@ -69,6 +131,20 @@
             window.location.href = "/asset_all";
         }
 
+        function confirmDelete() {
+            // Prompt the user for confirmation
+            var userConfirmation = prompt("To confirm deletion, type 'Delete asset':");
+
+            // Check if the entered text is 'Delete asset'
+            if (userConfirmation !== "Delete asset") {
+                alert("Confirmation text did not match. Asset will not be deleted.");
+                return false; // Prevent form submission
+            }
+
+            // If the confirmation text is correct, allow form submission
+            return true;
+        }
+
         // Function to show a toast notification for successful update
         function showToast() {
             Toastify({
@@ -80,6 +156,27 @@
                 stopOnFocus: true // Prevents dismissing of toast on hover
             }).showToast();
         }
+    // Function to filter services based on user input
+    function filterServices() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("nameFilter");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("service-table");
+        tr = table.getElementsByTagName("tr");
+
+        // Loop through all table rows, and hide those that don't match the search query
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0]; // Change index to the column you want to search
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
     </script>
     
     <!-- Conditionally show the toast notification -->
