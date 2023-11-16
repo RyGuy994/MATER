@@ -2,23 +2,24 @@
 <html>
 <head>
     <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
 
-<div id="navbar" class="navbar">
+<div id="custom-navbar" class="custom-navbar">
     <a href="/">Home</a>
     <a href="/calendar">Calendar</a>
-    <div class="dropdown">
+    <div class="custom-dropdown">
         <button class="dropbtn">Assets</button>
-        <div class="dropdown-content">
+        <div class="custom-dropdown-content">
             <a href="/asset_add">Add Asset</a>
             <a href="/asset_all">All Assets</a>
         </div>
     </div>
-    <div class="dropdown">
+    <div class="custom-dropdown">
         <button class="dropbtn">Services</button>
-        <div class="dropdown-content">
+        <div class="custom-dropdown-content">
             <a href="/service_add">Add Service</a>
             <a href="/service_all">All Services</a>
         </div>

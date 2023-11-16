@@ -151,12 +151,32 @@ def all_assets():
     assets = Asset.query.all() # query all in Class Asset
     return render_template('asset_all.html',assets=assets) # display asset_all.html and pass assets
 
-@app.route('/asset_delete/<int:asset_id>', methods=['POST']) #delete route
+@app.route('/asset_delete/<int:asset_id>', methods=['POST'])
 def delete_asset(asset_id):
-    asset = Asset.query.get_or_404(asset_id) #s et asset by id
-    db.session.delete(asset) # delete asset
-    db.session.commit() # commit to DB
-    return redirect('/') # return to index.html
+    asset = Asset.query.get_or_404(asset_id)
+    services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
+
+    # Check if the asset has associated services
+    if asset.services:
+        # If yes, delete the associated services first
+        for service in asset.services:
+            if service.serviceattachments:
+                # If yes, delete the associated attachments first
+                for attachment in service.serviceattachments:
+                    # Delete the file from your storage (optional, depending on your setup)
+                    delete_attachment_from_storage(attachment.attachment_path)
+
+                # Delete the attachment record from the database
+                db.session.delete(attachment)
+
+            db.session.delete(service)
+
+    # Delete the asset
+    db.session.delete(asset)
+    db.session.commit()
+
+    return redirect('/')
+
 
 @app.route('/service_add', methods=['GET', 'POST']) # service_add.html route
 def service_add():
@@ -289,12 +309,40 @@ def all_services():
     return render_template('service_all.html', services=services, total_service_cost=total_service_cost)
 
 
-@app.route('/service_delete/<int:service_id>', methods=['POST']) # service delete route
-def delete_service(service_id): # get service_id to delete
-    service = Service.query.get_or_404(service_id) # pulls record to delete and stores it in service
-    db.session.delete(service) # deletes dervice
-    db.session.commit() # commits change DB
-    return redirect('/') # returns to index.html
+@app.route('/service_delete/<int:service_id>', methods=['POST'])
+def delete_service(service_id):
+    service = Service.query.get_or_404(service_id)
+
+    # Check if the service has associated attachments
+    if service.serviceattachments:
+        # If yes, delete the associated attachments first
+        for attachment in service.serviceattachments:
+            # Delete the file from your storage (optional, depending on your setup)
+            delete_attachment_from_storage(attachment.attachment_path)
+
+            # Delete the attachment record from the database
+            db.session.delete(attachment)
+
+    # Delete the service
+    db.session.delete(service)
+    db.session.commit()
+
+    return redirect('/')
+
+def delete_attachment_from_storage(attachment_path):
+    # Assuming your attachments are stored in a folder named 'attachments'
+    attachment_full_path = os.path.join('attachments', attachment_path)
+
+    try:
+        # Attempt to delete the file
+        os.remove(attachment_full_path)
+        print(attachment_full_path)
+    except FileNotFoundError:
+        # Handle the case where the file does not exist
+        pass
+    except Exception as e:
+        # Handle other exceptions as needed
+        print(f"Error deleting attachment: {e}")
 
 @app.route('/<image_name>', methods=['GET']) # get image name
 def serve_image(image_name):

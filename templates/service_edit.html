@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Service</title>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> <!-- Include jQuery UI library -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    
     <style>
         .required-field::after {
             content: "*";
@@ -19,73 +22,92 @@
 
 {% block content %}
 <h1>Edit Service</h1>
-<form action="/service_edit/{{ service.id }}" method="post">
-    <label for="asset_name" class="required-field">Asset Name:</label><br>
-    <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()" required><br><br>
-    <input type="hidden" id="asset_id_input" name="asset_id" value="{{ service.asset_id }}">
 
-    <label for="service_type" class="required-field">Service Type:</label><br>
-    <input type="text" id="service_type" name="service_type" value="{{ service.service_type }}" required><br><br>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="myTabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">General</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="services-tab" data-toggle="tab" href="#services">Services</a>
+        </li>
+        <!-- Add more tabs as needed -->
+    </ul>
 
-    <label for="service_date" class="required-field">Service Date:</label><br>
-    <input type="date" id="service_date" name="service_date" value="{{ service.service_date }}" required><br><br>
+<!-- Tab panes -->
+<div class="tab-content">
+    <!-- General tab -->
+    <div id="general" class="tab-pane fade show active">
+        <!-- General form -->
+        <form action="/service_edit/{{ service.id }}" method="post">
+            <!-- Your general form content -->
+            <label for="asset_name" class="required-field">Asset Name:</label><br>
+            <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()" required><br><br>
+            <input type="hidden" id="asset_id_input" name="asset_id" value="{{ service.asset_id }}">
 
-    <label for="service_cost">Service Cost:</label><br>
-    <input type="number" id="service_cost" name="service_cost" value="{{ service.service_cost }}" step="any"><br><br> <!--added any to accept decimal -->
+            <label for="service_type" class="required-field">Service Type:</label><br>
+            <input type="text" id="service_type" name="service_type" value="{{ service.service_type }}" required><br><br>
 
-    <label for="service_complete">Service Complete:</label><br>
-    <input type="checkbox" id="service_complete" name="service_complete" {% if service.service_complete %}checked{% endif %} onchange="showSecondaryCheckbox()"><br><br>
+            <label for="service_date" class="required-field">Service Date:</label><br>
+            <input type="date" id="service_date" name="service_date" value="{{ service.service_date }}" required><br><br>
 
-    <div id="serivce_add_again" style="display: none;">
-        <label for="service_add_again">Add Service again?</label><br>
-        <input type="checkbox" name="service_add_again_check" id="service_add_again_check"onchange="showSecondaryDays()"><br>
-        <div id="serivce_add_again_days" style="display: none;"><br>
-            <label for="service_add_again">What Date will this be due?</label><br>
-            <input type="date" name="service_add_again_days_cal" id="service_add_again_days_cal"><br><br>
-            <div class="dropdown1">
-                <button class="standard-btn">Add Days</button>
-                <div class="dropdown-content1">
-                    <a onclick="addDaysToDate(7)">7 Days</a>
-                    <a onclick="addDaysToDate(14)">14 Days</a>
-                    <a onclick="addDaysToDate(30)">30 Days</a>
-                    <a onclick="addDaysToDate(60)">60 Days</a>
-                    <a onclick="addDaysToDate(90)">90 Days</a>
-                    <a onclick="addDaysToDate(120)">180 Days</a>
-                    <a onclick="addDaysToDate(365)">365 Days</a>
-                    <a onclick="addDaysToDate(720)">730 Days</a>
+            <label for="service_cost">Service Cost:</label><br>
+            <input type="number" id="service_cost" name="service_cost" value="{{ service.service_cost }}" step="any"><br><br> <!--added any to accept decimal -->
+
+            <label for="service_complete">Service Complete:</label><br>
+            <input type="checkbox" id="service_complete" name="service_complete" {% if service.service_complete %}checked{% endif %} onchange="showSecondaryCheckbox()"><br><br>
+
+            <div id="serivce_add_again" style="display: none;">
+                <label for="service_add_again">Add Service again?</label><br>
+                <input type="checkbox" name="service_add_again_check" id="service_add_again_check"onchange="showSecondaryDays()"><br>
+                <div id="serivce_add_again_days" style="display: none;"><br>
+                    <label for="service_add_again">What Date will this be due?</label><br>
+                    <input type="date" name="service_add_again_days_cal" id="service_add_again_days_cal"><br><br>
+                    <div class="dropdown1">
+                        <button class="standard-btn">Add Days</button>
+                        <div class="dropdown-content1">
+                            <a onclick="addDaysToDate(7)">7 Days</a>
+                            <a onclick="addDaysToDate(14)">14 Days</a>
+                            <a onclick="addDaysToDate(30)">30 Days</a>
+                            <a onclick="addDaysToDate(60)">60 Days</a>
+                            <a onclick="addDaysToDate(90)">90 Days</a>
+                            <a onclick="addDaysToDate(120)">180 Days</a>
+                            <a onclick="addDaysToDate(365)">365 Days</a>
+                            <a onclick="addDaysToDate(720)">730 Days</a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <label for="service_notes">Service Notes:</label><br>
+            <textarea id="service_notes" name="service_notes">{{ service.service_notes }}</textarea><br><br>
+
+            <!-- Add multiple attachment upload field -->
+            <label for="attachments">Attachments:</label><br>
+            <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
+        <input type="submit" class="standard-btn" value="Update Service"><br>
+        <button type="button" class="standard-btn" onclick="goBack()">Back</button>
+        <button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
+        </form>
     </div>
 
-    <label for="service_notes">Service Notes:</label><br>
-    <textarea id="service_notes" name="service_notes">{{ service.service_notes }}</textarea><br><br>
-    <!-- Add multiple attachment upload field -->
-    <label for="attachments">Attachments:</label><br>
-    <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
-
-    <h2>Attachments</h2>
-{% if service.serviceattachments %}
-    <ul>
-        {% for attachment in service.serviceattachments %}
-            <li>
-                <a href="{{ url_for('uploaded_file', filename=attachment.attachment_path) }}" target="_blank">{{ attachment.attachment_path }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No attachments for this service.</p>
-{% endif %}
-
-    <input type="submit" class="standard-btn" value="Save Changes">
-</form>
-
-<form action="/service_delete/{{ service.id }}" method="post" onsubmit="return confirm('Are you sure you want to delete this service?')">
-    <button type="button" class="standard-btn" onclick="goBack()">Back</button>
-    <button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
-    <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
-</form>
-
+    <!-- Attachments tab -->
+    <div id="services" class="tab-pane fade">
+        <!-- Attachments content -->
+        <h2>Attachments</h2>
+        {% if service.serviceattachments %}
+            <ul>
+                {% for attachment in service.serviceattachments %}
+                    <li>
+                        <a href="{{ url_for('uploaded_file', filename=attachment.attachment_path) }}" target="_blank">{{ attachment.attachment_path }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No attachments for this service.</p>
+        {% endif %}
+    </div>
+</div>
 <script>
     function goBack() {
         window.history.back();
@@ -103,23 +125,22 @@
             stopOnFocus: true // Prevents dismissing of toast on hover
         }).showToast();
     }
-</script>
-<script>
-    $(function() {
+    // jQuery UI autocomplete setup
+    $(function () {
         var assetData = [
-            // Array of asset data containing both ID and name
             {% for asset in assets %}
                 { label: "{{ asset.name | safe }}", value: "{{ asset.id }}" },
             {% endfor %}
         ];
+
         $("#asset_name_input").autocomplete({
             source: assetData,
-            select: function(event, ui) {
+            select: function (event, ui) {
                 $("#asset_name_input").val(ui.item.label);
                 $("#asset_id_input").val(ui.item.value);
                 return false;
             }
-        }).data("ui-autocomplete")._renderItem = function(ul, item) {
+        }).data("ui-autocomplete")._renderItem = function (ul, item) {
             return $("<li>")
                 .append("<div>" + item.label + "</div>")
                 .appendTo(ul);
