@@ -1,32 +1,23 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>Settings</title>
-</head>
-
 {% extends 'base.html' %}
 
 {% block title %}Settings{% endblock %}
 
 {% block content %}
+    <!-- Heading -->
     <h1>Settings</h1>
 
+    <!-- Form for exporting data to CSV -->
     <form action="{{ url_for('export_csv') }}" method="post">
+        <!-- Dropdown to select a table for export -->
         <label for="table">Select a Table:</label>
         <select id="table" name="table">
-            <!-- Populate the dropdown with your table names -->
+            <!-- Populate the dropdown with table names -->
             {% for table_name in table_names %}
                 <option value="{{ table_name }}">{{ table_name }}</option>
             {% endfor %}
         </select>
     
+        <!-- Submit button to trigger CSV export -->
         <button type="submit" class="standard-btn">Export to CSV</button>
     </form>
 {% endblock %}
-
-</div>
-
-</body>
-
-</html>

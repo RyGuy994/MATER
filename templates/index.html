@@ -1,9 +1,14 @@
-<!DOCTYPE html>
-<html>
+<!-- Extending the base template -->
+{% extends 'base.html' %}
 
-<head>
+<!-- Setting the title -->
+{% block title %}MATER{% endblock %}
+
+<!-- Setting the head-->
+{% block head %}
     <!-- CSS for the heading text -->
     <style>
+        /* Styling for the heading text */
         .cool-text {
             font-family: 'Arial Black', Gadget, sans-serif;
             font-size: 60px;
@@ -13,11 +18,8 @@
             text-align: center;
             position: relative;
         }
-        .center {
-            display: block;
-            margin: auto;
-        }
 
+        /* Styling for the after content of the heading */
         .cool-text::after {
             content: 'Maintenance. Asset. Tracking. Equipment. Registry.';
             font-family: 'Arial', sans-serif;
@@ -30,18 +32,21 @@
             text-align: center;
         }
 
+        /* Styling for the table */
         table {
             border-collapse: collapse;
             width: 100%;
             background-color: #f2f2f2; /* light grey */
         }
 
+        /* Styling for table headers and cells */
         th, td {
             border: 1px solid black;
             padding: 8px;
             text-align: left;
         }
 
+        /* Styling for the name filter input */
         #nameFilter {
             padding: 10px;
             margin-bottom: 15px;
@@ -49,22 +54,22 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
+        /* Centering an image */
+        .center {
+            display: block;
+            margin: auto;
+        }
     </style>
-</head>
+{% endblock %}
 
-<body>
-    <!-- Extending the base template -->
-    {% extends 'base.html' %}
-
-    <!-- Setting the title -->
-    {% block title %}MATER{% endblock %}
-
-    <!-- Content block -->
-    {% block content %}
+<!-- Content block -->
+{% block content %}
     <!-- Heading -->
     <h1 class="cool-text" data-text="MATER">
         MATER
     </h1>
+    <!-- MATER Image -->
     <c><img src="/static/MATER.png" alt="MATER Image" class="center"></c>
     <!-- Subheading -->
     <h2>Services due in the next 30 days</h2>
@@ -82,15 +87,16 @@
             <th>Service Complete</th>
             <th>Service Notes</th>
         </tr>
+        <!-- Loop through upcoming_services to display service details -->
         {% for service in upcoming_services %}
-        <tr>
-            <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
-            <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
-            <td>{{ service.service_date }}</td>
-            <td>{{ service.service_cost }}</td>
-            <td>{{ service.service_complete }}</td>
-            <td>{{ service.service_notes }}</td>
-        </tr>
+            <tr>
+                <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+                <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                <td>{{ service.service_date }}</td>
+                <td>{{ service.service_cost }}</td>
+                <td>{{ service.service_complete }}</td>
+                <td>{{ service.service_notes }}</td>
+            </tr>
         {% endfor %}
     </table>
 
@@ -124,8 +130,4 @@
             }
         }
     </script>
-
-    {% endblock %}
-</body>
-
-</html>
+{% endblock %}

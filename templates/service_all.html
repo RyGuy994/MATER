@@ -1,7 +1,10 @@
-<!DOCTYPE html>
-<html>
+<!-- Extending the base template -->
+{% extends 'base.html' %}
 
-<head>
+<!-- Setting the title -->
+{% block title %}Service Records{% endblock %}
+
+{% block head %}
     <!-- Styling for the table -->
     <style>
         table {
@@ -36,48 +39,45 @@
             display: none;
         }
     </style>
-</head>
+{% endblock %}
 
-<body>
-    <!-- Extending the base template -->
-    {% extends 'base.html' %}
-
-    <!-- Setting the title -->
-    {% block title %}Service Records{% endblock %}
-
-    <!-- Content block -->
-    {% block content %}
+<!-- Content block -->
+{% block content %}
     <!-- First Heading -->
     <h1>Service List</h1>
     <!-- Input for filtering -->
     <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
-<!-- Table to display services -->
-<table id="service-table">
-    <tr>
-        <th>Asset Name</th>
-        <th>Service Type</th>
-        <th>Service Date</th>
-        <th>Service Cost</th>
-        <th>Service Complete</th>
-        <th>Service Notes</th>
-    </tr>
-    {% for service in services %}
-    <tr class="visible-row"> <!-- Add the "visible-row" class to all rows -->
-        <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
-        <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
-        <td>{{ service.service_date }}</td>
-        <td>{{ service.service_cost }}</td>
-        <td>{{ service.service_complete }}</td>
-        <td>{{ service.service_notes }}</td>
-    </tr>
-    {% endfor %}
-    <!-- Total Row -->
-    <tr id="total-row" class="always-visible visible-row"> <!-- Add the "visible-row" class to the total row -->
-        <td colspan="3"></td>
-        <td>Total: <span id="total-service-cost">0.00</span></td>
-        <td colspan="2"></td>
-    </tr>
-</table>
+    
+    <!-- Table to display services -->
+    <table id="service-table">
+        <tr>
+            <th>Asset Name</th>
+            <th>Service Type</th>
+            <th>Service Date</th>
+            <th>Service Cost</th>
+            <th>Service Complete</th>
+            <th>Service Notes</th>
+        </tr>
+        {% for service in services %}
+            <!-- Add the "visible-row" class to all rows -->
+            <tr class="visible-row">
+                <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+                <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                <td>{{ service.service_date }}</td>
+                <td>{{ service.service_cost }}</td>
+                <td>{{ service.service_complete }}</td>
+                <td>{{ service.service_notes }}</td>
+            </tr>
+        {% endfor %}
+
+        <!-- Total Row -->
+        <!-- Add the "visible-row" class to the total row -->
+        <tr id="total-row" class="always-visible visible-row">
+            <td colspan="3"></td>
+            <td>Total: <span id="total-service-cost">0.00</span></td>
+            <td colspan="2"></td>
+        </tr>
+    </table>
 
 <!-- JavaScript function for filtering the table -->
 <script>
@@ -105,7 +105,7 @@
         // After filtering, update the total cost
         updateTotalCost();
     }
-
+    // Updating the total cost
     function updateTotalCost() {
     var totalCost = 0;
     var visibleRows = 0;
@@ -132,11 +132,11 @@
         }
     }
 
-    var totalCostSpan = document.getElementById("total-service-cost");
+    var totalCostSpan = document.getElementById("total-service-cost"); // get total cost id
 
     if (visibleRows > 0) {
         totalRow.style.display = "table-row";
-        totalCostSpan.textContent = totalCost.toFixed(2);
+        totalCostSpan.textContent = totalCost.toFixed(2); // Fix to .00
     } else {
         totalRow.style.display = "none";
         totalCostSpan.textContent = "0.00";
@@ -145,6 +145,3 @@
 
 </script>
     {% endblock %}
-</body>
-
-</html>

@@ -1,154 +1,190 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Add Service</title>
+<!-- Extending the base template -->
+{% extends 'base.html' %}
+
+<!-- Setting the title -->
+{% block title %}Add Service{% endblock %}
+
+<!-- Setting the head -->
+{% block head %}
+    <!-- Including necessary scripts and styles -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <!-- Styling for required fields -->
     <style>
         .required-field::after {
             content: "*";
             color: red;
         }
     </style>
-</head>
-{% extends 'base.html' %}
+{% endblock %}
 
-{% block title %}Add Service{% endblock %}
-
+<!-- Content block -->
 {% block content %}
-<h1>Add Service</h1>
-<form action="/service_add" method="post" enctype="multipart/form-data"> <!-- Add enctype attribute for file upload -->
-    <label for="asset_name" class="required-field">Asset Name:</label><br>
-    <input type="text" id="asset_name_input" name="asset_name" oninput="updateAssetId()" required><br><br>
-    <input type="hidden" id="asset_id_input" name="asset_id" value="">
+    <h1>Add Service</h1>
 
-    <label for="service_type" class="required-field">Service Type:</label><br>
-    <input type="text" id="service_type" name="service_type" required><br><br>
+    <!-- Service add form -->
+    <form action="/service_add" method="post" enctype="multipart/form-data">
 
-    <label for="service_date" class="required-field">Service Date:</label><br>
-    <input type="date" id="service_date" name="service_date" required><br><br>
+        <!-- Asset Name input -->
+        <label for="asset_name" class="required-field">Asset Name:</label><br>
+        <input type="text" id="asset_name_input" name="asset_name" oninput="updateAssetId()" required><br><br>
+        <input type="hidden" id="asset_id_input" name="asset_id" value="">
 
-    <label for="service_cost">Service Cost:</label><br>
-    <input type="number" id="service_cost" name="service_cost" step="any"><br><br> <!--added step any to accept decimal -->
+        <!-- Service Type input -->
+        <label for="service_type" class="required-field">Service Type:</label><br>
+        <input type="text" id="service_type" name="service_type" required><br><br>
 
-    <label for="service_complete">Service Complete:</label><br>
-    <input type="checkbox" id="service_complete" name="service_complete" onchange="showSecondaryCheckbox()"><br><br>
+        <!-- Service Date input -->
+        <label for="service_date" class="required-field">Service Date:</label><br>
+        <input type="date" id="service_date" name="service_date" required><br><br>
 
-    <div id="serivce_add_again" style="display: none;">
-        <label for="service_add_again">Add Service again?</label><br>
-        <input type="checkbox" name="service_add_again_check" id="service_add_again_check"onchange="showSecondaryDays()"><br>
-        <div id="serivce_add_again_days" style="display: none;"><br>
-            <label for="service_add_again">What Date will this be due?</label><br>
-            <input type="date" name="service_add_again_days_cal" id="service_add_again_days_cal"><br><br>
-            <div class="dropdown1">
-                <button class="standard-btn">Add Days</button>
-                <div class="dropdown-content1">
-                    <a onclick="addDaysToDate(7)">7 Days</a>
-                    <a onclick="addDaysToDate(14)">14 Days</a>
-                    <a onclick="addDaysToDate(30)">30 Days</a>
-                    <a onclick="addDaysToDate(60)">60 Days</a>
-                    <a onclick="addDaysToDate(90)">90 Days</a>
-                    <a onclick="addDaysToDate(120)">180 Days</a>
-                    <a onclick="addDaysToDate(365)">365 Days</a>
-                    <a onclick="addDaysToDate(720)">730 Days</a>
+        <!-- Service Cost input -->
+        <label for="service_cost">Service Cost:</label><br>
+        <input type="number" id="service_cost" name="service_cost" step="any"><br><br>
+
+        <!-- Service Complete checkbox -->
+        <label for="service_complete">Service Complete:</label><br>
+        <input type="checkbox" id="service_complete" name="service_complete" onchange="showSecondaryCheckbox()"><br><br>
+
+        <!-- Secondary Checkbox for adding service again -->
+        <div id="serivce_add_again" style="display: none;">
+            <label for="service_add_again">Add Service again?</label><br>
+            <input type="checkbox" name="service_add_again_check" id="service_add_again_check"onchange="showSecondaryDays()"><br>
+
+            <!-- Date input for the next service -->
+            <div id="serivce_add_again_days" style="display: none;"><br>
+                <label for="service_add_again">What Date will this be due?</label><br>
+                <input type="date" name="service_add_again_days_cal" id="service_add_again_days_cal"><br><br>
+
+                <!-- Dropdown for adding days to the date -->
+                <div class="dropdown1">
+                    <button class="standard-btn">Add Days</button>
+                    <div class="dropdown-content1">
+                        <a onclick="addDaysToDate(7)">7 Days</a>
+                        <a onclick="addDaysToDate(14)">14 Days</a>
+                        <a onclick="addDaysToDate(30)">30 Days</a>
+                        <a onclick="addDaysToDate(60)">60 Days</a>
+                        <a onclick="addDaysToDate(90)">90 Days</a>
+                        <a onclick="addDaysToDate(120)">180 Days</a>
+                        <a onclick="addDaysToDate(365)">365 Days</a>
+                        <a onclick="addDaysToDate(720)">730 Days</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <label for="service_notes">Service Notes:</label><br>
-    <textarea id="service_notes" name="service_notes"></textarea><br><br>
-    <!-- Add multiple attachment upload field -->
-    <label for="attachments">Attachments:</label><br>
-    <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
 
-    <input type="submit" class="standard-btn" value="Add Service">
-</form>
+        <!-- Service Notes textarea -->
+        <label for="service_notes">Service Notes:</label><br>
+        <textarea id="service_notes" name="service_notes"></textarea><br><br>
 
-<button type="button" class="standard-btn" onclick="goBack()">Back</button>
-<button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
+        <!-- Multiple attachment upload field -->
+        <label for="attachments">Attachments:</label><br>
+        <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
 
-<script>
-    function goBack() {
-        window.history.back();
-    }
-    function redirectToServiceAll() {
-    window.location.href = "/service_all";
-    }
-    function showToast() {
-        Toastify({
-            text: "Service successfully added!",
-            duration: 3000, // 3 seconds
-            gravity: "top", // `top` or `bottom`
-            position: 'right', // `left`, `center` or `right`
-            backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
-            stopOnFocus: true // Prevents dismissing of toast on hover
-        }).showToast();
-    }
-    $(function() {
-        var assetData = [
-            // Array of asset data containing both ID and name
-            {% for asset in assets %}
-                { label: "{{ asset.name | safe }}", value: "{{ asset.id }}" },
-            {% endfor %}
-        ];
-        $("#asset_name_input").autocomplete({
-            source: assetData,
-            select: function(event, ui) {
-                $("#asset_name_input").val(ui.item.label);
-                $("#asset_id_input").val(ui.item.value);
-                return false;
+        <!-- Submit button for adding service -->
+        <input type="submit" class="standard-btn" value="Add Service">
+    </form>
+
+    <!-- Back and All Services buttons -->
+    <button type="button" class="standard-btn" onclick="goBack()">Back</button>
+    <button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
+
+    <!-- JavaScript functions for navigation and notifications -->
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+
+        function redirectToServiceAll() {
+            window.location.href = "/service_all";
+        }
+
+        function showToast() {
+            // Display a toast notification for successful service addition
+            Toastify({
+                text: "Service successfully added!",
+                duration: 3000, // 3 seconds
+                gravity: "top", // `top` or `bottom`
+                position: 'right', // `left`, `center` or `right`
+                backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
+                stopOnFocus: true // Prevents dismissing of toast on hover
+            }).showToast();
+        }
+
+        // jQuery UI autocomplete for asset name input
+        $(function() {
+            var assetData = [
+                // Array of asset data containing both ID and name
+                {% for asset in assets %}
+                    { label: "{{ asset.name | safe }}", value: "{{ asset.id }}" },
+                {% endfor %}
+            ];
+
+            // Initialize autocomplete
+            $("#asset_name_input").autocomplete({
+                source: assetData,
+                select: function(event, ui) {
+                    $("#asset_name_input").val(ui.item.label);
+                    $("#asset_id_input").val(ui.item.value);
+                    return false;
+                }
+            }).data("ui-autocomplete")._renderItem = function(ul, item) {
+                return $("<li>")
+                    .append("<div>" + item.label + "</div>")
+                    .appendTo(ul);
+            };
+        });
+
+        // Show/hide secondary checkboxes based on the service completion status
+        function showSecondaryCheckbox() {
+            var serviceCompleteCheckbox = document.getElementById("service_complete");
+            var secondaryCheckbox = document.getElementById("serivce_add_again");
+
+            if (serviceCompleteCheckbox.checked) {
+                secondaryCheckbox.style.display = "block";
+            } else {
+                secondaryCheckbox.style.display = "none";
             }
-        }).data("ui-autocomplete")._renderItem = function(ul, item) {
-            return $("<li>")
-                .append("<div>" + item.label + "</div>")
-                .appendTo(ul);
-        };
-    });
-    function showSecondaryCheckbox() {
-        var serviceCompleteCheckbox = document.getElementById("service_complete");
-        var secondaryCheckbox = document.getElementById("serivce_add_again");
-        if (serviceCompleteCheckbox.checked) {
-            secondaryCheckbox.style.display = "block";
-        } else {
-            secondaryCheckbox.style.display = "none";
         }
-    }
-    function showSecondaryDays() {
-        var serviceCompleteCheckbox = document.getElementById("service_complete");
-        var secondaryCheckbox = document.getElementById("serivce_add_again_days");
-        if (serviceCompleteCheckbox.checked) {
-            secondaryCheckbox.style.display = "block";
-        } else {
-            secondaryCheckbox.style.display = "none";
+
+        // Show/hide secondary days input based on the secondary checkbox
+        function showSecondaryDays() {
+            var serviceCompleteCheckbox = document.getElementById("service_complete");
+            var secondaryCheckbox = document.getElementById("serivce_add_again_days");
+
+            if (serviceCompleteCheckbox.checked) {
+                secondaryCheckbox.style.display = "block";
+            } else {
+                secondaryCheckbox.style.display = "none";
+            }
         }
-    }
-    function addDaysToDate(addDays) {
-        console.log("Adding days:", addDays); // Log to check if the function is being triggered
-        var today = new Date();
-        var serviceAddAgainDays = new Date(today.setDate(today.getDate() + addDays));
-        var formattedDate = formatDate(serviceAddAgainDays);
-        console.log("Formatted date:", formattedDate); // Log the formatted date
-        document.getElementById("service_add_again_days_cal").value = formattedDate;
-    }
 
-    function formatDate(date) {
-        var year = date.getFullYear();
-        var month = (date.getMonth() + 1).toString().padStart(2, '0');
-        var day = date.getDate().toString().padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
+        // Add specified days to the date input
+        function addDaysToDate(addDays) {
+            console.log("Adding days:", addDays); // Log to check if the function is being triggered
+            var today = new Date();
+            var serviceAddAgainDays = new Date(today.setDate(today.getDate() + addDays));
+            var formattedDate = formatDate(serviceAddAgainDays);
+            console.log("Formatted date:", formattedDate); // Log the formatted date
+            document.getElementById("service_add_again_days_cal").value = formattedDate;
+        }
 
-</script>
-    </body>
+        // Format date as YYYY-MM-DD
+        function formatDate(date) {
+            var year = date.getFullYear();
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
+            var day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    </script>
 
+    <!-- Show toast if specified in the template -->
     {% if toast %}
         <script>
             showToast();
         </script>
     {% endif %}
-
-
 {% endblock %}
-</html>
