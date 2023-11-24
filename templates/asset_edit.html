@@ -1,10 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Asset</title>
+{% extends 'base.html' %}
+
+{% block title %}Edit Asset{% endblock %}
+
+{% block head %}
+    <!-- Include necessary scripts and styles -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- Custom styles for the table -->
     <style>
         table {
             border-collapse: collapse;
@@ -38,65 +41,71 @@
             display: none;
         }
     </style>
-</head>
-{% extends 'base.html' %}
-
-{% block title %}Edit Asset{% endblock %}
+{% endblock %}
 
 {% block content %}
-<body>
+    <!-- Heading for the asset edit page -->
     <h1>Edit Asset</h1>
 
-    <!-- Nav tabs -->
+    <!-- Nav tabs for different sections -->
     <ul class="nav nav-tabs" id="myTabs">
+        <!-- Tab for general asset information -->
         <li class="nav-item">
-            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">General</a>
+            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">Asset Info</a>
         </li>
+        <!-- Tab for services related to the asset -->
         <li class="nav-item">
             <a class="nav-link" id="services-tab" data-toggle="tab" href="#services">Services</a>
         </li>
-        <!-- Add more tabs as needed -->
+        <!-- Add more tabs as needed FUTUREFUTURE attachments tab when assets are related directed to asset ID-->
     </ul>
 
     <!-- Tab panes -->
     <div class="tab-content">
         <!-- General tab -->
         <div id="general" class="tab-pane fade show active">
+            <!-- Display the asset image if available -->
             {% if asset.image_path %}
 				<img src="{{ url_for('serve_image', image_name=asset.image_path) }}" alt="Asset Image" style="max-width: 200px; max-height: 200px; border: 3px solid green;">
 			{% endif %}
 			<br>
-		<form action="/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
-			<label for="name">Asset Name:</label><br>
-			<input type="text" id="name" name="name" value="{{ asset.name }}"><br><br>
+            <!-- Form for editing general asset information -->
+            <form action="/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
+                <!-- Input fields for asset details -->
+                <label for="name">Asset Name:</label><br>
+                <input type="text" id="name" name="name" value="{{ asset.name }}"><br><br>
 
-			<label for="asset-sn">Asset Serial Number:</label><br>
-			<input type="text" id="asset-sn" name="asset_sn" value="{{ asset.asset_sn }}" required><br><br>      
+                <label for="asset-sn">Asset Serial Number:</label><br>
+                <input type="text" id="asset-sn" name="asset_sn" value="{{ asset.asset_sn }}" required><br><br>
 
-			<label for="description">Asset Description:</label><br>
-			<textarea id="description" name="description">{{ asset.description }}</textarea><br><br>
+                <label for="description">Asset Description:</label><br>
+                <textarea id="description" name="description">{{ asset.description }}</textarea><br><br>
 
-			<label for="acquired-date">Acquired Date:</label><br>
-			<input type="date" id="acquired-date" name="acquired_date" value="{{ asset.acquired_date }}">
-		
-			<br><br>
-			<label for="image">Upload Image:</label><br>
-			<input type="file" id="image" class="standard-btn" name="image">
-			<br><br>
-			<input type="submit" class="standard-btn" value="Update Asset"><br>
-    </form>
-    <form action="/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirmDelete()">
-        <button type="button" class="standard-btn" onclick="goBack()">Back</button>
-        <button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
-        <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
-    </form>
+                <label for="acquired-date">Acquired Date:</label><br>
+                <input type="date" id="acquired-date" name="acquired_date" value="{{ asset.acquired_date }}"><br><br>
+
+                <!-- Input for uploading a new image -->
+                <label for="image">Upload Image:</label><br>
+                <input type="file" id="image" class="standard-btn" name="image"><br><br>
+
+                <!-- Button to submit the form -->
+                <input type="submit" class="standard-btn" value="Update Asset"><br>
+            </form>
+
+            <!-- Form for deleting the asset -->
+            <form action="/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirmDelete()">
+                <!-- Buttons for navigation and deletion -->
+                <button type="button" class="standard-btn" onclick="goBack()">Back</button>
+                <button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
+                <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
+            </form>
         </div>
 
-        <!-- Services tab -->
+        <!-- Services tab content -->
         <div id="services" class="tab-pane fade">
-            <!-- Search input -->
+            <!-- Input for filtering services -->
             <input type="text" id="nameFilter" placeholder="Search by Service Type" oninput="filterServices()">
-            <!-- Table to display services -->
+            <!-- Table to display services related to the asset -->
             <table id="service-table">
                 <tr>
                     <th>Service Type</th>
@@ -105,17 +114,18 @@
                     <th>Service Complete</th>
                     <th>Service Notes</th>
                 </tr>
+                <!-- Loop through services and display them in a table -->
                 {% for service in services %}
-                <tr class="visible-row"> <!-- Add the "visible-row" class to all rows -->
-                    <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
-                    <td>{{ service.service_date }}</td>
-                    <td>{{ service.service_cost }}</td>
-                    <td>{{ service.service_complete }}</td>
-                    <td>{{ service.service_notes }}</td>
-                </tr>
+                    <tr class="visible-row"> <!-- Add the "visible-row" class to all rows -->
+                        <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                        <td>{{ service.service_date }}</td>
+                        <td>{{ service.service_cost }}</td>
+                        <td>{{ service.service_complete }}</td>
+                        <td>{{ service.service_notes }}</td>
+                    </tr>
                 {% endfor %}
+            </table>
         </div>
-
         <!-- Add more tab panes as needed -->
     </div>
 
@@ -185,7 +195,4 @@
             showToast();
         </script>
     {% endif %}
-    
-</body>
 {% endblock %}
-</html>

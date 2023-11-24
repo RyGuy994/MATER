@@ -1,33 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Set the title of the page -->
     <title>{% block title %}{% endblock %}</title>
+    <!-- Include head content such as scripts and styles -->
+    {% block head %}{% endblock %}
+    <!-- Include Bootstrap CSS from a CDN -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Include custom styles from a local static file -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
 
+<!-- Custom navigation bar -->
 <div id="custom-navbar" class="custom-navbar">
+    <!-- Home link -->
     <a href="/">Home</a>
+    <!-- Calendar link -->
     <a href="/calendar">Calendar</a>
+    <!-- Dropdown for Assets -->
     <div class="custom-dropdown">
         <button class="dropbtn">Assets</button>
         <div class="custom-dropdown-content">
+            <!-- Link to add a new asset -->
             <a href="/asset_add">Add Asset</a>
+            <!-- Link to view all assets -->
             <a href="/asset_all">All Assets</a>
         </div>
     </div>
+    <!-- Dropdown for Services -->
     <div class="custom-dropdown">
         <button class="dropbtn">Services</button>
         <div class="custom-dropdown-content">
+            <!-- Link to add a new service -->
             <a href="/service_add">Add Service</a>
+            <!-- Link to view all services -->
             <a href="/service_all">All Services</a>
         </div>
     </div>
+    <!-- Link to the Settings page -->
     <a href="/settings">Settings</a>
 </div>
 
+<!-- Content section of the page -->
 <div id="content">
+    <!-- Block to be filled with content by child templates -->
     {% block content %}{% endblock %}
 </div>
 

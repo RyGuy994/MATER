@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, send_file, abort, Response, jsonify # import from flask for calling if greyed out means not in use
+from flask import Flask, render_template, request, redirect, send_file, abort, Response, jsonify, url_for # import from flask for calling if greyed out means not in use
 from flask_sqlalchemy import SQLAlchemy # import SQL for SQLite
 from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
 from werkzeug.utils import secure_filename # import filename
@@ -13,13 +13,11 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
 UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  # images Folder root/static/serviceattachments
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = '?!$@Mc9cJksjud@k8n' # Security key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db' # path to database for app to use
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to use
 app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
 db = SQLAlchemy(app) #db app
-
-# Set the secret key
-app.secret_key = 'kSyAS5$d76fnyas7cc6ASi#und6A&S56d!nf9qlA01'
 
 class Asset(db.Model): # Asset table
     id = db.Column(db.Integer, primary_key=True) # id of asset
@@ -45,8 +43,7 @@ class Service(db.Model): # Service table
     service_cost = db.Column(db.Float) # cost of service
     service_complete = db.Column(db.Boolean) # if the service is complete
     service_notes = db.Column(db.Text) # notes of service
-    # Inside the Service model class
-    def to_calendar_event(self):
+    def to_calendar_event(self): #pull info for FullCalendar
         return {
             'title': self.service_type,
             'start': self.service_date.isoformat(),
@@ -54,7 +51,7 @@ class Service(db.Model): # Service table
             'description': self.id
             # Add more fields as needed
         }
-    def to_icalendar_event(self):
+    def to_icalendar_event(self): # 
         event = Event()
         event.add('summary', self.service_type)
         event.add('dtstart', self.service_date)
@@ -63,6 +60,7 @@ class Service(db.Model): # Service table
 
         return event
 
+# Create the database tables
 with app.app_context(): 
     db.create_all() # create all tables in database
 
@@ -151,31 +149,22 @@ def all_assets():
     assets = Asset.query.all() # query all in Class Asset
     return render_template('asset_all.html',assets=assets) # display asset_all.html and pass assets
 
-@app.route('/asset_delete/<int:asset_id>', methods=['POST'])
+@app.route('/asset_delete/<int:asset_id>', methods=['POST']) # route for delete an asset by id
 def delete_asset(asset_id):
-    asset = Asset.query.get_or_404(asset_id)
+    asset = Asset.query.get_or_404(asset_id) # get asset by id
     services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
 
     # Check if the asset has associated services
-    if asset.services:
-        # If yes, delete the associated services first
+    if asset.services: # If yes, delete the associated services first
         for service in asset.services:
-            if service.serviceattachments:
-                # If yes, delete the associated attachments first
-                for attachment in service.serviceattachments:
-                    # Delete the file from your storage (optional, depending on your setup)
-                    delete_attachment_from_storage(attachment.attachment_path)
-
-                # Delete the attachment record from the database
-                db.session.delete(attachment)
-
-            db.session.delete(service)
-
-    # Delete the asset
-    db.session.delete(asset)
-    db.session.commit()
-
-    return redirect('/')
+            if service.serviceattachments: # If yes, delete the associated attachments first
+                for attachment in service.serviceattachments: # Delete the file from your storage 
+                    delete_attachment_from_storage(attachment.attachment_path) # Delete the attachment record from the database
+                db.session.delete(attachment) # delete attachment
+            db.session.delete(service) # delete service
+    db.session.delete(asset) # Delete the asset
+    db.session.commit() # Commit the changes
+    return redirect('/') # display index.html
 
 
 @app.route('/service_add', methods=['GET', 'POST']) # service_add.html route
@@ -280,9 +269,9 @@ def service_edit(service_id):
                 attachment.save(attachment_path)
                 attachment_paths.append(attachment_path)
 
-        # Attachments saved, now store the attachment paths in the database
-        for attachment_path in attachment_paths:
-            new_attachment = ServiceAttachment(service_id=service.id, attachment_path=attachment_path)
+        # Attachments saved, now store the attachment filenames in the database
+        for attachment_filename in attachment_paths:
+            new_attachment = ServiceAttachment(service_id=service, attachment_filename=attachment_filename)
             db.session.add(new_attachment)
 
         db.session.commit()  # commit change to DB
@@ -370,100 +359,99 @@ def settings():
 # Route to handle the form submission and export data to CSV
 @app.route('/export_csv', methods=['POST'])
 def export_csv():
-    print("Export CSV route called.")
-    table_name = request.form['table']
-    print("Selected table:", table_name)
+    try:
+        print("Export CSV route called.")
+        table_name = request.form['table']
+        print("Selected table:", table_name)
 
-    # Get data from the selected table
-    model_class = globals().get(table_name.capitalize()) or globals().get(table_name.title())
+        # Dictionary mapping table names to model classes
+        table_model_mapping = {
+            'asset': Asset,
+            'serviceattachment': ServiceAttachment,
+            'service': Service
+            # Add more tables as needed
+        }
 
-    if not model_class:
-        return abort(404)  # Table not found
+        model_class = table_model_mapping.get(table_name)
+        print("Model class:", model_class)
 
-    data = model_class.query.all()
+        if not model_class:
+            print("Model class not found.")
+            return abort(404)
 
-    # Prepare CSV data
-    column_names = [column.key for column in model_class.__table__.columns]
-    csv_data = [column_names]
+        data = model_class.query.all()
+        print("Data:", data)
 
-    for row in data:
-        csv_data.append([str(getattr(row, column)) for column in column_names])
+        # Prepare CSV data
+        column_names = [column.key for column in model_class.__table__.columns]
+        csv_data = [column_names]
 
-    # Create a CSV response
-    response = Response(csv_generator(csv_data), content_type='text/csv')
-    response.headers['Content-Disposition'] = f'attachment; filename={table_name}.csv'
-    print("CSV data:", csv_data)
-    return response
+        for row in data:
+            csv_data.append([str(getattr(row, column)) for column in column_names])
+
+        # Create a CSV response
+        response = Response(csv_generator(csv_data), content_type='text/csv')
+        response.headers['Content-Disposition'] = f'attachment; filename={table_name}.csv'
+        print("CSV data:", csv_data)
+        return response
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return abort(500)
 
 # Generator function for streaming CSV data
 def csv_generator(data):
     for row in data:
         yield ','.join(map(str, row)) + '\n'
 
+
+
 @app.route('/calendar')
 def calendar():
     return render_template('calendar.html')
 
-# Normal endpoint for all events
-@app.route('/api/events')
+@app.route('/api/events') # Normal endpoint for all events
 def api_events():
     services = Service.query.all()
     calendar_events = [service.to_calendar_event() for service in services]
     return jsonify(calendar_events)
 
-# Endpoint for completed events
-@app.route('/api/events/completed')
+@app.route('/api/events/completed') # Endpoint for completed events
 def api_events_completed():
     complete_services = Service.query.filter_by(service_complete=True).all()
     calendar_events_completed = [service.to_calendar_event() for service in complete_services]
     return jsonify(calendar_events_completed)
 
-# Endpoint for incomplete events
-@app.route('/api/events/incomplete')
+@app.route('/api/events/incomplete') # Endpoint for incomplete events
 def api_events_incomplete():
     incomplete_services = Service.query.filter_by(service_complete=False).all()
     calendar_events_incomplete = [service.to_calendar_event() for service in incomplete_services]
     return jsonify(calendar_events_incomplete)
 
-@app.route('/ical/events')
+@app.route('/ical/events') # ical events
 def ical_events():
-    services = Service.query.all()
-
-    cal = Calendar()
-
-    for service in services:
-        cal_event = service.to_icalendar_event()
-        cal.add_component(cal_event)
-
-    response = Response(cal.to_ical(), content_type='text/calendar; charset=utf-8')
-    response.headers['Content-Disposition'] = 'attachment; filename=events.ics'
-
-    return response
+    services = Service.query.all() # query all services
+    cal = Calendar() # set calendar
+    for service in services: #for services in Class services
+        cal_event = service.to_icalendar_event() # change to event
+        cal.add_component(cal_event) # add event
+    response = Response(cal.to_ical(), content_type='text/calendar; charset=utf-8') # set text
+    response.headers['Content-Disposition'] = 'attachment; filename=events.ics' # set as attachment
+    return response # send response
 
 @app.route('/ical/subscribe')
 def ical_subscribe():
-    # Retrieve the base URL of your application
-    base_url = request.url_root
-
-    # Generate iCalendar data for subscription
-    cal = Calendar()
-    services = Service.query.all()
-
-    for service in services:
-        cal_event = service.to_icalendar_event()
-        cal.add_component(cal_event)
-
-    # Generate the full iCalendar URL for subscription
-    ical_url = base_url + 'ical/events'
-
-    # Add the iCalendar URL to the response
-    cal.add('method', 'PUBLISH')
-    cal.add('X-WR-CALNAME', 'MATER')  # Calendar Name
-
-    response = Response(cal.to_ical(), content_type='text/calendar')
-    response.headers['Content-Disposition'] = 'inline; filename=calendar.ics'
-
-    return response
-
+    base_url = request.url_root # Retrieve the base URL of your application
+    cal = Calendar() # Generate iCalendar data for subscription
+    services = Service.query.all() # get services
+    for service in services: # for services in Class services
+        cal_event = service.to_icalendar_event() # change to event
+        cal.add_component(cal_event) # add event
+    ical_url = base_url + 'ical/events' # Generate the full iCalendar URL for subscription
+    cal.add('method', 'PUBLISH') # Add the iCalendar URL to the response
+    cal.add('X-WR-CALNAME', 'MATER')  # Calendar Name **ADDADD Maybe let user set this**
+    response = Response(cal.to_ical(), content_type='text/calendar') # set text
+    response.headers['Content-Disposition'] = 'inline; filename=calendar.ics' # set as attachment
+    return response # send response
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True) # **ADDADD set for user to run anything they want**

@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
+<!-- Extending the base template -->
+{% extends 'base.html' %}
 
-<head>
+<!-- Setting the title -->
+{% block title %}Calendar{% endblock %}
+
+{% block head %}
+    <!-- Meta tags for character set and viewport -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar</title>
+    
     <!-- Include FullCalendar CSS and JS files -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -12,36 +16,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-</head>
+{% endblock %}
 
-<body>
-    <!-- Extending the base template -->
-    {% extends 'base.html' %}
+<!-- Content block -->
+{% block content %}
+<div>
+    <!-- Tabs for switching between calendar views -->
+    <ul class="nav nav-tabs" id="calendarTabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="tabAll" data-toggle="tab" href="#calendarAllContainer" data-events-url="/api/events">All Events</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="tabCompleted" data-toggle="tab" href="#calendarCompletedContainer" data-events-url="/api/events/completed">Completed Events</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="tabIncomplete" data-toggle="tab" href="#calendarIncompleteContainer" data-events-url="/api/events/incomplete">Incomplete Events</a>
+        </li>
+    </ul>
 
-    <!-- Setting the title -->
-    {% block title %}Calendar{% endblock %}
-
-    <!-- Content block -->
-    {% block content %}
-        <div>
-            <!-- Tabs for switching between calendar views -->
-            <ul class="nav nav-tabs" id="calendarTabs">
-                <li class="nav-item">
-                    <a class="nav-link active" id="tabAll" data-toggle="tab" href="#calendarAllContainer" data-events-url="/api/events">All Events</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="tabCompleted" data-toggle="tab" href="#calendarCompletedContainer" data-events-url="/api/events/completed">Completed Events</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="tabIncomplete" data-toggle="tab" href="#calendarIncompleteContainer" data-events-url="/api/events/incomplete">Incomplete Events</a>
-                </li>
-            </ul>
-            <!-- Buttons for subscription and download --> <!--ADDADD We have to add buttons for each of the calendars to get said completed/incompleted-->
-            <div>
-                <a href="{{ url_for('ical_subscribe') }}" class="standard-btn" target="_blank">Subscribe to Calendar</a>
-                <a href="{{ url_for('ical_events') }}" class="standard-btn" download>Download iCalendar</a>
-            </div>
-        </div>
+    <!-- Buttons for subscription and download -->
+    <div>
+        <a href="{{ url_for('ical_subscribe') }}" class="standard-btn" target="_blank">Subscribe to Calendar</a>
+        <a href="{{ url_for('ical_events') }}" class="standard-btn" download>Download iCalendar</a>
+    </div>
+</div>
 
 <!-- Calendar containers for each view -->
 <div class="tab-content">
@@ -101,7 +99,4 @@
             });
     }
 </script>
-    {% endblock %}
-</body>
-
-</html>
+{% endblock %}

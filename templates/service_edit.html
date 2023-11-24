@@ -1,47 +1,49 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends 'base.html' %}
+
+{% block title %}Edit Service{% endblock %}
+
+{% block head %}
+    <!-- Include necessary scripts and styles -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> <!-- Include jQuery UI library -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    
+
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    
+
+    <!-- Styling for required fields -->
     <style>
         .required-field::after {
             content: "*";
             color: red;
         }
     </style>
-</head>
-{% extends 'base.html' %}
-
-{% block title %}Edit Service{% endblock %}
+{% endblock %}
 
 {% block content %}
-<h1>Edit Service</h1>
+    <!-- Heading -->
+    <h1>Edit Service</h1>
 
-    <!-- Nav tabs -->
+    <!-- Navigation tabs -->
     <ul class="nav nav-tabs" id="myTabs">
         <li class="nav-item">
-            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">General</a>
+            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general">Service Info</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="services-tab" data-toggle="tab" href="#services">Services</a>
+            <a class="nav-link" id="services-tab" data-toggle="tab" href="#services">Attachments</a>
         </li>
         <!-- Add more tabs as needed -->
     </ul>
 
-<!-- Tab panes -->
-<div class="tab-content">
-    <!-- General tab -->
-    <div id="general" class="tab-pane fade show active">
-        <!-- General form -->
-        <form action="/service_edit/{{ service.id }}" method="post">
-            <!-- Your general form content -->
-            <label for="asset_name" class="required-field">Asset Name:</label><br>
+    <!-- Tab panes -->
+    <div class="tab-content">
+        <!-- General tab -->
+        <div id="general" class="tab-pane fade show active">
+            <!-- General form -->
+            <form action="/service_edit/{{ service.id }}" method="post">
+                <!-- Form fields for general service information -->
+                <label for="asset_name" class="required-field">Asset Name:</label><br>
             <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()" required><br><br>
             <input type="hidden" id="asset_id_input" name="asset_id" value="{{ service.asset_id }}">
 
@@ -58,6 +60,7 @@
             <input type="checkbox" id="service_complete" name="service_complete" {% if service.service_complete %}checked{% endif %} onchange="showSecondaryCheckbox()"><br><br>
 
             <div id="serivce_add_again" style="display: none;">
+                <!-- Additional options if service is marked as complete -->
                 <label for="service_add_again">Add Service again?</label><br>
                 <input type="checkbox" name="service_add_again_check" id="service_add_again_check"onchange="showSecondaryDays()"><br>
                 <div id="serivce_add_again_days" style="display: none;"><br>
@@ -104,23 +107,28 @@
                 {% endfor %}
             </ul>
         {% else %}
+            <!-- Display message if no attachments -->
             <p>No attachments for this service.</p>
         {% endif %}
     </div>
 </div>
-<script>
-    function goBack() {
-        window.history.back();
-    }
-    function redirectToServiceAll() {
-    window.location.href = "/service_all";
-    }
+    <!-- JavaScript for additional functionality -->
+    <script>
+        // Function to navigate back
+        function goBack() {
+            window.history.back();
+        }
+
+        // Function to redirect to all services
+        function redirectToServiceAll() {
+            window.location.href = "/service_all";
+        }
     function showToast() {
         Toastify({
             text: "Service successfully updated!",
             duration: 3000, // 3 seconds
-            gravity: "top", // `top` or `bottom`
-            position: 'right', // `left`, `center` or `right`
+            gravity: "top", // 'top' or 'bottom'
+            position: 'right', // 'left', 'center' or 'right'
             backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
             stopOnFocus: true // Prevents dismissing of toast on hover
         }).showToast();
@@ -146,6 +154,7 @@
                 .appendTo(ul);
         };
     });
+    // Functions for conditional display of additional options
     function showSecondaryCheckbox() {
         var serviceCompleteCheckbox = document.getElementById("service_complete");
         var secondaryCheckbox = document.getElementById("serivce_add_again");
@@ -155,6 +164,7 @@
             secondaryCheckbox.style.display = "none";
         }
     }
+    // Function to add days to a date
     function showSecondaryDays() {
         var serviceCompleteCheckbox = document.getElementById("service_complete");
         var secondaryCheckbox = document.getElementById("serivce_add_again_days");
@@ -172,7 +182,7 @@
         console.log("Formatted date:", formattedDate); // Log the formatted date
         document.getElementById("service_add_again_days_cal").value = formattedDate;
     }
-
+    // Function to format a date
     function formatDate(date) {
         var year = date.getFullYear();
         var month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -180,15 +190,10 @@
         return `${year}-${month}-${day}`;
     }
 </script>
-
-    </body>
-
+    <!-- Show toast message if needed -->
     {% if toast %}
         <script>
             showToast();
         </script>
     {% endif %}
-
-
 {% endblock %}
-</html>

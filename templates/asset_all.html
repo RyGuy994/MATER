@@ -1,12 +1,16 @@
-<!DOCTYPE html>
-<html>
+<!-- Extending the base template -->
+{% extends 'base.html' %}
 
-<head>
-    <!-- Styling for the table -->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
-<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+<!-- Setting the title -->
+{% block title %}Asset Maintenance{% endblock %}
+
+{% block head %}
+<!-- Styling for the table -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
     <style>
+        /* Table style */
         table {
             border-collapse: collapse;
             width: 100%;
@@ -27,7 +31,7 @@
             border-radius: 4px;
         }
 
-        /* Add the necessary CSS styles for the slideshow and image display */
+        /* styles for the slideshow and image display */
         .slideshow-container {
             display: flex;
             justify-content: center;
@@ -91,18 +95,11 @@
         }
         
     </style>
-</head>
+{% endblock %}
 
-<body>
-    <!-- Extending the base template -->
-    {% extends 'base.html' %}
-
-    <!-- Setting the title -->
-    {% block title %}Asset Maintenance{% endblock %}
-
-    <!-- Content block -->
-    {% block content %}
-    <!-- First Heading -->
+<!-- Content block -->
+{% block content %}
+<!-- First Heading -->
     <h1>Asset List</h1>
 
     <!-- Input for filtering -->
@@ -122,6 +119,7 @@
         {% endfor %}
     </table>
 
+    <!-- Slideshow container for displaying images -->
     <div class="slideshow-container">
         {% for asset in assets %}
         <div class="mySlides">
@@ -142,6 +140,7 @@
 
     <!-- JavaScript function for filtering the table -->
     <script>
+    // Function to filter the table based on the entered text
     function filterNames() {
         var input, filter, table, tr, td, i, txtValue;
         var counter = 0;
@@ -170,7 +169,7 @@
             }
         }
     }
-
+    // Slick carousel initialization for the slideshow
     $(document).ready(function(){
         var slideshowContainer = $('.slideshow-container');
         slideshowContainer.slick({
@@ -180,7 +179,7 @@
             prevArrow: '<a class="prev" onclick="plusSlides(-1)">&#10094;</a>',
             nextArrow: '<a class="next" onclick="plusSlides(1)">&#10095;</a>'
         });
-
+        // Function to navigate through the slideshow
         function plusSlides(n) {
             if (n > 0) {
                 slideshowContainer.slick('slickNext');
@@ -192,6 +191,3 @@
     
     </script>
     {% endblock %}
-</body>
-
-</html>
