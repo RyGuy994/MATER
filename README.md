@@ -10,6 +10,10 @@
 
 Welcome to MATER, short for Maintenance, Asset, Tracking, Equipment, Registry. This project is a personal endeavor by a coding newbie, designed to provide a self-hosted solution for tracking various assets such as hardware, computers, software, cars, or any item that requires maintenance or service.
 
+## Disclaimer
+  🚧 USE AT YOUR OWN RISK. CURRENTLY IN ALPHA. MAKE SURE YOU KEEP A BACKUP OF ALL DATA ELSE WHERE
+
+
 ## Project Goals
 
 The current primary goals for the MATER project include:
