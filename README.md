@@ -36,6 +36,7 @@ The current primary goals for the MATER project include:
 <img src=https://github.com/RyGuy994/MATER/assets/92389688/1f32295d-7a09-4997-924c-8f7f59058929>
 </p>
 </details>
+
 ## About the Code
 
 Apologies for any perceived shortcomings in the code quality. This project is an ongoing learning experience for me who is passionate about creating something valuable. Contributions, suggestions, and improvements are always welcome!
