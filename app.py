@@ -7,13 +7,35 @@ import csv # import csv
 from icalendar import Calendar, Event # import calendar
 
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/pictures
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/images
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
 
 UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  # images Folder root/static/serviceattachments
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db' # path to database for app to use
+
+# Switch statement on DB_TYPE, default is SQLiteDB
+match os.getenv("DB_TYPE"):
+    case 'postgresql':
+        username = os.getenv('POSTGRESQL_USERNAME')
+        password = os.getenv('POSTGRESQL_PASSWORD')
+        host = os.getenv('POSTGRESQL_HOST')
+        port = os.getenv('POSTGRESQL_PORT')
+        database_name = os.getenv('POSTGRESQL_DB_NAME')
+        # Sets config for postgresql db
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{host}:{port}/{database_name}'
+    case 'mysql':
+        username = os.getenv('MYSQL_USERNAME')
+        password = os.getenv('MYSQL_PASSWORD')
+        host = os.getenv('MYSQL_HOST')
+        port = os.getenv('MYSQL_PORT')
+        database_name = os.getenv('MYSQL_DB_NAME')
+        # Sets config for mysql db
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql://{username}:{password}@{host}:{port}/{database_name}'
+    case _:
+        db_folder = os.path.join(os.getcwd(), 'instance', '')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_folder}/database.db' # path to database for app to use
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to use
 app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
 db = SQLAlchemy(app) #db app

@@ -2,11 +2,12 @@ version: '3'
 
 services:
   web:
-    build: .
+    build:
+      context: ./
+      dockerfile: .dockerfile
     ports:
       - "5000:5000"
     volumes:
       - .:/app
     environment:
       FLASK_APP: app.py
-      FLASK_ENV: development

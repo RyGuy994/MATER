@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: dev.dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      POSTGRESQL_USERNAME: example
+      POSTGRESQL_PASSWORD: example
+      POSTGRESQL_HOST: http://postgresqldb
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DB_NAME: example
+  postgresqldb:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: example 
+      POSTGRES_DB: example
