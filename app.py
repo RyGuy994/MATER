@@ -4,7 +4,7 @@ from datetime import datetime, timedelta # import datetime and timedelta for dat
 from werkzeug.utils import secure_filename # import filename
 import os # import the OS
 import csv # import csv
-from icalendar import Calendar, Event # import calendar
+from icalendar import Calendar
 from models.shared import db
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/images
