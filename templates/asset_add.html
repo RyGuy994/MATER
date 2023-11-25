@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>Add Asset</title>
+{% extends 'base.html' %}
+{% block title %}Add Asset{% endblock %}
+{% block head %}
+    <!-- Include the Toastify library for displaying toast messages -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Define custom styles -->
     <style>
         /* Adds a red asterisk to required fields */
         .required-field::after {
@@ -17,51 +17,59 @@
             margin-top: 20px;
         }
     </style>
-</head>
-
-{% extends 'base.html' %}
-{% block title %}Add Asset{% endblock %}
+{% endblock %}
 {% block content %}
 <h1>Add Asset</h1>
 <!-- Form for adding a new asset -->
     <!-- Image preview container -->
     <div id="image-preview"></div><br>
 
-<form action="/asset_add" method="post" enctype="multipart/form-data">
-    <label for="name" class="required-field">Asset Name:</label><br>
-    <input type="text" id="name" name="name" required><br><br>
+    <!-- Form for adding a new asset -->
+    <form action="/asset_add" method="post" enctype="multipart/form-data">
+        <!-- Asset Name -->
+        <label for="name" class="required-field">Asset Name:</label><br>
+        <input type="text" id="name" name="name" required><br><br>
 
-    <label for="asset-sn" class="required-field">Asset Serial Number:</label><br>
-    <input type="text" id="asset-sn" name="asset_sn" required><br><br>
+        <!-- Asset Serial Number -->
+        <label for="asset-sn" class="required-field">Asset Serial Number:</label><br>
+        <input type="text" id="asset-sn" name="asset_sn" required><br><br>
 
-    <label for="description">Asset Description:</label><br>
-    <textarea id="description" name="description"></textarea><br><br>
+        <!-- Asset Description -->
+        <label for="description">Asset Description:</label><br>
+        <textarea id="description" name="description"></textarea><br><br>
 
-    <label for="acquired-date">Acquired Date:</label><br>
-    <input type="date" id="acquired-date" name="acquired_date">
-    <br><br>
+        <!-- Acquired Date -->
+        <label for="acquired-date">Acquired Date:</label><br>
+        <input type="date" id="acquired-date" name="acquired_date">
+        <br><br>
 
-    <!-- New input field for file upload -->
-    <label for="image">Select image:</label><br>
-    <input type="file" class="standard-btn" id="image" name="image" onchange="previewImage(event)">
-    <br><br>
+        <!-- File Upload for Image -->
+        <label for="image">Select image:</label><br>
+        <input type="file" class="standard-btn" id="image" name="image" onchange="previewImage(event)">
+        <br><br>
 
-    <input type="submit" class="standard-btn" value="Add Asset">
-</form>
-<!-- Button for navigating back -->
-<button type="button" class="standard-btn" onclick="goBack()">Back</button>
-<button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
+        <!-- Submit Button -->
+        <input type="submit" class="standard-btn" value="Add Asset">
+    </form>
 
-<script>
-    // Function to navigate back to the previous page
-    function goBack() {
-        window.history.back();
-    }
-    function redirectToAssetAll() {
-        window.location.href = "/asset_all";
-    }
+    <!-- Navigation Buttons -->
+    <!-- Button for navigating back -->
+    <button type="button" class="standard-btn" onclick="goBack()">Back</button>
+    <!-- Button for navigating to All Assets -->
+    <button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>
 
-    // Function to display a preview of the selected image
+    <!-- JavaScript Section -->
+    <script>
+        // Function to navigate back to the previous page
+        function goBack() {
+            window.history.back();
+        }
+        // Function to redirect to All Assets page
+        function redirectToAssetAll() {
+            window.location.href = "/asset_all";
+        }
+
+        // Function to display a preview of the selected image
     function previewImage(event) {
         var image = document.getElementById('image-preview');
         image.innerHTML = '';
@@ -91,12 +99,10 @@
     }
 </script>
 
+<!-- Display the toast message when necessary -->
 {% if toast %}
-    <!-- Display the toast message when necessary -->
     <script>
         showToast();
     </script>
 {% endif %}
 {% endblock %}
-
-</html>
