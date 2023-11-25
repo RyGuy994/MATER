@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, redirect, send_file, abort, Response, jsonify, url_for # import from flask for calling if greyed out means not in use
+from flask import Flask, render_template, request, redirect, send_file, abort, Response, jsonify
 from flask_sqlalchemy import SQLAlchemy # import SQL for SQLite
 from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
 from werkzeug.utils import secure_filename # import filename
 import os # import the OS
 import csv # import csv
 from icalendar import Calendar, Event # import calendar
-
+from models.shared import db
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/images
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
@@ -20,71 +20,34 @@ match os.getenv("DB_TYPE"):
         username = os.getenv('POSTGRESQL_USERNAME')
         password = os.getenv('POSTGRESQL_PASSWORD')
         host = os.getenv('POSTGRESQL_HOST')
-        port = os.getenv('POSTGRESQL_PORT')
         database_name = os.getenv('POSTGRESQL_DB_NAME')
+        # Set url as its own variable to update when necessary
+        db_url = f'postgresql+psycopg2://{username}:{password}@{host}/{database_name}'
         # Sets config for postgresql db
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{host}:{port}/{database_name}'
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     case 'mysql':
         username = os.getenv('MYSQL_USERNAME')
         password = os.getenv('MYSQL_PASSWORD')
         host = os.getenv('MYSQL_HOST')
-        port = os.getenv('MYSQL_PORT')
         database_name = os.getenv('MYSQL_DB_NAME')
+        db_url = f'mysql+pymysql://{username}:{password}@{host}/{database_name}'
         # Sets config for mysql db
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql://{username}:{password}@{host}:{port}/{database_name}'
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     case _:
         db_folder = os.path.join(os.getcwd(), 'instance', '')
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_folder}/database.db' # path to database for app to use
 
 app.config['SECRET_KEY'] = '?!$@Mc9cJksjud@k8n' # Security key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db' # path to database for app to use
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to use
 app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
-db = SQLAlchemy(app) #db app
 
-class Asset(db.Model): # Asset table
-    id = db.Column(db.Integer, primary_key=True) # id of asset
-    name = db.Column(db.String(255), nullable=False) # name of asset
-    description = db.Column(db.Text, nullable=True) # description of asset
-    asset_sn = db.Column(db.String(100), nullable=True) # sn of asset
-    acquired_date = db.Column(db.Date, nullable=True) # date acquired of asset
-    image_path = db.Column(db.String(255), nullable=True)  # image path of asset
-
-class ServiceAttachment(db.Model): # ServiceAttachment table
-    __tablename__ = 'serviceattachment'  # Add this line to specify the table name
-    id = db.Column(db.Integer, primary_key=True) #id of attachment
-    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False) #Service ID this goes to in class Service
-    service = db.relationship('Service', backref=db.backref('serviceattachments', lazy=True)) #relationship to service
-    attachment_path = db.Column(db.String(255)) #attachment path
-
-class Service(db.Model): # Service table
-    id = db.Column(db.Integer, primary_key=True) # id of the Service
-    asset_id = db.Column(db.Integer, db.ForeignKey('asset.id'), nullable=False) # Asset ID this goes to in Class Asset
-    asset = db.relationship('Asset', backref=db.backref('services', lazy=True)) # relation to Asset
-    service_type = db.Column(db.String(100)) # type of service
-    service_date = db.Column(db.Date) # date of service
-    service_cost = db.Column(db.Float) # cost of service
-    service_complete = db.Column(db.Boolean) # if the service is complete
-    service_notes = db.Column(db.Text) # notes of service
-    def to_calendar_event(self): #pull info for FullCalendar
-        return {
-            'title': self.service_type,
-            'start': self.service_date.isoformat(),
-            'end': self.service_date.isoformat(),  # Assuming events are same-day; adjust as needed
-            'description': self.id
-            # Add more fields as needed
-        }
-    def to_icalendar_event(self): # 
-        event = Event()
-        event.add('summary', self.service_type)
-        event.add('dtstart', self.service_date)
-        event.add('description', self.service_notes)
-        # Add more fields as needed
-
-        return event
 
 # Create the database tables
-with app.app_context(): 
+with app.app_context():
+    from models.service import Service
+    from models.asset import Asset
+    from models.serviceattachment import ServiceAttachment
+    db.init_app(app)
     db.create_all() # create all tables in database
 
 def allowed_file(filename): # allowed file function

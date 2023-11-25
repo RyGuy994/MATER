@@ -1,3 +1,6 @@
 Flask
 Flask-SQLAlchemy
 icalendar
+psycopg2
+pymysql
+cryptography

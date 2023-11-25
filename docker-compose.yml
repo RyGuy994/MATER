@@ -4,10 +4,49 @@ services:
   web:
     build:
       context: ./
-      dockerfile: .dockerfile
+      dockerfile: dev.dockerfile
     ports:
-      - "5000:5000"
+      - 5000:5000
     volumes:
       - .:/app
+    restart: unless-stopped
     environment:
       FLASK_APP: app.py
+      FLASK_ENV: production
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: postgres
+      POSTGRESQL_HOST: postgresqldb
+      POSTGRESQL_DB_NAME: postgres
+      # MYSQL_USERNAME: user
+      # MYSQL_PASSWORD: password
+      # MYSQL_HOST: mysqldb
+      # MYSQL_DB_NAME: db
+      DB_TYPE: mysql
+  postgresqldb:
+    image: postgres
+    container_name: mater-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgresql_volume:/var/lib/postgresql/data
+  # mysqldb:
+  #   container_name: mater-mysqldb
+  #   image: mysql
+  #   restart: always
+  #   environment:
+  #     MYSQL_DATABASE: db
+  #     MYSQL_USER: user
+  #     MYSQL_PASSWORD: password
+  #     MYSQL_ROOT_PASSWORD: password
+  #   ports:
+  #     - 3306:3306
+  #   volumes:
+  #     - mysql_volume:/var/lib/mysql
+volumes:
+  postgresql_volume:
+  # mysql_volume:
