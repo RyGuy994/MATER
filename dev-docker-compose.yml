@@ -19,6 +19,7 @@ services:
       DB_HOST: mater-postgres
       DB_NAME: postgres
       DB_TYPE: postgresql
+      SECRET_KEY: secret
   postgresqldb:
     image: postgres
     container_name: mater-postgres
