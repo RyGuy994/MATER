@@ -13,15 +13,11 @@ services:
     environment:
       FLASK_APP: app.py
       FLASK_ENV: production
-      POSTGRESQL_USERNAME: postgres
-      POSTGRESQL_PASSWORD: postgres
-      POSTGRESQL_HOST: postgresqldb
-      POSTGRESQL_DB_NAME: postgres
-      # MYSQL_USERNAME: user
-      # MYSQL_PASSWORD: password
-      # MYSQL_HOST: mysqldb
-      # MYSQL_DB_NAME: db
-      DB_TYPE: mysql
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: mater-postgresql
+      DB_NAME: postgres
+      DB_TYPE: postgresql
   postgresqldb:
     image: postgres
     container_name: mater-postgres

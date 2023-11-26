@@ -14,14 +14,10 @@ services:
       FLASK_APP: app.py
       FLASK_ENV: development
       FLASK_DEBUG: 1
-      POSTGRESQL_USERNAME: postgres
-      POSTGRESQL_PASSWORD: postgres
-      POSTGRESQL_HOST: postgresqldb
-      POSTGRESQL_DB_NAME: postgres
-      # MYSQL_USERNAME: user
-      # MYSQL_PASSWORD: password
-      # MYSQL_HOST: mater-mysqldb
-      # MYSQL_DB_NAME: db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: mater-postgres
+      DB_NAME: postgres
       DB_TYPE: postgresql
   postgresqldb:
     image: postgres

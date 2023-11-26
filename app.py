@@ -15,21 +15,17 @@ UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  
 app = Flask(__name__)
 
 # Switch statement on DB_TYPE, default is SQLiteDB
+username = os.getenv('DB_USERNAME')
+password = os.getenv('DB_PASSWORD')
+host = os.getenv('DB_HOST')
+database_name = os.getenv('DB_NAME')
 match os.getenv("DB_TYPE"):
     case 'postgresql':
-        username = os.getenv('POSTGRESQL_USERNAME')
-        password = os.getenv('POSTGRESQL_PASSWORD')
-        host = os.getenv('POSTGRESQL_HOST')
-        database_name = os.getenv('POSTGRESQL_DB_NAME')
         # Set url as its own variable to update when necessary
         db_url = f'postgresql+psycopg2://{username}:{password}@{host}/{database_name}'
         # Sets config for postgresql db
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     case 'mysql':
-        username = os.getenv('MYSQL_USERNAME')
-        password = os.getenv('MYSQL_PASSWORD')
-        host = os.getenv('MYSQL_HOST')
-        database_name = os.getenv('MYSQL_DB_NAME')
         db_url = f'mysql+pymysql://{username}:{password}@{host}/{database_name}'
         # Sets config for mysql db
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
