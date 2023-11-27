@@ -20,9 +20,9 @@ The current primary goals for the MATER project include:
 
 - **Mobile App:** Develop a mobile application for seamless asset tracking on the go.
   
-- **Break-away Database:** Implement a modular and scalable database architecture to enhance data management and give the user the option to use an exteneral database.
+- ~**Break-away Database:** Implement a modular and scalable database architecture to enhance data management and give the user the option to use an exteneral database.~
 
-- **Calendar Integration:** Integrate calendar features for scheduling and managing maintenance activities and syncing to various calendar systems.
+- ~**Calendar Integration:** Integrate calendar features for scheduling and managing maintenance activities and syncing to various calendar systems.~
 
 - **API: Intergration with apps that house asset information (i.e Home assistant)**
 
