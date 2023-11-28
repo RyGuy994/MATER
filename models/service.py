@@ -10,6 +10,8 @@ class Service(db.Model): # Service table
     service_cost = db.Column(db.Float) # cost of service
     service_complete = db.Column(db.Boolean) # if the service is complete
     service_notes = db.Column(db.Text) # notes of service
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # owner of service
+    user = db.relationship('User', backref=db.backref('user', lazy=True)) # relation to service
     def to_calendar_event(self): #pull info for FullCalendar
         return {
             'title': self.service_type,
