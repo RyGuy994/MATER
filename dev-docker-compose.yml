@@ -20,6 +20,8 @@ services:
       DB_NAME: postgres
       DB_TYPE: postgresql
       SECRET_KEY: secret
+    depends_on:
+      - postgresqldb
   postgresqldb:
     image: postgres
     container_name: mater-postgres
