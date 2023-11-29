@@ -8,7 +8,8 @@ from blueprints.base import app
 from blueprints.asset import assets_blueprint
 from blueprints.service import services_blueprint
 from blueprints.calendar import calendar_blueprint
-
+from blueprints.utilities import retrieve_username_jwt
+from blueprints.auth import auth_blueprint
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/images
 
 UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  # images Folder root/static/serviceattachments
@@ -43,6 +44,7 @@ app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folde
 app.register_blueprint(assets_blueprint)
 app.register_blueprint(services_blueprint)
 app.register_blueprint(calendar_blueprint)
+app.register_blueprint(auth_blueprint)
 
 # Create the database tables
 with app.app_context():
@@ -52,15 +54,20 @@ with app.app_context():
     db.init_app(app)
     db.create_all() # create all tables in database
 
-
 @app.route('/') # for index.html route
 def index():
+    return render_template('index.html') #display index.html and pass upcoming_services
+
+@app.route('/home') # for index.html route
+def home():
     current_date = datetime.now().date() # define the current date
+    user_id = retrieve_username_jwt()
     upcoming_services = Service.query.filter( # Query Class Services
         Service.service_complete == False, # service completed is false
-        Service.service_date <= current_date + timedelta(days=30) # service date is within 30 days
+        Service.service_date <= current_date + timedelta(days=30), 
+        Service.user_id == user_id
     ).all() # query all items
-    return render_template('index.html', upcoming_services=upcoming_services) #display index.html and pass upcoming_services
+    return render_template('home.html', upcoming_services=upcoming_services) #display index.html and pass upcoming_services
 
 
 @app.route('/<image_name>', methods=['GET']) # get image name

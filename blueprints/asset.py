@@ -8,11 +8,12 @@ from  models.service import Service
 from .utilities import allowed_file, delete_attachment_from_storage
 from .base import app
 from models.asset import Asset
-
+from blueprints.utilities import retrieve_username_jwt
 assets_blueprint = Blueprint('assets', __name__, template_folder='../templates')
 
 @assets_blueprint.route('/asset_add', methods=['GET', 'POST']) # asset_add.html route
 def add():
+    user_id = retrieve_username_jwt()
     if request.method == 'POST':
         name = request.form.get('name') # get the name from form element 'name'
         asset_sn = request.form.get('asset_sn') # get the asset sn from form 'easset_sn'
@@ -24,7 +25,7 @@ def add():
                 acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date() #change to python
             else:
                 acquired_date = None  # change to None
-            new_asset = Asset(name=name, asset_sn=asset_sn, description=description, acquired_date=acquired_date) # make new_asset and is ready for adding to DB
+            new_asset = Asset(name=name, asset_sn=asset_sn, description=description, acquired_date=acquired_date, user_id=user_id) # make new_asset and is ready for adding to DB
             
             # Handle image upload
             if 'image' in request.files:
@@ -45,8 +46,9 @@ def add():
 
 @assets_blueprint.route('/asset_edit/<int:asset_id>', methods=['GET', 'POST'])  # asset_edit.html route
 def edit(asset_id):
-    asset = Asset.query.get_or_404(asset_id)  # query or get 404
-    services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
+    user_id = retrieve_username_jwt()
+    asset = Asset.query.get_or_404(asset_id, user_id=user_id)  # query or get 404
+    services = Service.query.filter(asset_id=asset_id, user_id=user_id).all()  # Fetch services associated with the asset
     image_path = asset.image_path  # get the image path
     if request.method == 'POST':  # if write
         name = request.form.get('name')  # get the name
@@ -79,13 +81,15 @@ def edit(asset_id):
 
 @assets_blueprint.route('/asset_all') # asset_all.html route
 def all_assets():
-    assets = Asset.query.all() # query all in Class Asset
+    user_id = retrieve_username_jwt()
+    assets = Asset.query.filter(user_id=user_id).all() # query all in Class Asset
     return render_template('asset_all.html',assets=assets) # display asset_all.html and pass assets
 
 @assets_blueprint.route('/asset_delete/<int:asset_id>', methods=['POST']) # route for delete an asset by id
 def delete_asset(asset_id):
-    asset = Asset.query.get_or_404(asset_id) # get asset by id
-    services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
+    user_id = retrieve_username_jwt()
+    asset = Asset.query.get_or_404(asset_id=asset_id, user_id=user_id) # get asset by id
+    services = Service.query.filter_by(asset_id=asset_id, user_id=user_id).all()  # Fetch services associated with the asset
 
     # Check if the asset has associated services
     if asset.services: # If yes, delete the associated services first

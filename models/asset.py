@@ -8,4 +8,4 @@ class Asset(db.Model): # Asset table
     acquired_date = db.Column(db.Date, nullable=True) # date acquired of asset
     image_path = db.Column(db.String(255), nullable=True)  # image path of asset
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False) # owner of asset
-    user = db.relationship('User', backref=db.backref('user', lazy=True)) # relation to Asset
+    asset_owner = db.relationship('User', backref=db.backref('user', lazy=True)) # relation to Asset
