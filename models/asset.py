@@ -1,15 +1,6 @@
-from blueprints.base import swagger
 from .shared import db
 
-@swagger.definition('Asset')
 class Asset(db.Model): # Asset table
-    """
-    Asset Object
-    ---
-    properties:
-        name:
-            type: string
-    """
     __tablename__ = "asset"
     id = db.Column(db.Integer, primary_key=True) # id of asset
     name = db.Column(db.String(255), nullable=False) # name of asset
