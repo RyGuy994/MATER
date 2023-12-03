@@ -1,5 +1,6 @@
 import os
 from flask import request
+import jwt
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
 def allowed_file(filename): # allowed file function
@@ -34,9 +35,8 @@ def delete_attachment_from_storage(attachment_path):
         # Handle other exceptions as needed
         print(f"Error deleting attachment: {e}")
 
-def retrieve_username_jwt():
-    jwt = request.cookies.get('access_token')
-    decoded_data = jwt.decode(jwt=jwt,
+def retrieve_username_jwt(user_jwt):
+    decoded_data = jwt.decode(jwt=user_jwt,
                               key=os.environ.get("SECRET_KEY"),
                               algorithms=["HS256"])
     return decoded_data.get('id')

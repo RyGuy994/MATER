@@ -41,10 +41,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to u
 app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
 
 # Blueprints to import for the various routes
-app.register_blueprint(assets_blueprint)
-app.register_blueprint(services_blueprint)
-app.register_blueprint(calendar_blueprint)
-app.register_blueprint(auth_blueprint)
+app.register_blueprint(assets_blueprint, url_prefix='/assets/')
+app.register_blueprint(services_blueprint, url_prefix='/services/')
+app.register_blueprint(calendar_blueprint, url_prefix='/calendar/')
+app.register_blueprint(auth_blueprint, url_prefix='/auth/')
 
 # Create the database tables
 with app.app_context():
@@ -54,20 +54,31 @@ with app.app_context():
     db.init_app(app)
     db.create_all() # create all tables in database
 
-@app.route('/') # for index.html route
-def index():
-    return render_template('index.html') #display index.html and pass upcoming_services
+@app.route('/signup') # for index.html route
+def signup_page():
+    return render_template('signup.html') #display index.html and pass upcoming_services
+
+@app.route('/') # for signin.html route
+def signin_page():
+    try:
+        user_id = retrieve_username_jwt(request.cookies.get('access_token'))
+        return render_template('signin.html', loggedIn=True) #display index.html and pass upcoming_services
+    except:
+        return render_template('signin.html', loggedIn=False) #display index.html and pass upcoming_services
 
 @app.route('/home') # for index.html route
 def home():
-    current_date = datetime.now().date() # define the current date
-    user_id = retrieve_username_jwt()
-    upcoming_services = Service.query.filter( # Query Class Services
-        Service.service_complete == False, # service completed is false
-        Service.service_date <= current_date + timedelta(days=30), 
-        Service.user_id == user_id
-    ).all() # query all items
-    return render_template('home.html', upcoming_services=upcoming_services) #display index.html and pass upcoming_services
+    try:
+        current_date = datetime.now().date() # define the current date
+        user_id = retrieve_username_jwt(request.cookies.get('access_token'))
+        upcoming_services = Service.query.filter( # Query Class Services
+            Service.service_complete == False, # service completed is false
+            Service.service_date <= current_date + timedelta(days=30), 
+            Service.user_id == user_id
+        ).all() # query all items
+        return render_template('index.html', upcoming_services=upcoming_services, loggedIn=True) #display index.html and pass upcoming_services
+    except:
+        return render_template('signin.html')
 
 
 @app.route('/<image_name>', methods=['GET']) # get image name
@@ -91,7 +102,7 @@ def uploaded_file(filename):
 def settings():
     # Get a list of table names from the database
     table_names = db.metadata.tables.keys()
-    return render_template('settings.html', table_names=table_names) # return setting.html and pass table_names
+    return render_template('settings.html', table_names=table_names, loggedIn=True) # return setting.html and pass table_names
 
 # Route to handle the form submission and export data to CSV
 @app.route('/export_csv', methods=['POST'])

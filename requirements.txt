@@ -7,4 +7,4 @@ cryptography
 bcrypt
 python-ulid
 pyjwt
-csv
+flasgger==0.9.7b2

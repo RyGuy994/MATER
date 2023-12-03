@@ -15,17 +15,17 @@
 <!-- Custom navigation bar -->
 <div id="custom-navbar" class="custom-navbar">
     <!-- Home link -->
-    <a href="/">Home</a>
+    <a href="/home">Home</a>
     <!-- Calendar link -->
-    <a href="/calendar">Calendar</a>
+    <a href="/calendar/calendar">Calendar</a>
     <!-- Dropdown for Assets -->
     <div class="custom-dropdown">
         <button class="dropbtn">Assets</button>
         <div class="custom-dropdown-content">
             <!-- Link to add a new asset -->
-            <a href="/asset_add">Add Asset</a>
+            <a href="/assets/asset_add">Add Asset</a>
             <!-- Link to view all assets -->
-            <a href="/asset_all">All Assets</a>
+            <a href="/assets/asset_all">All Assets</a>
         </div>
     </div>
     <!-- Dropdown for Services -->
@@ -33,13 +33,17 @@
         <button class="dropbtn">Services</button>
         <div class="custom-dropdown-content">
             <!-- Link to add a new service -->
-            <a href="/service_add">Add Service</a>
+            <a href="/services/service_add">Add Service</a>
             <!-- Link to view all services -->
-            <a href="/service_all">All Services</a>
+            <a href="/services/service_all">All Services</a>
         </div>
     </div>
     <!-- Link to the Settings page -->
     <a href="/settings">Settings</a>
+    {% if not loggedIn %}
+    <a href="/">Login</a>
+    {% endif %}
+    <a href="/auth/logout">Logout</a>
 </div>
 
 <!-- Content section of the page -->

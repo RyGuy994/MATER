@@ -12,7 +12,7 @@ def calendar():
 
 @calendar_blueprint.route('/api/events') # Normal endpoint for all events
 def api_events():
-    user_id = retrieve_username_jwt()
+    user_id = retrieve_username_jwt(request.cookies.get('access_token'))
     services = Service.query.filter(
         user_id == user_id
     ).all()
@@ -21,7 +21,7 @@ def api_events():
 
 @calendar_blueprint.route('/api/events/completed') # Endpoint for completed events
 def api_events_completed():
-    user_id = retrieve_username_jwt()
+    user_id = retrieve_username_jwt(request.cookies.get('access_token'))
     complete_services = Service.query.filter(
         service_complete=True, 
         user_id = user_id
@@ -31,15 +31,15 @@ def api_events_completed():
 
 @calendar_blueprint.route('/api/events/incomplete') # Endpoint for incomplete events
 def api_events_incomplete():
-    user_id = retrieve_username_jwt()
+    user_id = retrieve_username_jwt(request.cookies.get('access_token'))
     incomplete_services = Service.query.filter(service_complete=False, user_id = user_id).all()
     calendar_events_incomplete = [service.to_calendar_event() for service in incomplete_services]
     return jsonify(calendar_events_incomplete)
 
 @calendar_blueprint.route('/ical/events') # ical events
 def ical_events():
-    user_id = retrieve_username_jwt()
-    services = Service.query.all(user_id = user_id) # query all services
+    user_id = retrieve_username_jwt(request.cookies.get('access_token'))
+    services = Service.query.filter_by(user_id =user_id).all() # query all services
     cal = Calendar() # set calendar
     for service in services: #for services in Class services
         cal_event = service.to_icalendar_event() # change to event

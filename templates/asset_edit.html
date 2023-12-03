@@ -93,7 +93,7 @@
             </form>
 
             <!-- Form for deleting the asset -->
-            <form action="/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirmDelete()">
+            <form action="/assets/asset_delete/{{ asset.id }}" method="post" onsubmit="return confirmDelete()">
                 <!-- Buttons for navigation and deletion -->
                 <button type="button" class="standard-btn" onclick="goBack()">Back</button>
                 <button type="button" class="standard-btn" onclick="redirectToAssetAll()">All Assets</button>

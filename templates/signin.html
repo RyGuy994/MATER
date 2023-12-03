@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+<!-- Setting the title -->
+{% block title %}MATER{% endblock %}
+
+<!-- Setting the head-->
+{% block head %}
+    <!-- CSS for the heading text -->
+    <style>
+        .login{
+            text-align: center;
+        }
+        .cool-text {
+            font-family: 'Arial Black', Gadget, sans-serif;
+            font-size: 60px;
+            color: #4CAF50;
+            text-shadow: 2px 2px 4px #000000;
+            letter-spacing: 0.1em;
+            text-align: center;
+            position: relative;
+        }
+        /* Styling for the after content of the heading */
+        .cool-text::after {
+            content: 'Maintenance. Asset. Tracking. Equipment. Registry.';
+            font-family: 'Arial', sans-serif;
+            font-size: 18px;
+            color: #000;
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+        .center {
+            display: block;
+            margin: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Heading -->
+    <h1 class="cool-text" data-text="MATER">
+        MATER
+    </h1>
+    <!-- MATER Image -->
+    <c><img src="/static/MATER.png" alt="MATER Image" class="center"></c>
+    <div class="login">
+        <form action="/auth/login" method="post" enctype="multipart/form-data">
+        <label>Username: </label>
+        <input id="username" name="username"></input>
+        <br/>
+        <label>Password: </label>
+        <input id="password" name="password"></input>
+        <br/>
+        <button>Submit</button>
+        </form>
+        <br/>
+        <button id="signup"><a href="/signup">Signup</a></button>
+    </div>
+{% endblock %}
