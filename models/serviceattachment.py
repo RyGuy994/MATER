@@ -5,3 +5,5 @@ class ServiceAttachment(db.Model): # ServiceAttachment table
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False) #Service ID this goes to in class Service
     service = db.relationship('Service', backref=db.backref('serviceattachments', lazy=True)) #relationship to service
     attachment_path = db.Column(db.String(255)) #attachment path
+    user_id = db.Column(db.Text, db.ForeignKey('user.id'), nullable=False) # owner of service attachment
+    service_attachment_owner = db.relationship('User', backref=db.backref('service_attachment_owner', lazy=True)) # relation to attachment

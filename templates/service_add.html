@@ -26,7 +26,7 @@
     <h1>Add Service</h1>
 
     <!-- Service add form -->
-    <form action="/service_add" method="post" enctype="multipart/form-data">
+    <form action="/services/service_add" method="post" enctype="multipart/form-data">
 
         <!-- Asset Name input -->
         <label for="asset_name" class="required-field">Asset Name:</label><br>
@@ -99,7 +99,7 @@
         }
 
         function redirectToServiceAll() {
-            window.location.href = "/service_all";
+            window.location.href = "/services/service_all";
         }
 
         function showToast() {

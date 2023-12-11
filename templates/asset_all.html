@@ -113,7 +113,7 @@
         </tr>
         {% for asset in assets %}
         <tr>
-            <td><a href="/asset_edit/{{ asset.id }}">{{ asset.name }}</a></td>
+            <td><a href="/assets/asset_edit/{{ asset.id }}">{{ asset.name }}</a></td>
             <td>{{ asset.description }}</td>
         </tr>
         {% endfor %}
@@ -124,11 +124,11 @@
         {% for asset in assets %}
         <div class="mySlides">
             {% if asset.image_path %}
-                <a href="/asset_edit/{{ asset.id }}">
+                <a href="/assets/asset_edit/{{ asset.id }}">
                     <c><img src="{{ asset.image_path }}" alt="{{ asset.name }}"></c>
                 </a>
             {% else %}
-                <a href="/asset_edit/{{ asset.id }}">
+                <a href="/assets/asset_edit/{{ asset.id }}">
                     <c><img src="static/images/default.png" alt="{{ asset.name }}"></c>
                 </a>
             {% endif %}

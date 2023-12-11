@@ -41,7 +41,7 @@
         <!-- General tab -->
         <div id="general" class="tab-pane fade show active">
             <!-- General form -->
-            <form action="/service_edit/{{ service.id }}" method="post">
+            <form action="/services/service_edit/{{ service.id }}" method="post">
                 <!-- Form fields for general service information -->
                 <label for="asset_name" class="required-field">Asset Name:</label><br>
             <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()" required><br><br>

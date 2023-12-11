@@ -61,8 +61,8 @@
         {% for service in services %}
             <!-- Add the "visible-row" class to all rows -->
             <tr class="visible-row">
-                <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
-                <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                <td><a href="/assets/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+                <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
                 <td>{{ service.service_date }}</td>
                 <td>{{ service.service_cost }}</td>
                 <td>{{ service.service_complete }}</td>
