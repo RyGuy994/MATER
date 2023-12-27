@@ -5,7 +5,7 @@ import csv # import csv
 
 from models.shared import db
 from blueprints.base import app
-from blueprints.utilities import retrieve_username_jwt
+from blueprints.utilities import retrieve_username_jwt, get_asset_upload_folder, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage
 from models.service import Service
 from models.asset import Asset
 from models.serviceattachment import ServiceAttachment
@@ -39,8 +39,8 @@ def home():
 
 
 @app.route('/<image_name>', methods=['GET']) # get image name
-def serve_image(image_name):
-    image_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], image_name)) # get the pull image path
+def serve_image(image_name, asset_id):
+    image_path = os.path.abspath(os.path.join(get_image_upload_folder(asset_id), image_name)) # get the pull image path
     if os.path.exists(image_path): # if that path exists 
         return send_file(image_path, mimetype='image/jpg')  # return the image path
     else:
