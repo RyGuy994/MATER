@@ -1,7 +1,5 @@
 from flask import Flask
 import os
-
-
 from models.shared import db
 
 app = Flask(__name__, template_folder='templates', static_folder="../static")
@@ -31,9 +29,8 @@ def create_db_tables(app, db, typeDB):
             with app.app_context():
                 db.create_all() # create all tables in database
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/images
-
-UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  # images Folder root/static/serviceattachments
+# Define the base upload folder
+UPLOAD_BASE_FOLDER = 'static/assets/' # base folder set
 
 # Sets defaults for databases
 username = os.getenv('DB_USERNAME')
@@ -63,7 +60,6 @@ match os.getenv("DB_TYPE"):
         create_db_tables(app, db, 'sqlite')
 
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY") # Security key
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to use
-app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
+
 
 

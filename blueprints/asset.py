@@ -6,26 +6,31 @@ import json
 
 from models.shared import db
 from  models.service import Service
-from .utilities import allowed_file, delete_attachment_from_storage
+from .utilities import allowed_file, get_asset_upload_folder, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage
 from .configuration import app
 from models.asset import Asset
 from blueprints.utilities import retrieve_username_jwt
 assets_blueprint = Blueprint('assets', __name__, template_folder='../templates')
 
-def create_image(request_image, new_asset):
+def create_image(request_image, new_asset, asset_id):
     try:
         if 'image' in request_image:
-            file = request_image.get('image') # get the file from element 'image'
+            file = request_image.get('image')  # get the file from element 'image'
             # If the user does not select a file, the browser submits an empty file without a filename
-            if file.filename == '': #name is blank
-                print('No selected file') # no selected file
-            if file and allowed_file(file.filename): # if there is a file and it passes the allowed_file function
-                filename = secure_filename(file.filename) # get filename
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename)) #place file in folder
-                new_asset.image_path = filename # Save the image path to the database
-    except:
-        pass
+            if file.filename == '':
+                print('No selected file')  # no selected file
+            if file and allowed_file(file.filename):  # if there is a file and it passes the allowed_file function
+                filename = secure_filename(file.filename)  # get filename
+                image_upload_folder = get_image_upload_folder(asset_id)  # call get_image_upload_folder and apss asset id
+                if not os.path.exists(image_upload_folder): # if path doesn't exist 
+                    os.makedirs(image_upload_folder) # then create
+
+                file.save(os.path.join(image_upload_folder, filename))  # place file in folder
+                new_asset.image_path = (os.path.join(image_upload_folder, filename))  # Save the image path to the database
+    except Exception as e:
+        print(f"Error uploading image: {e}")
     return new_asset
+ 
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
     name = request_dict.get('name') # get the name from form element 'name'
@@ -39,8 +44,9 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
         else:
             acquired_date = None  # change to None
         new_asset = Asset(name=name, asset_sn=asset_sn, description=description, acquired_date=acquired_date, user_id=user_id) # make new_asset and is ready for adding to DB
-        
-        new_asset = create_image(request_image, new_asset)
+        db.session.add(new_asset)  # Add new_asset to Class Assets
+        db.session.commit()  # Commit changes to DB (saving it)
+        new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)
         db.session.add(new_asset) # Add new_asset to Class Assets
         db.session.commit() # Commit changes to DB (saving it)
 
@@ -117,6 +123,7 @@ def edit(asset_id):
             asset_sn = request.form.get('asset_sn')  # get the sn
             description = request.form.get('description')  # get description
             acquired_date = request.form.get('acquired_date')  # get the acquired date
+            new_image_path = None
             # Check if the necessary fields are provided
             if name and asset_sn:  # required fields
                 if acquired_date:  # optional
@@ -131,14 +138,17 @@ def edit(asset_id):
                     if 'image' in request.files:
                         image_path = asset.image_path  # get the image path
                         file = request.files['image']  # get the file from element 'image'
-                        # If the user does not select a file, the browser submits an empty file without a filename
+                        # If the user does not   select a file, the browser submits an empty file without a filename
                         if file.filename == '':  # Check if the name is blank
                             print('No selected file')  # no selected file
                         if file and allowed_file(file.filename):  # if there is a file and it passes the allowed_file function
                             filename = secure_filename(file.filename)  # get filename
-                            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # place file in folder
-                            image_path = filename  # Save the image path to the database
-                            asset.image_path = image_path
+                            new_image_path = get_image_upload_folder(asset_id)  # call get_image_upload_folder and apss asset id
+                            if not os.path.exists(new_image_path): # if path doesn't exist 
+                                os.makedirs(new_image_path) # then create
+                            file.save(os.path.join(new_image_path, filename))  # place file in folder
+                            image_path = os.path.join(new_image_path, filename)  # Save the image path to the database
+                            asset.image_path = image_path # save iage path back to the asset image path
                 except:
                     pass
                 db.session.commit()  # commit changes
@@ -216,7 +226,6 @@ def delete_asset(asset_id):
         405:
             description: Error occured
     """
-    
     
     if request.args.get('jwt') != None:
         user_id = retrieve_username_jwt(request.cookies.get('access_token'))

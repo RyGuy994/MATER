@@ -66,8 +66,8 @@
         <div id="general" class="tab-pane fade show active">
             <!-- Display the asset image if available -->
             {% if asset.image_path %}
-				<img src="{{ url_for('serve_image', image_name=asset.image_path) }}" alt="Asset Image" style="max-width: 200px; max-height: 200px; border: 3px solid green;">
-			{% endif %}
+            <img src="{{ url_for('serve_image', image_name=asset.image_path, asset_id=asset.id) }}" alt="{{ asset.image_path }}" style="max-width: 200px; max-height: 200px; border: 3px solid green;">
+            {% endif %}
 			<br>
             <!-- Form for editing general asset information -->
             <form action="/assets/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
