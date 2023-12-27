@@ -8,3 +8,4 @@ bcrypt
 python-ulid
 pyjwt
 flasgger==0.9.7b2
+sqlalchemy

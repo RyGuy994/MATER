@@ -12,12 +12,8 @@ services:
     restart: unless-stopped
     environment:
       FLASK_APP: app.py
-      FLASK_ENV: production
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_HOST: mater-postgresql
-      DB_NAME: postgres
-      DB_TYPE: postgresql
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
       SECRET_KEY: secret
     depends_on:
       - postgresqldb
@@ -33,19 +29,5 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgresql_volume:/var/lib/postgresql/data
-  # mysqldb:
-  #   container_name: mater-mysqldb
-  #   image: mysql
-  #   restart: always
-  #   environment:
-  #     MYSQL_DATABASE: db
-  #     MYSQL_USER: user
-  #     MYSQL_PASSWORD: password
-  #     MYSQL_ROOT_PASSWORD: password
-  #   ports:
-  #     - 3306:3306
-  #   volumes:
-  #     - mysql_volume:/var/lib/mysql
 volumes:
   postgresql_volume:
-  # mysql_volume:

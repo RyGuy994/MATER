@@ -125,7 +125,7 @@
         <div class="mySlides">
             {% if asset.image_path %}
                 <a href="/assets/asset_edit/{{ asset.id }}">
-                    <c><img src="{{ asset.image_path }}" alt="{{ asset.name }}"></c>
+                    <c><img src="{{ url_for('serve_image', image_name=asset.image_path) }}" alt="{{ asset.name }}"></c>
                 </a>
             {% else %}
                 <a href="/assets/asset_edit/{{ asset.id }}">

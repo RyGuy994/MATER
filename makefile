@@ -2,10 +2,10 @@ DEV_FILE = dev-docker-compose.yml
 DEV_DOCKER_COMPOSE=docker-compose -f $(DEV_FILE)
 default: build
 
-#==================================================#
-# Builds and does other docker functionality #
-#==================================================#
-build: # Builds using all the dockerfiles and docker-compose provided
+#=========================================================#
+# Builds and does other docker functionality for Mater #
+#=========================================================#
+build:
 	@echo "Building MATER!"
 	@$(DEV_DOCKER_COMPOSE) up --build
 up:
@@ -17,6 +17,6 @@ clean: # Removes all orphans processes
 stop:
 	@echo "Shutting MATER down now!"
 	@$(DEV_DOCKER_COMPOSE) down 
-detached: # Runs the containers in daemon mode
+detached-pg: # Runs the containers in daemon mode
 	@echo "Running MATER in detached mode!"
 	@$(DEV_DOCKER_COMPOSE) up -d --build

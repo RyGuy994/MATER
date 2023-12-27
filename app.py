@@ -5,54 +5,10 @@ import csv # import csv
 
 from models.shared import db
 from blueprints.base import app
-from blueprints.asset import assets_blueprint
-from blueprints.service import services_blueprint
-from blueprints.calendar import calendar_blueprint
 from blueprints.utilities import retrieve_username_jwt
-from blueprints.auth import auth_blueprint
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'images')  # images Folder root/static/images
-
-UPLOAD_FOLDER_DOCS = os.path.join(os.getcwd(), 'static', 'serviceattachments')  # images Folder root/static/serviceattachments
-
-# Sets defaults for databases
-username = os.getenv('DB_USERNAME')
-password = os.getenv('DB_PASSWORD')
-host = os.getenv('DB_HOST')
-database_name = os.getenv('DB_NAME')
-
-# Switch statement on DB_TYPE, default is SQLiteDB
-match os.getenv("DB_TYPE"):
-    case 'postgresql':
-        # Set url as its own variable to update when necessary
-        db_url = f'postgresql+psycopg2://{username}:{password}@{host}/{database_name}'
-        # Sets config for postgresql db
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-    case 'mysql':
-        # Set url as its own variable to update when necessary
-        db_url = f'mysql+pymysql://{username}:{password}@{host}/{database_name}'
-        # Sets config for mysql db
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-    case _:
-        db_folder = os.path.join(os.getcwd(), 'instance', '')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_folder}/database.db' # path to database for app to use
-
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY") # Security key
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER # path to images folder for app to use
-app.config['UPLOAD_FOLDER_DOCS'] = UPLOAD_FOLDER_DOCS #path to attachments folder for app to use
-
-# Blueprints to import for the various routes
-app.register_blueprint(assets_blueprint, url_prefix='/assets/')
-app.register_blueprint(services_blueprint, url_prefix='/services/')
-app.register_blueprint(calendar_blueprint, url_prefix='/calendar/')
-app.register_blueprint(auth_blueprint, url_prefix='/auth/')
-
-# Create the database tables
-with app.app_context():
-    from models.service import Service
-    from models.asset import Asset
-    from models.serviceattachment import ServiceAttachment
-    db.init_app(app)
-    db.create_all() # create all tables in database
+from models.service import Service
+from models.asset import Asset
+from models.serviceattachment import ServiceAttachment
 
 @app.route('/signup') # for index.html route
 def signup_page():
@@ -62,9 +18,9 @@ def signup_page():
 def signin_page():
     try:
         user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-        return render_template('signin.html', loggedIn=True) #display index.html and pass upcoming_services
+        return render_template('signin.html', loggedIn=True) # display index.html and pass upcoming_services
     except:
-        return render_template('signin.html', loggedIn=False) #display index.html and pass upcoming_services
+        return render_template('signin.html', loggedIn=False) # display index.html and pass upcoming_services
 
 @app.route('/home') # for index.html route
 def home():
@@ -77,7 +33,8 @@ def home():
             Service.user_id == user_id
         ).all() # query all items
         return render_template('index.html', upcoming_services=upcoming_services, loggedIn=True) #display index.html and pass upcoming_services
-    except:
+    except Exception as e:
+        print(e)
         return render_template('signin.html')
 
 

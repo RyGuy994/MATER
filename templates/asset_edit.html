@@ -70,7 +70,7 @@
 			{% endif %}
 			<br>
             <!-- Form for editing general asset information -->
-            <form action="/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
+            <form action="/assets/asset_edit/{{ asset.id }}" method="post" enctype="multipart/form-data">
                 <!-- Input fields for asset details -->
                 <label for="name">Asset Name:</label><br>
                 <input type="text" id="name" name="name" value="{{ asset.name }}"><br><br>
@@ -117,7 +117,7 @@
                 <!-- Loop through services and display them in a table -->
                 {% for service in services %}
                     <tr class="visible-row"> <!-- Add the "visible-row" class to all rows -->
-                        <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                        <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
                         <td>{{ service.service_date }}</td>
                         <td>{{ service.service_cost }}</td>
                         <td>{{ service.service_complete }}</td>
@@ -138,7 +138,7 @@
 
         // Function to redirect to the page displaying all assets
         function redirectToAssetAll() {
-            window.location.href = "/asset_all";
+            window.location.href = "/assets/asset_all";
         }
 
         function confirmDelete() {
