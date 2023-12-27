@@ -25,7 +25,7 @@
     <div id="image-preview"></div><br>
 
     <!-- Form for adding a new asset -->
-    <form action="/asset_add" method="post" enctype="multipart/form-data">
+    <form action="/assets/asset_add" method="post" enctype="multipart/form-data">
         <!-- Asset Name -->
         <label for="name" class="required-field">Asset Name:</label><br>
         <input type="text" id="name" name="name" required><br><br>
@@ -66,7 +66,7 @@
         }
         // Function to redirect to All Assets page
         function redirectToAssetAll() {
-            window.location.href = "/asset_all";
+            window.location.href = "/assets/asset_all";
         }
 
         // Function to display a preview of the selected image
