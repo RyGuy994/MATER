@@ -1,0 +1,122 @@
+<!-- Extending the base template -->
+{% extends 'base.html' %}
+
+<!-- Setting the title -->
+{% block title %}Calendar{% endblock %}
+
+{% block head %}
+    <!-- Meta tags for character set and viewport -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Include FullCalendar CSS and JS files -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+{% endblock %}
+
+<!-- Content block -->
+{% block content %}
+<div>
+    <!-- Tabs for switching between calendar views -->
+    <ul class="nav nav-tabs" id="calendarTabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="tabAll" data-toggle="tab" href="#calendarAllContainer" data-events-url="calendar/api/events">All Events</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="tabCompleted" data-toggle="tab" href="#calendarCompletedContainer" data-events-url="calendar/api/events/completed">Completed Events</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="tabIncomplete" data-toggle="tab" href="#calendarIncompleteContainer" data-events-url="calendar/api/events/incomplete">Incomplete Events</a>
+        </li>
+    </ul>
+
+    <!-- Buttons for subscription and download -->
+    <div>
+        <a href="{{ url_for('calendar.ical_subscribe') }}" class="standard-btn" target="_blank">Subscribe to Calendar</a>
+        <a href="{{ url_for('calendar.ical_events') }}" class="standard-btn" download>Download iCalendar</a>
+    </div>
+</div>
+
+<!-- Calendar containers for each view -->
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="calendarAllContainer">
+        <!-- Calendar content for All Events -->
+    </div>
+    <div class="tab-pane fade show active" id="calendarCompletedContainer">
+        <!-- Calendar content for Completed Events -->
+    </div>
+    <div class="tab-pane fade show active" id="calendarIncompleteContainer">
+        <!-- Calendar content for Incomplete Events -->
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Check if the user has an access token before initializing FullCalendar
+        var loggedIn = '{{ 'access_token' in request.cookies }}';
+
+        if (loggedIn) {
+            // Bootstrap tab activation
+            $('#calendarTabs a').on('click', function (e) {
+                e.preventDefault();
+
+                // Get the target tab and container
+                var target = $(this).attr('href');
+                var containerId = target + 'Container';
+
+                // Show the active tab and hide others
+                $('.tab-pane').removeClass('show active');
+                $(containerId).addClass('show active');
+
+                // Initialize FullCalendar for the selected tab if not already done
+                if (!$(containerId).data('fullCalendar')) {
+                    initCalendar(containerId, $(this).data('events-url'));
+                    $(containerId).data('fullCalendar', true);
+                }
+            });
+
+            // Initialize FullCalendar for All Events by default
+            initCalendar('#calendarAllContainer', 'calendar/api/events');
+            
+            // Debugging: Check if Completed and Incomplete tabs load correctly
+            initCalendar('#calendarCompletedContainer', 'calendar/api/events/completed');
+            initCalendar('#calendarIncompleteContainer', 'calendar/api/events/incomplete');
+        }
+    });
+
+    function initCalendar(containerId, eventsUrl) {
+        fetch(eventsUrl)
+            .then(response => response.json())
+            .then(events => {
+                // Debugging: Log the events retrieved
+                console.log('Events for ' + containerId + ':', events);
+
+                // Initialize FullCalendar
+                $(containerId).fullCalendar({
+                    header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'month,agendaWeek,agendaDay'
+                    },
+                    defaultView: 'month',
+                    events: events,
+                    eventClick: function (calEvent, jsEvent, view) {
+                        // Redirect to the service_edit page with the service ID
+                        window.location.href = '/service_edit/' + calEvent.description;
+                    },
+                    // Add more FullCalendar options as needed
+                });
+            })
+            .catch(error => {
+                // Debugging: Log any errors in fetching data
+                console.error('Error fetching data for ' + containerId + ':', error);
+            });
+    }
+</script>
+
+
+{% endblock %}
