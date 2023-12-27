@@ -24,13 +24,13 @@
     <!-- Tabs for switching between calendar views -->
     <ul class="nav nav-tabs" id="calendarTabs">
         <li class="nav-item">
-            <a class="nav-link active" id="tabAll" data-toggle="tab" href="#calendarAllContainer" data-events-url="/api/events">All Events</a>
+            <a class="nav-link active" id="tabAll" data-toggle="tab" href="#calendarAllContainer" data-events-url="calendar/api/events">All Events</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="tabCompleted" data-toggle="tab" href="#calendarCompletedContainer" data-events-url="/api/events/completed">Completed Events</a>
+            <a class="nav-link" id="tabCompleted" data-toggle="tab" href="#calendarCompletedContainer" data-events-url="calendar/api/events/completed">Completed Events</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="tabIncomplete" data-toggle="tab" href="#calendarIncompleteContainer" data-events-url="/api/events/incomplete">Incomplete Events</a>
+            <a class="nav-link" id="tabIncomplete" data-toggle="tab" href="#calendarIncompleteContainer" data-events-url="calendar/api/events/incomplete">Incomplete Events</a>
         </li>
     </ul>
 
@@ -56,31 +56,45 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize FullCalendar for All Events by default
-        initCalendar('#calendarAllContainer', '/api/events');
-        initCalendar('#calendarCompletedContainer', '/api/events/completed');
-        initCalendar('#calendarIncompleteContainer', '/api/events/incomplete');
+        // Check if the user has an access token before initializing FullCalendar
+        var loggedIn = '{{ 'access_token' in request.cookies }}';
 
-        // Bootstrap tab activation
-        $('#calendarTabs a').on('click', function (e) {
-            e.preventDefault();
+        if (loggedIn) {
+            // Bootstrap tab activation
+            $('#calendarTabs a').on('click', function (e) {
+                e.preventDefault();
 
-            // Get the target tab and container
-            var target = $(this).attr('href');
-            var containerId = target + 'Container';
+                // Get the target tab and container
+                var target = $(this).attr('href');
+                var containerId = target + 'Container';
 
-            // Initialize FullCalendar for the selected tab if not already done
-            if (!$(containerId).data('fullCalendar')) {
-                initCalendar(containerId, $(this).data('events-url'));
-                $(containerId).data('fullCalendar', true);
-            }
-        });
+                // Show the active tab and hide others
+                $('.tab-pane').removeClass('show active');
+                $(containerId).addClass('show active');
+
+                // Initialize FullCalendar for the selected tab if not already done
+                if (!$(containerId).data('fullCalendar')) {
+                    initCalendar(containerId, $(this).data('events-url'));
+                    $(containerId).data('fullCalendar', true);
+                }
+            });
+
+            // Initialize FullCalendar for All Events by default
+            initCalendar('#calendarAllContainer', 'calendar/api/events');
+            
+            // Debugging: Check if Completed and Incomplete tabs load correctly
+            initCalendar('#calendarCompletedContainer', 'calendar/api/events/completed');
+            initCalendar('#calendarIncompleteContainer', 'calendar/api/events/incomplete');
+        }
     });
 
     function initCalendar(containerId, eventsUrl) {
         fetch(eventsUrl)
             .then(response => response.json())
             .then(events => {
+                // Debugging: Log the events retrieved
+                console.log('Events for ' + containerId + ':', events);
+
                 // Initialize FullCalendar
                 $(containerId).fullCalendar({
                     header: {
@@ -96,7 +110,13 @@
                     },
                     // Add more FullCalendar options as needed
                 });
+            })
+            .catch(error => {
+                // Debugging: Log any errors in fetching data
+                console.error('Error fetching data for ' + containerId + ':', error);
             });
     }
 </script>
+
+
 {% endblock %}
