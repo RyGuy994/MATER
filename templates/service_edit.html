@@ -41,7 +41,7 @@
         <!-- General tab -->
         <div id="general" class="tab-pane fade show active">
             <!-- General form -->
-            <form action="/services/service_edit/{{ service.id }}" method="post">
+            <form action="/services/service_edit/{{ service.id }}" method="post" enctype="multipart/form-data">
                 <!-- Form fields for general service information -->
                 <label for="asset_name" class="required-field">Asset Name:</label><br>
             <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()" required><br><br>
@@ -121,7 +121,7 @@
 
         // Function to redirect to all services
         function redirectToServiceAll() {
-            window.location.href = "/service_all";
+            window.location.href = "/services/service_all";
         }
     function showToast() {
         Toastify({

@@ -70,7 +70,7 @@
         MATER
     </h1>
     <!-- MATER Image -->
-    <c><img src="/static/MATER.png" alt="MATER Image" class="center"></c>
+    <c><img src="/static/images/MATER.png" alt="MATER Image" class="center"></c>
     <!-- Subheading -->
     <h2>Services due in the next 30 days</h2>
 
@@ -90,8 +90,8 @@
         <!-- Loop through upcoming_services to display service details -->
         {% for service in upcoming_services %}
             <tr>
-                <td><a href="/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
-                <td><a href="/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                <td><a href="/assets/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+                <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
                 <td>{{ service.service_date }}</td>
                 <td>{{ service.service_cost }}</td>
                 <td>{{ service.service_complete }}</td>
