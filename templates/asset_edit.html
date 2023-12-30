@@ -57,7 +57,10 @@
         <li class="nav-item">
             <a class="nav-link" id="services-tab" data-toggle="tab" href="#services">Services</a>
         </li>
-        <!-- Add more tabs as needed FUTUREFUTURE attachments tab when assets are related directed to asset ID-->
+        <li class="nav-item">
+            <a class="nav-link" id="services-tab" data-toggle="tab" href="#options">Options</a>
+        </li>
+        <!-- Add more tabs as needed -->
     </ul>
 
     <!-- Tab panes -->
@@ -125,6 +128,12 @@
                     </tr>
                 {% endfor %}
             </table>
+        </div>
+        <!-- Asset Options -->
+        <div id="options" class="tab-pane fade">
+            <form id="downloadForm" action="/assets/generate_zip/{{ asset.id }}" method="get">
+                <button type="submit" class="standard-btn">Download Asset Files</button>
+            </form>
         </div>
         <!-- Add more tab panes as needed -->
     </div>

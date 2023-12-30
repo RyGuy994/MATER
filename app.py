@@ -1,7 +1,8 @@
-from flask import render_template, request, redirect, send_file, abort, Response
+from flask import render_template, request, send_file, abort, Response
 from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
 import os # import the OS
 import csv # import csv
+import shutil
 
 from models.shared import db
 from blueprints.base import app
@@ -47,8 +48,8 @@ def serve_image(image_name, asset_id):
         abort(404)
 
 @app.route('/<filename>', methods=['GET']) # get attachment name
-def uploaded_file(filename):
-    image_path = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER_DOCS'], filename)) # get the pull doc path
+def uploaded_file(filename, asset_id):
+    filepath = os.path.abspath(os.path.join(get_attachment_upload_folder(asset_id), filename)) # get the pull doc path
     if os.path.exists(filename): # if that path exists 
         return send_file(filename)  # return the doc path
     else:

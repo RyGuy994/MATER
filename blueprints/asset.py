@@ -1,15 +1,17 @@
-from flask import Blueprint, request, render_template, redirect, jsonify
+from flask import Blueprint, request, render_template, redirect, jsonify, send_file
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename # import filename
 import json 
+import zipfile
 
 from models.shared import db
 from  models.service import Service
-from .utilities import allowed_file, get_image_upload_folder, delete_attachment_from_storage
+from .utilities import allowed_file, get_image_upload_folder, delete_attachment_from_storage,get_asset_upload_folder
 from .configuration import app
 from models.asset import Asset
 from blueprints.utilities import retrieve_username_jwt
+
 assets_blueprint = Blueprint('assets', __name__, template_folder='../templates')
 
 def create_image(request_image, new_asset, asset_id):
@@ -30,7 +32,6 @@ def create_image(request_image, new_asset, asset_id):
     except Exception as e:
         print(f"Error uploading image: {e}")
     return new_asset
- 
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
     name = request_dict.get('name') # get the name from form element 'name'
@@ -152,10 +153,10 @@ def edit(asset_id):
                 except:
                     pass
                 db.session.commit()  # commit changes
-            return render_template('asset_edit.html', asset=asset, services=services, toast=True, loggedIn=True)  # if committed load asset_edit.html and send asset and services and call toast
+            return render_template('asset_edit.html', asset=asset, services=services, asset_id=asset.id, toast=True, loggedIn=True)  # if committed load asset_edit.html and send asset and services and call toast
     else:
         pass
-    return render_template('asset_edit.html', asset=asset, services=services, toast=False, loggedIn=True)  # if committed load asset_edit.html and send asset and services and NO BUTTER TOAST
+    return render_template('asset_edit.html', asset=asset, services=services, asset_id=asset.id, toast=False, loggedIn=True)  # if committed load asset_edit.html and send asset and services and NO BUTTER TOAST
 
 @assets_blueprint.route('/asset_all', methods=['GET']) # asset_all.html route
 def all_assets():
@@ -236,3 +237,20 @@ def delete_asset(asset_id):
         asset_id = request.json.get('asset_id')
         delete_asset_helper(asset_id, user_id)
         return {'message': f'Successfully delete asset {request.json.get("asset_id")}', 'status_code': 200}
+    
+@assets_blueprint.route('/generate_zip/<int:asset_id>')
+def generate_zip(asset_id):
+    folder_path = get_asset_upload_folder(asset_id)
+    zip_filename = f'asset_{asset_id}_files.zip'
+
+    # Use the Flask app root_path to get the correct directory
+    zip_filepath = os.path.join(app.root_path, zip_filename)
+
+    with zipfile.ZipFile(zip_filepath, 'w') as zip_file:
+        for foldername, subfolders, filenames in os.walk(folder_path):
+            for filename in filenames:
+                file_path = os.path.join(foldername, filename)
+                arcname = os.path.relpath(file_path, folder_path)
+                zip_file.write(file_path, arcname)
+
+    return send_file(zip_filepath, as_attachment=True)
