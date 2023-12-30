@@ -6,7 +6,7 @@ import json
 
 from models.shared import db
 from  models.service import Service
-from .utilities import allowed_file, get_asset_upload_folder, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage
+from .utilities import allowed_file, get_image_upload_folder, delete_attachment_from_storage
 from .configuration import app
 from models.asset import Asset
 from blueprints.utilities import retrieve_username_jwt

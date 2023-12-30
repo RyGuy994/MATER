@@ -7,11 +7,12 @@ from models.asset import Asset
 from models.service import Service
 from models.serviceattachment import ServiceAttachment
 from models.shared import db
-from .utilities import delete_attachment_from_storage
+from .utilities import delete_attachment_from_storage, get_attachment_upload_folder
 from blueprints.utilities import retrieve_username_jwt
 services_blueprint = Blueprint('service', __name__, template_folder='../templates')
 @services_blueprint.route('/service_add', methods=['GET', 'POST']) # service_add.html route
 def service_add():
+    service_id = None
     service_complete2 = False # set completed 2 to false (if they add another service based off completed one)
     service_add_new = False # check box from service_add_again_check
     user_id = retrieve_username_jwt(request.cookies.get('access_token'))
@@ -45,21 +46,28 @@ def service_add():
                 # Handle multiple attachment uploads
         attachments = request.files.getlist('attachments')
         attachment_paths = []
+        db.session.add(new_service) # add to DB
+        db.session.commit() #commit all changes
+        service_id = new_service.id
 
-        for attachment in attachments:
+
+
+        for attachment in attachments:          
             if attachment:
-                attachment_path = os.path.join('static/serviceattachments', attachment.filename)
+                folder = get_attachment_upload_folder(asset_id, service_id)
+                
+                # Ensure the folder exists; create it if not
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+
+                attachment_path = os.path.join(folder, attachment.filename)
                 attachment.save(attachment_path)
                 attachment_paths.append(attachment_path)
-
-        db.session.add(new_service) # add to DB
-        
-        db.session.commit() #commit all changes
 
         if new_service is not None:
             # Attached saved now store the attachment paths in the database
             for attachment_path in attachment_paths:
-                new_attachment = ServiceAttachment(service_id=new_service.id, attachment_path=attachment_path)
+                new_attachment = ServiceAttachment(service_id=new_service.id, attachment_path=attachment_path, user_id=user_id)
                 db.session.add(new_attachment)
 
         db.session.commit()
@@ -69,7 +77,7 @@ def service_add():
 @services_blueprint.route('/service_edit/<int:service_id>', methods=['GET', 'POST']) # service_edit.html route with the service id on the back
 def service_edit(service_id):
     user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-    service = Service.query.get_or_404(service_id=service_id, user_id=user_id) # set service from query Class Service or return 404
+    service = Service.query.filter_by(id=service_id, user_id=user_id).first_or_404() # set service from query Class Service or return 404
     service_complete2 = False # set completed 2 to false (if they add another service based off completed one)
     service_add_new = False # check box from service_add_again_check
     if request.method == 'POST': #if form submit POST
@@ -108,15 +116,21 @@ def service_edit(service_id):
         attachments = request.files.getlist('attachments')
         attachment_paths = []
 
-        for attachment in attachments:
+        for attachment in attachments:          
             if attachment:
-                attachment_path = os.path.join('static/serviceattachments', attachment.filename)
+                folder = get_attachment_upload_folder(asset_id, service_id)
+                
+                # Ensure the folder exists; create it if not
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+
+                attachment_path = os.path.join(folder, attachment.filename)
                 attachment.save(attachment_path)
                 attachment_paths.append(attachment_path)
 
         # Attachments saved, now store the attachment filenames in the database
-        for attachment_filename in attachment_paths:
-            new_attachment = ServiceAttachment(service_id=service, attachment_filename=attachment_filename)
+        for attachment_path in attachment_paths:
+            new_attachment = ServiceAttachment(service_id=service.id, attachment_path=attachment_path, user_id=user_id)
             db.session.add(new_attachment)
 
         db.session.commit()  # commit change to DB
