@@ -1,13 +1,20 @@
 {% extends 'base.html' %}
 
 {% block title %}Settings{% endblock %}
-
+{% block head %}
+<style>.bordered-table {
+    background-color: lightcyan;
+    border: 1px solid green; /* You can customize the border style, color, and width */
+    padding: 10px; /* Optional: Add padding for better visual appearance */
+}
+</style>
+{% endblock %}
 {% block content %}
     <!-- Heading -->
     <h1>Settings</h1>
 
     <!-- Form for exporting data to CSV -->
-    <form action="{{ url_for('export_csv') }}" method="post">
+    <form action="{{ url_for('export_csv') }}" method="post" class="bordered-table">
         <!-- Dropdown to select a table for export -->
         <label for="table">Select a Table:</label>
         <select id="table" name="table">
@@ -15,9 +22,15 @@
             {% for table_name in table_names %}
                 <option value="{{ table_name }}">{{ table_name }}</option>
             {% endfor %}
-        </select>
-    
+        </select><br>
         <!-- Submit button to trigger CSV export -->
         <button type="submit" class="standard-btn">Export to CSV</button>
+    </form>
+
+    <!-- Form for exporting all files -->
+    <form action="{{ url_for('generate_zip') }}" method="post" class="bordered-table">
+        <!-- Submit button to trigger CSV export -->
+        Export all assets with all images and attachments:<br>
+        <button type="submit" class="standard-btn">Export all files</button>
     </form>
 {% endblock %}

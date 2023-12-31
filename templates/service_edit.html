@@ -86,31 +86,34 @@
             <textarea id="service_notes" name="service_notes">{{ service.service_notes }}</textarea><br><br>
 
             <!-- Add multiple attachment upload field -->
-            <label for="attachments">Attachments:</label><br>
+            <label for="attachments">Upload attachments to service:</label><br>
             <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
         <input type="submit" class="standard-btn" value="Update Service"><br>
         <button type="button" class="standard-btn" onclick="goBack()">Back</button>
         <button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
         </form>
     </div>
-
-    <!-- Attachments tab -->
-    <div id="services" class="tab-pane fade">
-        <!-- Attachments content -->
-        <h2>Attachments</h2>
-        {% if service.serviceattachments %}
-            <ul>
-                {% for attachment in service.serviceattachments %}
-                    <li>
-                        <a href="{{ url_for('uploaded_file', filename=attachment.attachment_path) }}" target="_blank">{{ attachment.attachment_path }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <!-- Display message if no attachments -->
-            <p>No attachments for this service.</p>
-        {% endif %}
+    <div id="services" class="tab-pane fade show active">
+        <!-- Attachments tab -->
+        <form action="/delete_selected_attachments" method="post" onsubmit="return confirmDelete()"">
+            {% if service.serviceattachments %}
+                <ul>
+                    {% for attachment in service.serviceattachments %}
+                        <li>
+                            <input type="checkbox" name="selected_attachments[]" value="{{ attachment.id }}" id="{{ attachment.id }}">
+                            <label for="{{ attachment.id }}">
+                                <a href="{{ url_for('uploaded_file', filename=attachment.attachment_path) }}" target="_blank">{{ attachment.attachment_path }}</a>
+                            </label>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <button type="submit" class="standard-btn">Delete Selected</button>
+            {% else %}
+                <p>No attachments for this service.</p>
+            {% endif %}
+        </form>
     </div>
+    
 </div>
     <!-- JavaScript for additional functionality -->
     <script>
@@ -188,6 +191,10 @@
         var month = (date.getMonth() + 1).toString().padStart(2, '0');
         var day = date.getDate().toString().padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+    function confirmDelete() {
+        var userInput = prompt("To confirm deletion, type 'delete':");
+        return userInput && userInput.toLowerCase() === 'delete';
     }
 </script>
     <!-- Show toast message if needed -->
