@@ -1,14 +1,16 @@
-from flask import render_template, request, send_file, abort, Response
+from flask import render_template, request, send_file, abort, Response, redirect, url_for, flash
 from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
 import os # import the OS
 import csv # import csv
 import shutil
+import zipfile
 
 from models.shared import db
 from blueprints.base import app
-from blueprints.utilities import retrieve_username_jwt, get_asset_upload_folder, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage
+from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage, delete_attachment_from_storage
 from models.service import Service
 from models.asset import Asset
+from blueprints.configuration import UPLOAD_BASE_FOLDER
 from models.serviceattachment import ServiceAttachment
 
 @app.route('/signup') # for index.html route
@@ -39,20 +41,24 @@ def home():
         return render_template('signin.html')
 
 
-@app.route('/<image_name>', methods=['GET']) # get image name
-def serve_image(image_name, asset_id):
-    image_path = os.path.abspath(os.path.join(get_image_upload_folder(asset_id), image_name)) # get the pull image path
-    if os.path.exists(image_path): # if that path exists 
-        return send_file(image_path, mimetype='image/jpg')  # return the image path
+@app.route('/<image_name>', methods=['GET'])
+def serve_image(image_name, asset_id=None):
+    if asset_id is not None:
+        image_path = os.path.abspath(os.path.join(get_image_upload_folder(asset_id), image_name))
+        if os.path.exists(image_path):
+            return send_file(image_path, mimetype='image/jpg')
     else:
+        # Handle the case where asset_id is None
         abort(404)
 
 @app.route('/<filename>', methods=['GET']) # get attachment name
-def uploaded_file(filename, asset_id):
-    filepath = os.path.abspath(os.path.join(get_attachment_upload_folder(asset_id), filename)) # get the pull doc path
-    if os.path.exists(filename): # if that path exists 
-        return send_file(filename)  # return the doc path
+def uploaded_file(filename, asset_id=None):
+    if asset_id is not None:
+        filepath = os.path.abspath(os.path.join(get_attachment_upload_folder(asset_id), filename)) # get the pull doc path
+        if os.path.exists(filename): # if that path exists 
+            return send_file(filename)  # return the doc path
     else:
+        # Handle the case where asset_id is None
         abort(404)
 
 # Route to handle the settings page
@@ -109,6 +115,56 @@ def export_csv():
 def csv_generator(data):
     for row in data:
         yield ','.join(map(str, row)) + '\n'
+
+
+@app.route('/generate_zip', methods=['POST'])
+def generate_zip():
+    folder_path = UPLOAD_BASE_FOLDER
+    zip_filename = 'All_Files.zip'
+
+    # Use the Flask app root_path to get the correct directory
+    zip_filepath = os.path.join(app.root_path, zip_filename)
+
+    with zipfile.ZipFile(zip_filepath, 'w') as zip_file:
+        for foldername, subfolders, filenames in os.walk(folder_path):
+            for filename in filenames:
+                file_path = os.path.join(foldername, filename)
+                arcname = os.path.relpath(file_path, folder_path)
+                zip_file.write(file_path, arcname)
+
+    return send_file(zip_filepath, as_attachment=True)
+
+@app.route('/delete_selected_attachments', methods=['POST'])
+def delete_selected_attachments():
+    try:
+        selected_attachments = request.form.getlist('selected_attachments[]')
+
+        service_id = None  # Initialize service_id to None
+
+        for attachment_id in selected_attachments:
+            attachment = ServiceAttachment.query.get(attachment_id)
+            if attachment:
+                # Check user permissions or other security measures if needed
+                delete_attachment_from_storage(attachment.attachment_path)
+                service_id = attachment.service_id  # Assuming service_id is stored in service_id
+
+                db.session.delete(attachment)
+
+        db.session.commit()
+        flash('Selected attachments deleted successfully.', 'success')
+    except Exception as e:
+        # Handle exceptions appropriately (e.g., log the error, display an error message)
+        flash('An error occurred during the deletion of attachments.', 'error')
+        print(f"Error: {e}")
+
+    if service_id is not None:
+        # Redirect to the service_edit page with the obtained service_id
+        return redirect(url_for('service.service_edit', service_id=service_id))
+    
+    else:
+        # If service_id is not obtained, redirect to a default page or handle it accordingly
+        return redirect('/services/service_all')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True) # **ADDADD set for user to run anything they want**
