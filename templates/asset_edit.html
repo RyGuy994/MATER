@@ -149,21 +149,18 @@
         function redirectToAssetAll() {
             window.location.href = "/assets/asset_all";
         }
-
+    // Function to confirm deletion
         function confirmDelete() {
             // Prompt the user for confirmation
-            var userConfirmation = prompt("To confirm deletion, type 'Delete asset':");
-
+            var userConfirmation = prompt("To confirm deletion, type 'delete asset':");
             // Check if the entered text is 'Delete asset'
-            if (userConfirmation !== "Delete asset") {
-                alert("Confirmation text did not match. Asset will not be deleted.");
+            if (userConfirmation !== "delete asset") {
+                alert("Confirmation text did not match. Service will not be deleted.");
                 return false; // Prevent form submission
             }
-
             // If the confirmation text is correct, allow form submission
             return true;
         }
-
         // Function to show a toast notification for successful update
         function showToast() {
             Toastify({

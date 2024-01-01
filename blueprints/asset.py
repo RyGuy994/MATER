@@ -1,36 +1,67 @@
-from flask import Blueprint, request, render_template, redirect, jsonify, send_file
-from datetime import datetime
+# Import necessary modules and components from Flask and other libraries
+from flask import Blueprint, request, render_template, redirect, send_file
+# Import datetime and timedelta for date and service calculations
+from datetime import datetime, timedelta
+# Import operating system-related functionality
 import os
-from werkzeug.utils import secure_filename # import filename
-import json 
+
+# Import CSV-related functionality
+import csv
+
+# Import shutil for file operations
+import shutil
+
+# Import zipfile for creating and extracting zip archives
 import zipfile
 
+# Import the database instance and the Flask app instance from shared and base modules
 from models.shared import db
-from  models.service import Service
-from .utilities import allowed_file, get_image_upload_folder, delete_attachment_from_storage,get_asset_upload_folder
-from .configuration import app
-from models.asset import Asset
-from blueprints.utilities import retrieve_username_jwt
+from blueprints.base import app
 
+# Import utility functions from the utilities module
+from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, allowed_file, delete_attachment_from_storage, get_asset_upload_folder
+
+# Import the Service and Asset models, as well as the ServiceAttachment model
+from models.service import Service
+from models.asset import Asset
+from models.serviceattachment import ServiceAttachment
+
+# Import securefilename
+from werkzeug.utils import secure_filename # import filename
+
+# Import json for API
+import json 
+
+# Import App
+from .configuration import app
+
+# Create a Blueprint named 'assets_blueprint' with a template folder path
 assets_blueprint = Blueprint('assets', __name__, template_folder='../templates')
 
+# Function to handle image creation for a new asset
 def create_image(request_image, new_asset, asset_id):
     try:
-        if 'image' in request_image:
-            file = request_image.get('image')  # get the file from element 'image'
-            # If the user does not select a file, the browser submits an empty file without a filename
-            if file.filename == '':
-                print('No selected file')  # no selected file
-            if file and allowed_file(file.filename):  # if there is a file and it passes the allowed_file function
-                filename = secure_filename(file.filename)  # get filename
-                image_upload_folder = get_image_upload_folder(asset_id)  # call get_image_upload_folder and apss asset id
-                if not os.path.exists(image_upload_folder): # if path doesn't exist 
-                    os.makedirs(image_upload_folder) # then create
+        if 'image' in request_image: # Check if 'image' is present in the request_image
+            file = request_image.get('image') # Get the file from the 'image' element in the request
 
-                file.save(os.path.join(image_upload_folder, filename))  # place file in folder
-                new_asset.image_path = (os.path.join(image_upload_folder, filename))  # Save the image path to the database
+            if file.filename == '': # If the user does not select a file, the browser submits an empty file without a filename
+                print('No selected file')  # Print message indicating no selected file
+
+            if file and allowed_file(file.filename): # Check if there is a file and it passes the allowed_file function
+                filename = secure_filename(file.filename) # Get the filename in a secure manner
+                image_upload_folder = get_image_upload_folder(asset_id) # Call the utility function to get the image upload folder path for the specific asset
+
+                if not os.path.exists(image_upload_folder): # Check if the image upload folder path exists, and create it if it doesn't
+                    os.makedirs(image_upload_folder)
+                
+                file.save(os.path.join(image_upload_folder, filename)) # Save the file to the image upload folder with the original filename
+                new_asset.image_path = os.path.join(image_upload_folder, filename) # Save the image path to the new_asset object in the database
+
     except Exception as e:
+        # Handle exceptions and print an error message
         print(f"Error uploading image: {e}")
+
+    # Return the new_asset object
     return new_asset
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
@@ -51,6 +82,7 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
         db.session.add(new_asset) # Add new_asset to Class Assets
         db.session.commit() # Commit changes to DB (saving it)
 
+# Define a route for adding assets, accessible through both GET and POST requests
 @assets_blueprint.route('/asset_add', methods=['GET', 'POST']) # asset_add.html route
 def add():
     """Api endpoint that creates a asset
@@ -100,17 +132,17 @@ def add():
             description: Error occured
     """
     if request.method == 'POST':
-        if(request.form.get('jwt') == None):
-            request_dict = {'meta_data': request.form, 'image': request.files['image']}
-            user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-            create_asset(request_dict.get('meta_data'), user_id, request_dict)
+        if(request.form.get('jwt') == None): # Check if JWT token is not provided in the form data
+            request_dict = {'meta_data': request.form, 'image': request.files['image']} # Construct a dictionary containing metadata and image data from the request
+            user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Retrieve the user_id from the access token in the request cookies
+            create_asset(request_dict.get('meta_data'), user_id, request_dict) # Call the create_asset function to handle asset creation
             return render_template('asset_add.html', toast=True, loggedIn=True) # Display the toast message when add is commited to Class Assets
         else:
-            request_dict = {'meta_data': request.form, 'image': request.files.getlist('file')[0]}
-            user_id = retrieve_username_jwt(request.form.get('jwt'))
-            create_asset(request_dict.get('meta_data'), user_id, request_dict)
-            return {'message': f'Successfully created asset {request.form.get("name")}', 'status_code': 200}
-        
+            request_dict = {'meta_data': request.form, 'image': request.files.getlist('file')[0]} # If JWT token is provided in the form data
+            user_id = retrieve_username_jwt(request.form.get('jwt')) # Retrieve the user_id from the JWT token
+            create_asset(request_dict.get('meta_data'), user_id, request_dict) # Call the create_asset function to handle asset creation
+            return {'message': f'Successfully created asset {request.form.get("name")}', 'status_code': 200} # Return a success message in JSON format
+    # If the request method is GET, display the asset_add.html template 
     return render_template('asset_add.html', loggedIn=True) # display asset_add.html
     
 @assets_blueprint.route('/asset_edit/<int:asset_id>', methods=['GET', 'POST'])  # asset_edit.html route
@@ -158,10 +190,12 @@ def edit(asset_id):
         pass
     return render_template('asset_edit.html', asset=asset, services=services, asset_id=asset.id, toast=False, loggedIn=True)  # if committed load asset_edit.html and send asset and services and NO BUTTER TOAST
 
-@assets_blueprint.route('/asset_all', methods=['GET']) # asset_all.html route
+# Define a route for retrieving all assets, accessible through a GET request
+@assets_blueprint.route('/asset_all', methods=['GET'])
 def all_assets():
-    """Api endpoint that gets all assets
-    This api gets all assets associated with a user
+    """
+    Api endpoint that gets all assets
+    This API gets all assets associated with a user.
     ---
     tags:
       - assets
@@ -172,19 +206,20 @@ def all_assets():
           example: {'jwt': 'test'}
     responses:
         200:
-            description: All assets are retrived
+            description: All assets are retrieved
         405:
-            description: Error occured
+            description: Error occurred
     """
-    if request.args.get('jwt') is None:
-        user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-        assets = Asset.query.filter_by(user_id=user_id).all() # query all in class Asset
-        return render_template('asset_all.html',assets=assets, loggedIn=True) # display asset_all.html and pass assets
+    if request.args.get('jwt') is None: # Check if JWT token is not provided as a query parameter
+        user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Retrieve the user_id from the access token in the request cookies 
+        assets = Asset.query.filter_by(user_id=user_id).all() # Query all assets in the Class Asset associated with the user
+        return render_template('asset_all.html', assets=assets, loggedIn=True) # Display the asset_all.html template and pass the retrieved assets
     else:
-        user_id = retrieve_username_jwt(request.json.get('jwt'))
-        assets = Asset.query.filter_by(user_id=user_id).all() # query all in class Asset
-        data = []
-        for asset in assets:
+        user_id = retrieve_username_jwt(request.json.get('jwt')) # If JWT token is provided in the query parameters
+        assets = Asset.query.filter_by(user_id=user_id).all()# Query all assets in the Class Asset associated with the user
+        data = [] # Prepare a list to store asset data in JSON format
+        
+        for asset in assets:# Iterate through each asset and extract relevant information
             asset_data = {
                 'name': asset.name,
                 'asset_sn': asset.asset_sn,
@@ -193,59 +228,53 @@ def all_assets():
                 'image_path': asset.image_path
             }
             data.append(asset_data)
-        return json.dumps(data)
 
-def delete_asset_helper(asset_id, user_id):
-    asset = Asset.query.get_or_404(asset_id) # get asset by id
-    
-    # Check if the asset has associated services
-    if asset.services: # If yes, delete the associated services first
-        for service in asset.services:
-            if service.serviceattachments and service.user_id == user_id: # If yes, delete the associated attachments first
-                for attachment in service.serviceattachments: # Delete the file from your storage 
-                    delete_attachment_from_storage(attachment.attachment_path) # Delete the attachment record from the database
-                db.session.delete(attachment) # delete attachment
-            db.session.delete(service) # delete service
-    db.session.delete(asset) # Delete the asset
-    db.session.commit() # Commit the changes
+        return json.dumps(data)# Return the asset data in JSON format
 
-@assets_blueprint.route('/asset_delete/<asset_id>', methods=['POST']) # route for delete an asset by id
-def delete_asset(asset_id):
-    """Api endpoint that deletes a asset
-    This api deletes an asset
-    ---
-    tags:
-      - assets
-    parameters:
-        - in: body
-          name: body
-          required: true 
-          example: {'asset_id': 'test', 'jwt': 'test'}
-    responses:
-        200:
-            description: Asset is deleted
-        405:
-            description: Error occured
-    """
-    
-    if request.args.get('jwt') != None:
+@assets_blueprint.route('/asset_delete/<int:asset_id>', methods=['POST'])
+def delete_service(asset_id):
+    try:
+        asset = Asset.query.get_or_404(asset_id)  # Get asset by id
         user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-        delete_asset_helper(asset_id, user_id)
-        return redirect('/home') # display index.html
-    else:
-        user_id = retrieve_username_jwt(request.json.get('jwt'))
-        asset_id = request.json.get('asset_id')
-        delete_asset_helper(asset_id, user_id)
-        return {'message': f'Successfully delete asset {request.json.get("asset_id")}', 'status_code': 200}
-    
+        asset_folder = get_asset_upload_folder(asset_id)
+        # Check if the asset has associated services
+        if asset.services:
+            for service in asset.services:
+                if service.serviceattachments and service.user_id == user_id:
+                    # If yes, delete the associated attachments first
+                    for attachment in service.serviceattachments:
+                        # Delete the file from your storage
+                        delete_attachment_from_storage(attachment.attachment_path)
+                        # Delete the attachment record from the database
+                        db.session.delete(attachment)
+                    db.session.delete(service)  # Delete the service
+        db.session.delete(asset)  # Delete the asset
+        db.session.commit()  # Commit the changes
+        if os.path.exists(asset_folder) and os.path.isdir(asset_folder):
+            try:
+                shutil.rmtree(asset_folder)
+                print(f"Directory {asset_folder} successfully deleted.")
+            except OSError as e:
+                print(f"Error deleting directory {asset_folder}: {e}")
+        else:
+            print(f"Directory {asset_folder} does not exist.")
+    except Exception as e:
+        db.session.rollback()  # Rollback changes if an error occurs
+        print(f"Error in delete_asset: {e}")
+        raise  # Reraise the exception to let the calling function handle it
+    finally:
+        db.session.close()  # Close the session
+
+    return redirect('/assets/asset_all')
+  
+# Define a route for generating a ZIP file containing all files associated with an asset
 @assets_blueprint.route('/generate_zip/<int:asset_id>')
 def generate_zip(asset_id):
-    folder_path = get_asset_upload_folder(asset_id)
-    zip_filename = f'asset_{asset_id}_files.zip'
+    folder_path = get_asset_upload_folder(asset_id)# Get the folder path where asset files are stored    
+    zip_filename = f'asset_{asset_id}_files.zip'# Define the ZIP file name with the asset_id
+    zip_filepath = os.path.join(app.root_path, zip_filename)# Use the Flask app root_path to get the correct directory for saving the ZIP file
 
-    # Use the Flask app root_path to get the correct directory
-    zip_filepath = os.path.join(app.root_path, zip_filename)
-
+    # Create a ZIP file and write all files from the asset folder into it
     with zipfile.ZipFile(zip_filepath, 'w') as zip_file:
         for foldername, subfolders, filenames in os.walk(folder_path):
             for filename in filenames:
@@ -253,4 +282,5 @@ def generate_zip(asset_id):
                 arcname = os.path.relpath(file_path, folder_path)
                 zip_file.write(file_path, arcname)
 
+    # Send the generated ZIP file as an attachment for download
     return send_file(zip_filepath, as_attachment=True)

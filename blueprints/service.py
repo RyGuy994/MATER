@@ -157,16 +157,16 @@ def all_services():
 
     return render_template('service_all.html', services=services, total_service_cost=total_service_cost, loggedIn=True)
 
-
 @services_blueprint.route('/service_delete/<int:service_id>', methods=['POST'])
 def delete_service(service_id):
-    service = Service.query.get_or_404(id=service_id)
+    # Use get_or_404 without passing 'id' as a keyword argument
+    service = Service.query.get_or_404(service_id)
 
     # Check if the service has associated attachments
     if service.serviceattachments:
         # If yes, delete the associated attachments first
         for attachment in service.serviceattachments:
-            # Delete the file from your storage (optional, depending on your setup)
+            # Delete the file from your storage 
             delete_attachment_from_storage(attachment.attachment_path)
 
             # Delete the attachment record from the database
@@ -176,4 +176,4 @@ def delete_service(service_id):
     db.session.delete(service)
     db.session.commit()
 
-    return redirect('/')
+    return redirect('/services/service_all')

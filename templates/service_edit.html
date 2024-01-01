@@ -89,13 +89,16 @@
             <label for="attachments">Upload attachments to service:</label><br>
             <input type="file" id="attachments" class="standard-btn" name="attachments" multiple><br><br>
         <input type="submit" class="standard-btn" value="Update Service"><br>
+        </form>
+        <form action="/services/service_delete/{{ service.id }}" method="post" onsubmit="return confirmDelete()">
         <button type="button" class="standard-btn" onclick="goBack()">Back</button>
         <button type="button" class="standard-btn" onclick="redirectToServiceAll()">All Services</button>
+        <input type="submit" value="Delete" style="background-color: #f44336;" class="standard-btn">
         </form>
     </div>
-    <div id="services" class="tab-pane fade show active">
+    <div id="services" class="tab-pane fade">
         <!-- Attachments tab -->
-        <form action="/delete_selected_attachments" method="post" onsubmit="return confirmDelete()"">
+        <form action="/delete_selected_attachments" method="post" onsubmit="return confirmDelete()">
             {% if service.serviceattachments %}
                 <ul>
                     {% for attachment in service.serviceattachments %}
@@ -192,10 +195,19 @@
         var day = date.getDate().toString().padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
+    // Function to confirm deletion
     function confirmDelete() {
-        var userInput = prompt("To confirm deletion, type 'delete':");
-        return userInput && userInput.toLowerCase() === 'delete';
-    }
+            // Prompt the user for confirmation
+            var userConfirmation = prompt("To confirm deletion, type 'delete service':");
+            // Check if the entered text is 'Delete asset'
+            if (userConfirmation !== "delete service") {
+                alert("Confirmation text did not match. Service will not be deleted.");
+                return false; // Prevent form submission
+            }
+            // If the confirmation text is correct, allow form submission
+            return true;
+        }
+
 </script>
     <!-- Show toast message if needed -->
     {% if toast %}

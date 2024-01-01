@@ -18,7 +18,7 @@ def get_image_upload_folder(asset_id):
     asset_upload_folder = get_asset_upload_folder(asset_id)
     return os.path.join(asset_upload_folder, 'image')
 
-# Function to get the upload folder for service attachments based on asset ID
+# Function to get the upload folder for service attachments based on asset ID and service ID
 def get_attachment_upload_folder(asset_id, service_id):
     asset_upload_folder = get_asset_upload_folder(asset_id)
     return os.path.join(asset_upload_folder, 'service_attachments', str(service_id))
@@ -36,7 +36,14 @@ def delete_attachment_from_storage(attachment_path):
         print(f"Error deleting attachment: {e}")
 
 def retrieve_username_jwt(user_jwt):
-    decoded_data = jwt.decode(jwt=user_jwt,
-                              key=os.environ.get("SECRET_KEY"),
-                              algorithms=["HS256"])
-    return decoded_data.get('id')
+    try:
+        # Ensure the JWT token is decoded as bytes
+        user_jwt_bytes = user_jwt.encode('utf-8') if isinstance(user_jwt, str) else user_jwt
+        decoded_data = jwt.decode(jwt=user_jwt_bytes, key=os.environ.get("SECRET_KEY"), algorithms=["HS256"])
+        return decoded_data.get('id')
+    except jwt.ExpiredSignatureError:
+        # Handle token expiration
+        return None
+    except jwt.InvalidTokenError:
+        # Handle invalid token
+        return None
