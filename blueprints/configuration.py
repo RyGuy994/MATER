@@ -55,8 +55,18 @@ match os.getenv("DB_TYPE"):
         db.init_app(app)
         create_db_tables(app)
     case _:
-        db_folder = os.path.join(os.getcwd(), 'instance', '')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_folder}/database.db' # path to database for app to use
+        # Get the absolute path to the 'instance' directory within the current working directory
+        db_folder = os.path.abspath(os.path.join(os.getcwd(), 'instance'))
+        # Create the 'instance' directory if it doesn't exist
+        os.makedirs(db_folder, exist_ok=True)
+        # Construct the absolute path to the SQLite database file within the 'instance' directory
+        db_file_path = os.path.join(db_folder, 'database.db')
+        # Print the absolute path for debugging purposes
+        print(f"Absolute Database File Path: {db_file_path}")
+        # Set the Flask app's configuration for the SQLite database URI
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_file_path}'
+        # Create database tables using the create_db_tables function
+        # Pass the Flask app, SQLAlchemy database instance (db), and database type ('sqlite')
         create_db_tables(app, db, 'sqlite')
 
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY") # Security key
