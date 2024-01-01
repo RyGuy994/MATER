@@ -32,9 +32,9 @@ def signup_page():
 def signin_page():
     try:
         user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Try to retrieve the user_id from the access token in the request cookies
-        return render_template('signin.html', loggedIn=True) # display signin.html
+        return render_template('signin.html') # display signin.html
     except:
-        return render_template('signin.html', loggedIn=False) # display signin.html
+        return render_template('signin.html') # display signin.html
 
 # Define a route for the home page (index.html)
 @app.route('/home') # for index.html route
