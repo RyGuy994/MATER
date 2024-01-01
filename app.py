@@ -1,36 +1,48 @@
+# Import necessary modules and components from Flask and other libraries
 from flask import render_template, request, send_file, abort, Response, redirect, url_for, flash
-from datetime import datetime, timedelta # import datetime and timedelta for date and service calculations
-import os # import the OS
-import csv # import csv
+# Import datetime and timedelta for date and service calculations
+from datetime import datetime, timedelta
+# Import operating system-related functionality
+import os
+# Import CSV-related functionality
+import csv
+# Import shutil for file operations
 import shutil
+# Import zipfile for creating and extracting zip archives
 import zipfile
-
+# Import the database instance and the Flask app instance from shared and base modules
 from models.shared import db
 from blueprints.base import app
-from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage, delete_attachment_from_storage
+# Import utility functions from the utilities module
+from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage
+# Import configutration from the configuration module
+from blueprints.configuration import UPLOAD_BASE_FOLDER
+# Import the Service and Asset models, as well as the ServiceAttachment model
 from models.service import Service
 from models.asset import Asset
-from blueprints.configuration import UPLOAD_BASE_FOLDER
 from models.serviceattachment import ServiceAttachment
 
-@app.route('/signup') # for index.html route
+# Define a route for the signup page (index.html)
+@app.route('/signup') # for signup.html route
 def signup_page():
-    return render_template('signup.html') #display index.html and pass upcoming_services
+    return render_template('signup.html') #display signup.html
 
+# Define a route for the default page (signin.html)
 @app.route('/') # for signin.html route
 def signin_page():
     try:
-        user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-        return render_template('signin.html', loggedIn=True) # display index.html and pass upcoming_services
+        user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Try to retrieve the user_id from the access token in the request cookies
+        return render_template('signin.html', loggedIn=True) # display signin.html
     except:
-        return render_template('signin.html', loggedIn=False) # display index.html and pass upcoming_services
+        return render_template('signin.html', loggedIn=False) # display signin.html
 
+# Define a route for the home page (index.html)
 @app.route('/home') # for index.html route
 def home():
     try:
-        current_date = datetime.now().date() # define the current date
-        user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-        upcoming_services = Service.query.filter( # Query Class Services
+        current_date = datetime.now().date() # Get the current date
+        user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Retrieve the user_id from the access token in the request cookies
+        upcoming_services = Service.query.filter( # Query upcoming services for the user within the next 30 days
             Service.service_complete == False, # service completed is false
             Service.service_date <= current_date + timedelta(days=30), 
             Service.user_id == user_id
@@ -40,23 +52,24 @@ def home():
         print(e)
         return render_template('signin.html')
 
-
+# Route to serve images
 @app.route('/<image_name>', methods=['GET'])
 def serve_image(image_name, asset_id=None):
-    if asset_id is not None:
-        image_path = os.path.abspath(os.path.join(get_image_upload_folder(asset_id), image_name))
-        if os.path.exists(image_path):
-            return send_file(image_path, mimetype='image/jpg')
+    if asset_id is not None: # Check if asset_id is provided
+        image_path = os.path.abspath(os.path.join(get_image_upload_folder(asset_id), image_name)) # Construct the absolute path to the image file based on the asset_id and image_name
+        if os.path.exists(image_path): # Check if the image file exists
+            return send_file(image_path, mimetype='image/jpg') # If the file exists, serve it with the appropriate MIME type for images
     else:
         # Handle the case where asset_id is None
         abort(404)
 
+# Route to serve uploaded files (attachments)
 @app.route('/<filename>', methods=['GET']) # get attachment name
 def uploaded_file(filename, asset_id=None):
-    if asset_id is not None:
-        filepath = os.path.abspath(os.path.join(get_attachment_upload_folder(asset_id), filename)) # get the pull doc path
-        if os.path.exists(filename): # if that path exists 
-            return send_file(filename)  # return the doc path
+    if asset_id is not None:# Check if asset_id is provided
+        filepath = os.path.abspath(os.path.join(get_attachment_upload_folder(asset_id), filename)) # Construct the absolute path to the uploaded file based on the asset_id and filename
+        if os.path.exists(filename): # Check if the file exists
+            return send_file(filename)  # If the file exists, serve it
     else:
         # Handle the case where asset_id is None
         abort(404)
@@ -84,73 +97,71 @@ def export_csv():
             # Add more tables as needed
         }
 
-        model_class = table_model_mapping.get(table_name)
+        model_class = table_model_mapping.get(table_name) # Get the corresponding model class based on the selected table name
         print("Model class:", model_class)
 
-        if not model_class:
+        if not model_class: # Check if the model class is found; if not, return a 404 error
             print("Model class not found.")
             return abort(404)
 
-        data = model_class.query.all()
+        data = model_class.query.all() # Retrieve all data records from the selected model class
         print("Data:", data)
 
-        # Prepare CSV data
+        # Prepare CSV data by extracting column names and data values
         column_names = [column.key for column in model_class.__table__.columns]
         csv_data = [column_names]
 
         for row in data:
-            csv_data.append([str(getattr(row, column)) for column in column_names])
+            csv_data.append([str(getattr(row, column)) for column in column_names]) # Append data values for each row in the CSV data
 
-        # Create a CSV response
+        # Create a CSV response using the generator function
         response = Response(csv_generator(csv_data), content_type='text/csv')
         response.headers['Content-Disposition'] = f'attachment; filename={table_name}.csv'
         print("CSV data:", csv_data)
-        return response
+        return response # Return the CSV response
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {e}") # Handle exceptions appropriately (e.g., log the error, return a 500 error)
         return abort(500)
 
 # Generator function for streaming CSV data
 def csv_generator(data):
     for row in data:
-        yield ','.join(map(str, row)) + '\n'
+        yield ','.join(map(str, row)) + '\n' # Yield each row of the CSV data as a string
 
 
 @app.route('/generate_zip', methods=['POST'])
-def generate_zip():
-    folder_path = UPLOAD_BASE_FOLDER
-    zip_filename = 'All_Files.zip'
+def generate_zip(): 
+    folder_path = UPLOAD_BASE_FOLDER # Define the base folder path where files to be zipped are located
+    zip_filename = 'All_Files.zip' # Set the desired name for the zip file to be generated
+    zip_filepath = os.path.join(app.root_path, zip_filename) # Use the Flask app root_path to get the correct directory for the zip file
 
-    # Use the Flask app root_path to get the correct directory
-    zip_filepath = os.path.join(app.root_path, zip_filename)
-
-    with zipfile.ZipFile(zip_filepath, 'w') as zip_file:
-        for foldername, subfolders, filenames in os.walk(folder_path):
+    with zipfile.ZipFile(zip_filepath, 'w') as zip_file: # Use a context manager to create and write to a zip file
+        for foldername, subfolders, filenames in os.walk(folder_path): # Iterate through the folder structure, including subfolders and filenames
             for filename in filenames:
-                file_path = os.path.join(foldername, filename)
-                arcname = os.path.relpath(file_path, folder_path)
-                zip_file.write(file_path, arcname)
+                file_path = os.path.join(foldername, filename) # Construct the full path of the file to be included in the zip
+                arcname = os.path.relpath(file_path, folder_path) # Determine the archive name for the file relative to the base folder
+                zip_file.write(file_path, arcname)  # Write the file to the zip archive with the specified archive name
 
-    return send_file(zip_filepath, as_attachment=True)
+    return send_file(zip_filepath, as_attachment=True) # Send the generated zip file as an attachment in the HTTP response
 
+# Route to delete selected attachments
 @app.route('/delete_selected_attachments', methods=['POST'])
 def delete_selected_attachments():
-    try:
+    try: # Iterate through selected_attachments, which contains the IDs of selected attachments to delete
         selected_attachments = request.form.getlist('selected_attachments[]')
 
         service_id = None  # Initialize service_id to None
 
-        for attachment_id in selected_attachments:
+        for attachment_id in selected_attachments: # Retrieve the ServiceAttachment record based on the attachment_id
             attachment = ServiceAttachment.query.get(attachment_id)
             if attachment:
-                # Check user permissions or other security measures if needed
-                delete_attachment_from_storage(attachment.attachment_path)
-                service_id = attachment.service_id  # Assuming service_id is stored in service_id
+                delete_attachment_from_storage(attachment.attachment_path) # Call a function to delete the associated file from storage
+                service_id = attachment.service_id  # stored in service_id
+                # Retrieve the service_id associated with the attachment for potential redirection
+                db.session.delete(attachment) # Delete the ServiceAttachment record from the database
 
-                db.session.delete(attachment)
-
-        db.session.commit()
+        db.session.commit() # Commit the changes to the database after deleting selected attachments
         flash('Selected attachments deleted successfully.', 'success')
     except Exception as e:
         # Handle exceptions appropriately (e.g., log the error, display an error message)

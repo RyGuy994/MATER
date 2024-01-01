@@ -3,6 +3,7 @@ from flasgger import Swagger
 from .swagger import template
 from .configuration import app
 
+# Initialize Swagger with the Flask app and a custom template
 swagger = Swagger(app, template=template)
 
 from blueprints.asset import assets_blueprint

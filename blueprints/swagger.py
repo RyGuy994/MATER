@@ -1,3 +1,4 @@
+# Swagger template defining the API documentation
 template = {
   "swagger": "2.0",
   "info": {
