@@ -3,7 +3,6 @@ name: Deploy to Docker
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 jobs:
   Mater_Setup:
     runs-on: ubuntu-latest
