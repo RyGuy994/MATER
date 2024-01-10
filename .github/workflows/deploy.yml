@@ -3,7 +3,6 @@ name: Deploy to Docker
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 jobs:
   Mater_Setup:
     runs-on: ubuntu-latest
@@ -37,13 +36,13 @@ jobs:
             docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
         - name: Dockerize Mater
           env:
-            DOCKER_USER: "${{ secrets.DOCKER_USER }}"
+            DH_REPO: "${{ secrets.DH_REPO }}"
             GITHUB_SHA: "${{ github.sha }}"
           run: |
-            docker buildx build --tag $DOCKER_USER/mater:$GITHUB_SHA -f ./prod.dockerfile .
+            docker buildx build --tag $DH_REPO:$GITHUB_SHA -f ./prod.dockerfile .
         - name: Docker push Mater
           env:
-            DOCKER_USER: "${{ secrets.DOCKER_USER }}"
+            DH_REPO: "${{ secrets.DH_REPO }}"
             GITHUB_SHA: "${{ github.sha }}"
           run: |
-            docker push $DOCKER_USER/mater:$GITHUB_SHA
+            docker push $DH_REPO:$GITHUB_SHA
