@@ -40,10 +40,10 @@ jobs:
             DOCKER_USER: "${{ secrets.DOCKER_USER }}"
             GITHUB_SHA: "${{ github.sha }}"
           run: |
-            docker buildx build --tag $DOCKER_USER/mater:$GITHUB_SHA -f ./prod.dockerfile .
+            docker buildx build --tag ryguy994/mater:$GITHUB_SHA -f ./prod.dockerfile .
         - name: Docker push Mater
           env:
             DOCKER_USER: "${{ secrets.DOCKER_USER }}"
             GITHUB_SHA: "${{ github.sha }}"
           run: |
-            docker push $DOCKER_USER/mater:$GITHUB_SHA
+            docker push ryguy994/mater:$GITHUB_SHA
