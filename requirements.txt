@@ -1,7 +1,7 @@
 Flask
 Flask-SQLAlchemy
 icalendar
-psycopg2
+psycopg2-binary
 pymysql
 cryptography
 bcrypt
