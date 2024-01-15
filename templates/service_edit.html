@@ -66,19 +66,24 @@
                 <div id="serivce_add_again_days" style="display: none;"><br>
                     <label for="service_add_again">What Date will this be due?</label><br>
                     <input type="date" name="service_add_again_days_cal" id="service_add_again_days_cal"><br><br>
-                    <div class="dropdown1">
+                    <!-- Custom dropdown with two columns -->
+                    <div class="custom-dropdown">
                         <button class="standard-btn">Add Days</button>
-                        <div class="dropdown-content1">
-                            <a onclick="addDaysToDate(7)">7 Days</a>
-                            <a onclick="addDaysToDate(14)">14 Days</a>
-                            <a onclick="addDaysToDate(30)">30 Days</a>
-                            <a onclick="addDaysToDate(60)">60 Days</a>
-                            <a onclick="addDaysToDate(90)">90 Days</a>
-                            <a onclick="addDaysToDate(120)">180 Days</a>
-                            <a onclick="addDaysToDate(365)">365 Days</a>
-                            <a onclick="addDaysToDate(720)">730 Days</a>
+                        <div class="custom-dropdown-content-double">
+                            <div class="column">
+                                <a onclick="addDaysToDate(7)">7 Days</a>
+                                <a onclick="addDaysToDate(14)">14 Days</a>
+                                <a onclick="addDaysToDate(30)">30 Days</a>
+                                <a onclick="addDaysToDate(60)">60 Days</a>
+                            </div>
+                            <div class="column">
+                                <a onclick="addDaysToDate(90)">90 Days</a>
+                                <a onclick="addDaysToDate(180)">180 Days</a>
+                                <a onclick="addDaysToDate(365)">365 Days</a>
+                                <a onclick="addDaysToDate(730)">730 Days</a>
+                            </div>
                         </div>
-                    </div>
+                    </div><br><br><br>
                 </div>
             </div>
 

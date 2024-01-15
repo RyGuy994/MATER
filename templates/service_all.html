@@ -7,18 +7,6 @@
 {% block head %}
     <!-- Styling for the table -->
     <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: #f2f2f2; /* light grey */
-        }
-
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-
         #nameFilter {
             padding: 10px;
             margin-bottom: 15px;
@@ -51,15 +39,15 @@
     <!-- Table to display services -->
     <table id="service-table">
         <tr>
-            <th>Asset Name</th>
-            <th>Service Type</th>
-            <th>Service Date</th>
-            <th>Service Cost</th>
-            <th>Service Complete</th>
-            <th>Service Notes</th>
+            <th onclick="sortTable(0)">Asset Name</th>
+            <th onclick="sortTable(1)">Service Type</th>
+            <th onclick="sortTable(2)">Service Date</th>
+            <th onclick="sortTable(3)">Service Cost</th>
+            <th onclick="sortTable(4)">Service Complete</th>
+            <th onclick="sortTable(5)">Service Notes</th>
         </tr>
+        <!-- Loop through services to display service details -->
         {% for service in services %}
-            <!-- Add the "visible-row" class to all rows -->
             <tr class="visible-row">
                 <td><a href="/assets/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
                 <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
@@ -69,7 +57,7 @@
                 <td>{{ service.service_notes }}</td>
             </tr>
         {% endfor %}
-
+    
         <!-- Total Row -->
         <!-- Add the "visible-row" class to the total row -->
         <tr id="total-row" class="always-visible visible-row">
@@ -140,6 +128,43 @@
     } else {
         totalRow.style.display = "none";
         totalCostSpan.textContent = "0.00";
+    }
+}
+
+var sortingOrder = {}; // Keep track of sorting order for each column
+
+function sortTable(columnIndex) {
+    var table, rows, switching, i, x, y, shouldSwitch;
+    table = document.getElementById("service-table");
+    switching = true;
+
+    // Initialize sorting order for the column if not present
+    if (!sortingOrder[columnIndex]) {
+        sortingOrder[columnIndex] = "asc";
+    } else {
+        // Toggle sorting order between "asc" and "desc"
+        sortingOrder[columnIndex] = (sortingOrder[columnIndex] === "asc") ? "desc" : "asc";
+    }
+
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+
+        for (i = 1; i < (rows.length - 2); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+            y = rows[i + 1].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+
+            if ((sortingOrder[columnIndex] === "asc" && x > y) || (sortingOrder[columnIndex] === "desc" && x < y)) {
+                shouldSwitch = true;
+                break;
+            }
+        }
+
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+        }
     }
 }
 

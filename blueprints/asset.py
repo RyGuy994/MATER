@@ -1,5 +1,5 @@
 # Import necessary modules and components from Flask and other libraries
-from flask import Blueprint, request, render_template, redirect, send_file
+from flask import Blueprint, request, render_template, redirect, send_file, jsonify
 # Import datetime and timedelta for date and service calculations
 from datetime import datetime, timedelta
 # Import operating system-related functionality
@@ -65,22 +65,28 @@ def create_image(request_image, new_asset, asset_id):
     return new_asset
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
-    name = request_dict.get('name') # get the name from form element 'name'
-    asset_sn = request_dict.get('asset_sn') # get the asset sn from form 'easset_sn'
-    description = request_dict.get('description') # get the description from form element 'desription'
-    acquired_date = request_dict.get('acquired_date') # get the acquired_date from form element 'acquired_date'
-    # Check if the necessary fields are provided
-    if name and asset_sn: # required fields
-        if acquired_date: # optional
-            acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date() #change to python
-        else:
-            acquired_date = None  # change to None
-        new_asset = Asset(name=name, asset_sn=asset_sn, description=description, acquired_date=acquired_date, user_id=user_id) # make new_asset and is ready for adding to DB
-        db.session.add(new_asset)  # Add new_asset to Class Assets
-        db.session.commit()  # Commit changes to DB (saving it)
-        new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)
-        db.session.add(new_asset) # Add new_asset to Class Assets
-        db.session.commit() # Commit changes to DB (saving it)
+    try:
+        name = request_dict.get('name') # get the name from form element 'name'
+        asset_sn = request_dict.get('asset_sn') # get the asset sn from form 'easset_sn'
+        description = request_dict.get('description') # get the description from form element 'desription'
+        acquired_date = request_dict.get('acquired_date') # get the acquired_date from form element 'acquired_date'
+        # Check if the necessary fields are provided
+        if name and asset_sn: # required fields
+            if acquired_date: # optional
+                acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date() #change to python
+            else:
+                acquired_date = None  # change to None
+            new_asset = Asset(name=name, asset_sn=asset_sn, description=description, acquired_date=acquired_date, user_id=user_id) # make new_asset and is ready for adding to DB
+            db.session.add(new_asset)  # Add new_asset to Class Assets
+            db.session.commit()  # Commit changes to DB (saving it)
+            new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)
+            db.session.add(new_asset) # Add new_asset to Class Assets
+            db.session.commit() # Commit changes to DB (saving it)
+    except Exception as e:
+                # Print the detailed error message to the console or log it
+        print(f"Error creating asset: {e}")
+        return False
+    return True
 
 # Define a route for adding assets, accessible through both GET and POST requests
 @assets_blueprint.route('/asset_add', methods=['GET', 'POST']) # asset_add.html route
@@ -132,18 +138,40 @@ def add():
             description: Error occured
     """
     if request.method == 'POST':
-        if(request.form.get('jwt') == None): # Check if JWT token is not provided in the form data
-            request_dict = {'meta_data': request.form, 'image': request.files['image']} # Construct a dictionary containing metadata and image data from the request
-            user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Retrieve the user_id from the access token in the request cookies
-            create_asset(request_dict.get('meta_data'), user_id, request_dict) # Call the create_asset function to handle asset creation
-            return render_template('asset_add.html', toast=True, loggedIn=True) # Display the toast message when add is commited to Class Assets
+        # Check if JWT token is not provided in the form data
+        if request.form.get('jwt') is None:
+            # Construct a dictionary containing metadata and image data from the request
+            request_dict = {'meta_data': request.form, 'image': request.files['image']}
+            # Retrieve the user_id from the access token in the request cookies
+            user_id = retrieve_username_jwt(request.cookies.get('access_token'))
+            # Call the create_asset function to handle asset creation
+            success = create_asset(request_dict.get('meta_data'), user_id, request_dict)
+
+            if success:
+                # Return a success message in JSON format
+                return jsonify({'message': 'Asset successfully added!', 'status_code': 200})
+            else:
+                # Return an error message in JSON format
+                return jsonify({'error': 'Failed to add asset.', 'status_code': 500})
         else:
-            request_dict = {'meta_data': request.form, 'image': request.files.getlist('file')[0]} # If JWT token is provided in the form data
-            user_id = retrieve_username_jwt(request.form.get('jwt')) # Retrieve the user_id from the JWT token
-            create_asset(request_dict.get('meta_data'), user_id, request_dict) # Call the create_asset function to handle asset creation
-            return {'message': f'Successfully created asset {request.form.get("name")}', 'status_code': 200} # Return a success message in JSON format
-    # If the request method is GET, display the asset_add.html template 
-    return render_template('asset_add.html', loggedIn=True) # display asset_add.html
+            # If JWT token is provided in the form data
+            # Construct a dictionary containing metadata and image data from the request
+            request_dict = {'meta_data': request.form, 'image': request.files.getlist('file')[0]}
+            # Retrieve the user_id from the JWT token
+            user_id = retrieve_username_jwt(request.form.get('jwt'))
+            # Call the create_asset function to handle asset creation
+            success = create_asset(request_dict.get('meta_data'), user_id, request_dict)
+
+            if success:
+                # Return a success message in JSON format
+                return jsonify({'message': f'Successfully created asset {request.form.get("name")}', 'status_code': 200})
+            else:
+                # Return an error message in JSON format
+                return jsonify({'error': 'Failed to create asset.', 'status_code': 500})
+
+    # If the request method is GET, display the asset_add.html template
+    return render_template('asset_add.html', loggedIn=True)
+
     
 @assets_blueprint.route('/asset_edit/<int:asset_id>', methods=['GET', 'POST'])  # asset_edit.html route
 def edit(asset_id):
@@ -152,6 +180,7 @@ def edit(asset_id):
         services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
         
         if request.method == 'POST':  # if write
+            print(request.form)
             name = request.form.get('name')  # get the name
             asset_sn = request.form.get('asset_sn')  # get the sn
             description = request.form.get('description')  # get description
@@ -159,13 +188,15 @@ def edit(asset_id):
             new_image_path = None
             # Check if the necessary fields are provided
             if name and asset_sn:  # required fields
-                if acquired_date:  # optional
-                    acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date()  # change to python
-                else:
-                    acquired_date = None  # change to None
+                try:
+                    acquired_date = datetime.strptime(acquired_date, '%Y-%m-%d').date()
+                except ValueError as e:
+                    print(f"Error parsing acquired_date: {e}")
+                    acquired_date = None
                 asset.name = name  # set name
                 asset.asset_sn = asset_sn  # set sn
                 asset.description = description  # set asset
+                asset.acquired_date = acquired_date # set acquired date
                 try:
                     # Handle image upload
                     if 'image' in request.files:

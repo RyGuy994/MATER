@@ -32,34 +32,12 @@
             text-align: center;
         }
 
-        /* Styling for the table */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: #f2f2f2; /* light grey */
-        }
-
-        /* Styling for table headers and cells */
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-
-        /* Styling for the name filter input */
-        #nameFilter {
-            padding: 10px;
-            margin-bottom: 15px;
-            width: 30%;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        /* Centering an image */
         .center {
             display: block;
-            margin: auto;
+            margin: 0 auto;
         }
+
+
     </style>
 {% endblock %}
 
@@ -74,60 +52,133 @@
     <!-- Subheading -->
     <h2>Services due in the next 30 days</h2>
 
-    <!-- Input for filtering -->
-    <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
+<!-- Input for filtering -->
+<input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
 
-    <!-- Table to display services -->
-    <table id="service-table">
+<!-- Table to display services -->
+<table id="service-table">
+    <tr>
+        <th class="sortable-header" data-column="0">Asset Name</th>
+        <th class="sortable-header" data-column="1">Service Type</th>
+        <th class="sortable-header" data-column="2">Service Date</th>
+        <th class="sortable-header" data-column="3">Service Cost</th>
+        <th class="sortable-header" data-column="4">Service Complete</th>
+        <th class="sortable-header" data-column="5">Service Notes</th>
+    </tr>
+    <!-- Loop through upcoming_services to display service details -->
+    {% for service in upcoming_services %}
         <tr>
-            <th>Asset Name</th>
-            <th>Service Type</th>
-            <th>Service Date</th>
-            <th>Service Cost</th>
-            <th>Service Complete</th>
-            <th>Service Notes</th>
+            <td><a href="/assets/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
+            <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+            <td>{{ service.service_date }}</td>
+            <td>{{ service.service_cost }}</td>
+            <td>{{ service.service_complete }}</td>
+            <td>{{ service.service_notes }}</td>
         </tr>
-        <!-- Loop through upcoming_services to display service details -->
-        {% for service in upcoming_services %}
-            <tr>
-                <td><a href="/assets/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
-                <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
-                <td>{{ service.service_date }}</td>
-                <td>{{ service.service_cost }}</td>
-                <td>{{ service.service_complete }}</td>
-                <td>{{ service.service_notes }}</td>
-            </tr>
-        {% endfor %}
-    </table>
+    {% endfor %}
+</table>
 
-    <!-- JavaScript function for filtering the table -->
-    <script>
-        function filterNames() {
-            var input, filter, table, tr, td, i, txtValue;
-            var counter = 0;
-            var maxItems = 50;
+<!-- JavaScript function for filtering the table -->
+<script>
+    function filterNames() {
+        var input, filter, table, tr, td, i, txtValue;
+        var counter = 0;
+        var maxItems = 50;
 
-            input = document.getElementById("nameFilter");
-            filter = input.value.toUpperCase();
-            table = document.getElementById("service-table");
-            tr = table.getElementsByTagName("tr");
+        input = document.getElementById("nameFilter");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("service-table");
+        tr = table.getElementsByTagName("tr");
 
-            for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[0];
-                if (td) {
-                    txtValue = td.textContent || td.innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        if (counter < maxItems) {
-                            tr[i].style.display = "";
-                            counter++;
-                        } else {
-                            tr[i].style.display = "none";
-                        }
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    if (counter < maxItems) {
+                        tr[i].style.display = "";
+                        counter++;
                     } else {
                         tr[i].style.display = "none";
                     }
+                } else {
+                    tr[i].style.display = "none";
                 }
             }
         }
-    </script>
+    }
+
+    var sortingOrder = {}; // Keep track of sorting order for each column
+
+    function sortTable(columnIndex) {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("service-table");
+        switching = true;
+
+        // Initialize sorting order for the column if not present
+        if (!sortingOrder[columnIndex]) {
+            sortingOrder[columnIndex] = "asc";
+        } else {
+            // Toggle sorting order between "asc" and "desc"
+            sortingOrder[columnIndex] = (sortingOrder[columnIndex] === "asc") ? "desc" : "asc";
+        }
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+                y = rows[i + 1].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+
+                if ((sortingOrder[columnIndex] === "asc" && x > y) || (sortingOrder[columnIndex] === "desc" && x < y)) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+
+        // Update arrow classes after sorting
+        updateArrowClasses(columnIndex);
+    }
+
+    // Function to toggle sorting order and update arrow classes
+    function toggleSortingOrder(columnIndex) {
+        var header = document.querySelectorAll(".sortable-header")[columnIndex];
+
+        if (!header.classList.contains("asc") && !header.classList.contains("desc")) {
+            header.classList.add("asc");
+        } else {
+            header.classList.toggle("asc");
+            header.classList.toggle("desc");
+        }
+    }
+
+    // Function to update arrow classes after sorting
+    function updateArrowClasses(columnIndex) {
+        var header = document.querySelectorAll(".sortable-header")[columnIndex];
+
+        document.querySelectorAll('.sortable-header').forEach(function (otherHeader, otherIndex) {
+            if (otherIndex !== columnIndex) {
+                otherHeader.classList.remove("asc", "desc");
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Attach click event listeners to sortable headers
+        document.querySelectorAll('.sortable-header').forEach(function (header, index) {
+            header.addEventListener('click', function () {
+                sortTable(index);
+                toggleSortingOrder(index);
+            });
+        });
+    });
+</script>
 {% endblock %}
