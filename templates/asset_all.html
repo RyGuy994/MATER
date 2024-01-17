@@ -10,19 +10,6 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
     <style>
-        /* Table style */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: #f2f2f2; /* light grey */
-        }
-
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-
         #nameFilter {
             padding: 10px;
             margin-bottom: 15px;
@@ -102,22 +89,23 @@
 <!-- First Heading -->
     <h1>Asset List</h1>
 
-    <!-- Input for filtering -->
-    <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in a Asset Name">
+<!-- Input for filtering -->
+<input type="text" id="nameFilter" oninput="filterNames('asset-table')" placeholder="Search for asset.." title="Type in an Asset Name">
 
-    <!-- Table to display assets -->
-    <table id="asset-table">
-        <tr>
-            <th>Name</th> 
-            <th>Description</th>
-        </tr>
-        {% for asset in assets %}
+<!-- Table to display assets -->
+<table id="asset-table">
+    <tr>
+        <th class="sortable-header" data-column="0">Name</th>
+        <th class="sortable-header" data-column="1">Description</th>
+    </tr>
+    {% for asset in assets %}
         <tr>
             <td><a href="/assets/asset_edit/{{ asset.id }}">{{ asset.name }}</a></td>
             <td>{{ asset.description }}</td>
         </tr>
-        {% endfor %}
-    </table>
+    {% endfor %}
+</table>
+
 
     <!-- Slideshow container for displaying images -->
     <div class="slideshow-container">
@@ -169,24 +157,77 @@
             }
         }
     }
-    // Slick carousel initialization for the slideshow
-    $(document).ready(function(){
-        var slideshowContainer = $('.slideshow-container');
-        slideshowContainer.slick({
-            centerMode: true,
-            centerPadding: '60px',
-            slidesToShow: 3,
-            prevArrow: '<a class="prev" onclick="plusSlides(-1)">&#10094;</a>',
-            nextArrow: '<a class="next" onclick="plusSlides(1)">&#10095;</a>'
-        });
-        // Function to navigate through the slideshow
-        function plusSlides(n) {
-            if (n > 0) {
-                slideshowContainer.slick('slickNext');
-            } else {
-                slideshowContainer.slick('slickPrev');
+    var sortingOrder = {}; // Keep track of sorting order for each column
+
+    function sortTable(columnIndex) {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("asset-table");
+        switching = true;
+
+        // Initialize sorting order for the column if not present
+        if (!sortingOrder[columnIndex]) {
+            sortingOrder[columnIndex] = "asc";
+        } else {
+            // Toggle sorting order between "asc" and "desc"
+            sortingOrder[columnIndex] = (sortingOrder[columnIndex] === "asc") ? "desc" : "asc";
+        }
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+                y = rows[i + 1].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+
+                if ((sortingOrder[columnIndex] === "asc" && x > y) || (sortingOrder[columnIndex] === "desc" && x < y)) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
             }
         }
+
+        // Update arrow classes after sorting
+        updateArrowClasses(columnIndex);
+    }
+
+    // Function to toggle sorting order and update arrow classes
+    function toggleSortingOrder(columnIndex) {
+        var header = document.querySelectorAll(".sortable-header")[columnIndex];
+
+        if (!header.classList.contains("asc") && !header.classList.contains("desc")) {
+            header.classList.add("asc");
+        } else {
+            header.classList.toggle("asc");
+            header.classList.toggle("desc");
+        }
+    }
+
+    // Function to update arrow classes after sorting
+    function updateArrowClasses(columnIndex) {
+        var header = document.querySelectorAll(".sortable-header")[columnIndex];
+
+        document.querySelectorAll('.sortable-header').forEach(function (otherHeader, otherIndex) {
+            if (otherIndex !== columnIndex) {
+                otherHeader.classList.remove("asc", "desc");
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Attach click event listeners to sortable headers
+        document.querySelectorAll('.sortable-header').forEach(function (header, index) {
+            header.addEventListener('click', function () {
+                sortTable(index);
+                toggleSortingOrder(index);
+            });
+        });
     });
     
     </script>

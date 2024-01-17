@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect
+from flask import Blueprint, request, render_template, redirect, jsonify
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename # import filename
@@ -10,69 +10,117 @@ from models.shared import db
 from .utilities import delete_attachment_from_storage, get_attachment_upload_folder
 from blueprints.utilities import retrieve_username_jwt
 services_blueprint = Blueprint('service', __name__, template_folder='../templates')
-@services_blueprint.route('/service_add', methods=['GET', 'POST']) # service_add.html route
-def service_add():
-    service_id = None
-    service_complete2 = False # set completed 2 to false (if they add another service based off completed one)
-    service_add_new = False # check box from service_add_again_check
-    user_id = retrieve_username_jwt(request.cookies.get('access_token'))
-    assets = Asset.query.filter_by(user_id=user_id).all()  # Retrieve all assets from the database
-    if request.method == 'POST': # if form submit POST
-        asset_id = request.form.get('asset_id') # get asset id
-        service_type = request.form.get('service_type') # get service type 
-        service_date = request.form.get('service_date') # set service date
-        service_cost = request.form.get('service_cost') # set service cost
-        service_complete = True if request.form.get('service_complete') == 'on' else False # set service completed
-        service_notes = request.form.get('service_notes') # set service notes
-        service_add_new = True if request.form.get('service_add_again_check') == 'on' else False # set if 2nd service is checked
-        if service_type and service_date: # required
-            if service_date: 
-                service_date = datetime.strptime(service_date, '%Y-%m-%d').date() # python date
+
+
+def save_attachments(attachments, asset_id, service_id, user_id):
+    # Function to save attachments and return a list of attachment paths
+
+    attachment_paths = []
+
+    for attachment in attachments:
+        if attachment:
+            # Get the folder path for storing attachments
+            folder = get_attachment_upload_folder(asset_id, service_id)
+
+            # Ensure the folder exists; create it if not
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
+            # Save the attachment to the folder
+            attachment_path = os.path.join(folder, attachment.filename)
+            attachment.save(attachment_path)
+            attachment_paths.append(attachment_path)
+
+            new_attachment = ServiceAttachment(service_id=service_id, attachment_path=attachment_path,
+                                                           user_id=user_id)
+            db.session.add(new_attachment)
+            db.session.commit()
+
+    return attachment_paths
+
+def create_service(request_dict: dict, user_id: str, request_image: dict):
+    try:
+        asset_id = request.form.get('asset_id')
+        service_id = None
+        service_complete2 = False # set completed 2 to false (if they add another service based off completed one)
+        service_type = request_dict.get('service_type')
+        service_date = request_dict.get('service_date')
+        service_cost = request_dict.get('service_cost')
+        service_complete = True if request_dict.get('service_complete') == 'on' else False
+        service_notes = request_dict.get('service_notes')
+        service_add_new = True if request_dict.get('service_add_again_check') == 'on' else False
+        if service_type and service_date:
+            if service_date:
+                service_date = datetime.strptime(service_date, '%Y-%m-%d').date()
             else:
-                service_date = None  # WARN Complier will crash if this line is removed even though field is required
+                service_date = None
+
             if service_cost == '':
-                service_cost = 0
-        if service_add_new == True: # if the 2nd service is checked do this
-            service_type = request.form.get('service_type') # get service type from 1st service
-            service_date_new = request.form.get('service_add_again_days_cal') # set 2nd service date
-            service_date_new = datetime.strptime(service_date_new, '%Y-%m-%d').date() # change to python
-            service_cost = request.form.get('service_cost') # set service cost from 1st service
-            service_notes = request.form.get('service_notes') # set service notes form 1st service
-            new_service2 =Service(asset_id=asset_id,service_type=service_type, service_date=service_date_new, # new_service2 Record (aka 2nd recorded based on service_add_new)
-                                service_cost=service_cost, service_complete=service_complete2, service_notes=service_notes, user_id=user_id)
-            db.session.add(new_service2) # add to DB
-        new_service = Service(asset_id=asset_id,service_type=service_type, service_date=service_date, #new_service is frist service
-                              service_cost=service_cost, service_complete=service_complete, service_notes=service_notes, user_id=user_id)
-                # Handle multiple attachment uploads
-        attachments = request.files.getlist('attachments')
-        attachment_paths = []
-        db.session.add(new_service) # add to DB
-        db.session.commit() #commit all changes
-        service_id = new_service.id
+                    service_cost = 0
 
+            new_service = Service(asset_id=asset_id, service_type=service_type, service_date=service_date,
+                                      service_cost=service_cost, service_complete=service_complete,
+                                      service_notes=service_notes, user_id=user_id)
+        # Save attachments and get the list of attachment paths
+            db.session.add(new_service)
+            db.session.commit()
+            attachments = request.files.getlist('attachments')
+            attachment_paths = save_attachments(attachments, asset_id, new_service.id, user_id)
 
+            if service_add_new == True: # if the 2nd service is checked do this
+                service_type = request_dict.get('service_type') # get service type from 1st service
+                service_date_new = request_dict.get('service_add_again_days_cal') # set 2nd service date
+                service_date_new = datetime.strptime(service_date_new, '%Y-%m-%d').date() # change to python
+                service_cost = request_dict.get('service_cost') # set service cost from 1st service
+                service_notes = request_dict.get('service_notes') # set service notes form 1st service
+                new_service2 =Service(asset_id=asset_id,service_type=service_type, service_date=service_date_new, # new_service2 Record (aka 2nd recorded based on service_add_new)
+                                    service_cost=service_cost, service_complete=service_complete2, service_notes=service_notes, user_id=user_id)
+                db.session.add(new_service2) # add to DB
+                db.session.commit()
 
-        for attachment in attachments:          
-            if attachment:
-                folder = get_attachment_upload_folder(asset_id, service_id)
-                
-                # Ensure the folder exists; create it if not
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
+    except Exception as e:
+                # Print the detailed error message to the console or log it
+        print(f"Error creating asset: {e}")
+        return False
+    return True
 
-                attachment_path = os.path.join(folder, attachment.filename)
-                attachment.save(attachment_path)
-                attachment_paths.append(attachment_path)
+@services_blueprint.route('/service_add', methods=['GET', 'POST'])
+def add_service():
+    if request.method == 'POST':
+        # Check if JWT token is not provided in the form data
+        if request.form.get('jwt') is None:
+            # Construct a dictionary containing metadata and image data from the request
+            request_dict = {'meta_data': request.form, 'attachments': request.files['attachments']}
+            # Retrieve the user_id from the access token in the request cookies
+            user_id = retrieve_username_jwt(request.cookies.get('access_token'))
+            # Call the create_asset function to handle asset creation
+            success = create_service(request_dict.get('meta_data'), user_id, request_dict)
 
-        if new_service is not None:
-            # Attached saved now store the attachment paths in the database
-            for attachment_path in attachment_paths:
-                new_attachment = ServiceAttachment(service_id=new_service.id, attachment_path=attachment_path, user_id=user_id)
-                db.session.add(new_attachment)
+            if success:
+                # Return a success message in JSON format
+                return jsonify({'message': 'Service successfully added!', 'status_code': 200})
+            else:
+                # Return an error message in JSON format
+                return jsonify({'error': 'Failed to add service.', 'status_code': 500})
+        else:
+            # If JWT token is provided in the form data
+            # Construct a dictionary containing metadata and image data from the request
+            request_dict = {'meta_data': request.form, 'image': request.files.getlist('file')[0]}
+            # Retrieve the user_id from the JWT token
+            user_id = retrieve_username_jwt(request.form.get('jwt'))
+            # Call the create_asset function to handle asset creation
+            success = create_service(request_dict.get('meta_data'), user_id, request_dict)
 
-        db.session.commit()
-        return render_template('service_add.html', assets=assets, toast=True, loggedIn=True) # if commit then return service_add.html pass asset and toast
-    return render_template('service_add.html', assets=assets, toast=False, loggedIn=True) # on load display  service_add.html pass asset and don't pass toast
+            if success:
+                # Return a success message in JSON format
+                return jsonify({'message': f'Successfully created service {request.form.get("name")}', 'status_code': 200})
+            else:
+                # Return an error message in JSON format
+                return jsonify({'error': 'Failed to create service.', 'status_code': 500})
+
+    # If the request method is GET, display the asset_add.html template
+    return render_template('service_add.html', loggedIn=True)
+
 
 @services_blueprint.route('/service_edit/<int:service_id>', methods=['GET', 'POST']) # service_edit.html route with the service id on the back
 def service_edit(service_id):

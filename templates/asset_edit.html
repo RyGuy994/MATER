@@ -9,18 +9,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <!-- Custom styles for the table -->
     <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background-color: #f2f2f2; /* light grey */
-        }
-
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-
         #nameFilter {
             padding: 10px;
             margin-bottom: 15px;
@@ -92,7 +80,10 @@
                 <input type="file" id="image" class="standard-btn" name="image"><br><br>
 
                 <!-- Button to submit the form -->
-                <input type="submit" class="standard-btn" value="Update Asset"><br>
+                <input type="submit" class="standard-btn" value="Update Asset">
+                <button type="button" class="standard-btn" data-toggle="modal" data-target="#addServiceModal" data-asset-id="{{ asset.id }}" data-asset-name="{{ asset.name }}">Add Service</button>
+                <!-- {% include 'service_add_button_new.html' %} -->
+                <br>
             </form>
 
             <!-- Form for deleting the asset -->
@@ -106,28 +97,44 @@
 
         <!-- Services tab content -->
         <div id="services" class="tab-pane fade">
-            <!-- Input for filtering services -->
-            <input type="text" id="nameFilter" placeholder="Search by Service Type" oninput="filterServices()">
-            <!-- Table to display services related to the asset -->
-            <table id="service-table">
-                <tr>
-                    <th>Service Type</th>
-                    <th>Service Date</th>
-                    <th>Service Cost</th>
-                    <th>Service Complete</th>
-                    <th>Service Notes</th>
-                </tr>
-                <!-- Loop through services and display them in a table -->
-                {% for service in services %}
-                    <tr class="visible-row"> <!-- Add the "visible-row" class to all rows -->
-                        <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
-                        <td>{{ service.service_date }}</td>
-                        <td>{{ service.service_cost }}</td>
-                        <td>{{ service.service_complete }}</td>
-                        <td>{{ service.service_notes }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
+            <!-- Button to trigger the modal -->
+            <br>
+            <button type="button" class="standard-btn" data-toggle="modal" data-target="#addServiceModal" data-asset-id="{{ asset.id }}" data-asset-name="{{ asset.name }}">Add Service</button>
+            <br>
+            <hr>
+    <!-- First Heading -->
+    <h1>Service List</h1>
+    <!-- Input for filtering -->
+    <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
+    
+    <!-- Table to display services -->
+    <table id="service-table">
+        <tr>
+            <th class="sortable-header" data-column="0">Service Type</th>
+            <th class="sortable-header" data-column="1">Service Date</th>
+            <th class="sortable-header" data-column="2">Service Cost</th>
+            <th class="sortable-header" data-column="3">Service Complete</th>
+            <th class="sortable-header" data-column="4">Service Notes</th>
+        </tr>
+        <!-- Loop through services to display service details -->
+        {% for service in services %}
+            <tr class="visible-row">
+                <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
+                <td>{{ service.service_date }}</td>
+                <td>{{ service.service_cost }}</td>
+                <td>{{ service.service_complete }}</td>
+                <td>{{ service.service_notes }}</td>
+            </tr>
+        {% endfor %}
+    
+        <!-- Total Row -->
+        <!-- Add the "visible-row" class to the total row -->
+        <tr id="total-row" class="always-visible visible-row">
+            <td colspan="2"></td>
+            <td>Total: <span id="total-service-cost">0.00</span></td>
+            <td colspan="2"></td>
+        </tr>
+    </table>
         </div>
         <!-- Asset Options -->
         <div id="options" class="tab-pane fade">
@@ -172,27 +179,129 @@
                 stopOnFocus: true // Prevents dismissing of toast on hover
             }).showToast();
         }
-    // Function to filter services based on user input
-    function filterServices() {
+        function filterNames() {
         var input, filter, table, tr, td, i, txtValue;
+        var counter = 0;
+        var maxItems = 50;
+
         input = document.getElementById("nameFilter");
         filter = input.value.toUpperCase();
         table = document.getElementById("service-table");
         tr = table.getElementsByTagName("tr");
 
-        // Loop through all table rows, and hide those that don't match the search query
-        for (i = 0; i < tr.length; i++) {
-            td = tr[i].getElementsByTagName("td")[0]; // Change index to the column you want to search
+        // Loop through all table rows, and hide those that don't match the search query or exceed the maximum number of items
+        for (i = 1; i < tr.length; i++) { // Start from index 1 to skip the header row
+            td = tr[i].getElementsByTagName("td")[0];
             if (td) {
                 txtValue = td.textContent || td.innerText;
-                if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
-                }
+                var isVisible = txtValue.toUpperCase().indexOf(filter) > -1 && counter < maxItems;
+                tr[i].classList.toggle("hidden", !isVisible);
+                counter += isVisible ? 1 : 0;
             }
         }
+
+        // After filtering, update the total cost
+        updateTotalCost();
     }
+    // Updating the total cost
+    function updateTotalCost() {
+    var totalCost = 0;
+    var visibleRows = 0;
+
+    var table = document.getElementById("service-table");
+    var rows = table.getElementsByTagName("tr");
+    var totalRow = document.getElementById("total-row");
+    }
+
+    // Check if the filter is empty
+    var isFilterEmpty = document.getElementById("nameFilter").value.trim() === '';
+
+    // Loop through all table rows (skip the header row)
+    for (var i = 1; i < rows.length; i++) {
+        if (isFilterEmpty || !rows[i].classList.contains("hidden")) { // Check if the filter is empty or the row is not hidden
+            var costCell = rows[i].getElementsByTagName("td")[3];
+            var costText = costCell.textContent.trim();
+            var cost = parseFloat(costText.replace(/[$,]/g, ''));
+
+            if (!isNaN(cost)) {
+                totalCost += cost;
+            }
+
+            visibleRows++;
+        }
+    }
+    var sortingOrder = {}; // Keep track of sorting order for each column
+
+    function sortTable(columnIndex) {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("service-table");
+        switching = true;
+
+        // Initialize sorting order for the column if not present
+        if (!sortingOrder[columnIndex]) {
+            sortingOrder[columnIndex] = "asc";
+        } else {
+            // Toggle sorting order between "asc" and "desc"
+            sortingOrder[columnIndex] = (sortingOrder[columnIndex] === "asc") ? "desc" : "asc";
+        }
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+                y = rows[i + 1].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
+
+                if ((sortingOrder[columnIndex] === "asc" && x > y) || (sortingOrder[columnIndex] === "desc" && x < y)) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+
+        // Update arrow classes after sorting
+        updateArrowClasses(columnIndex);
+    }
+
+    // Function to toggle sorting order and update arrow classes
+    function toggleSortingOrder(columnIndex) {
+        var header = document.querySelectorAll(".sortable-header")[columnIndex];
+
+        if (!header.classList.contains("asc") && !header.classList.contains("desc")) {
+            header.classList.add("asc");
+        } else {
+            header.classList.toggle("asc");
+            header.classList.toggle("desc");
+        }
+    }
+
+    // Function to update arrow classes after sorting
+    function updateArrowClasses(columnIndex) {
+        var header = document.querySelectorAll(".sortable-header")[columnIndex];
+
+        document.querySelectorAll('.sortable-header').forEach(function (otherHeader, otherIndex) {
+            if (otherIndex !== columnIndex) {
+                otherHeader.classList.remove("asc", "desc");
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Attach click event listeners to sortable headers
+        document.querySelectorAll('.sortable-header').forEach(function (header, index) {
+            header.addEventListener('click', function () {
+                sortTable(index);
+                toggleSortingOrder(index);
+            });
+        });
+    });
     </script>
     
     <!-- Conditionally show the toast notification -->
