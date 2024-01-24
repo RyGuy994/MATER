@@ -1,9 +1,8 @@
 import os
 from flask import send_file
-from blueprints.configuration import UPLOAD_BASE_FOLDER
+from common.configuration import UPLOAD_BASE_FOLDER
+
 import jwt
-import shutil
-import zipfile
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
 def allowed_file(filename): # allowed file function

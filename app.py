@@ -4,19 +4,15 @@ from flask import render_template, request, send_file, abort, Response, redirect
 from datetime import datetime, timedelta
 # Import operating system-related functionality
 import os
-# Import CSV-related functionality
-import csv
-# Import shutil for file operations
-import shutil
 # Import zipfile for creating and extracting zip archives
 import zipfile
 # Import the database instance and the Flask app instance from shared and base modules
 from models.shared import db
-from blueprints.base import app
+from common.base import app
 # Import utility functions from the utilities module
 from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, get_attachment_upload_folder, delete_attachment_from_storage
 # Import configutration from the configuration module
-from blueprints.configuration import UPLOAD_BASE_FOLDER
+from common.configuration import UPLOAD_BASE_FOLDER
 # Import the Service and Asset models, as well as the ServiceAttachment model
 from models.service import Service
 from models.asset import Asset
@@ -31,7 +27,7 @@ def signup_page():
 @app.route('/') # for signin.html route
 def signin_page():
     try:
-        user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Try to retrieve the user_id from the access token in the request cookies
+        retrieve_username_jwt(request.cookies.get('access_token')) # Try to retrieve the user_id from the access token in the request cookies
         return render_template('signin.html') # display signin.html
     except:
         return render_template('signin.html') # display signin.html

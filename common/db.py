@@ -1,43 +1,13 @@
-from flask import Flask
 import os
-from models.shared import db
+from models.shared import db, create_db_tables
+from .configuration import app
 
-app = Flask(__name__, template_folder='templates', static_folder="../static")
-
-# Create the database tables
-def create_db_tables(app, db, typeDB):
-    match typeDB:
-        case 'sqlite':
-            def _fk_pragma_on_connect(dbapi_con, con_record):  # noqa
-                dbapi_con.execute('pragma foreign_keys=ON')
-            from models.service import Service
-            from models.asset import Asset
-            from models.serviceattachment import ServiceAttachment
-            from models.user import User
-            with app.app_context():
-                from sqlalchemy import event
-
-                db.init_app(app)
-                event.listen(db.engine, 'connect', _fk_pragma_on_connect)
-                print("Making all tables now!")
-                db.create_all() # create all tables in database
-        case _:
-            from models.service import Service
-            from models.asset import Asset
-            from models.serviceattachment import ServiceAttachment
-            from models.user import User
-            with app.app_context():
-                db.create_all() # create all tables in database
-
-# Define the base upload folder
-UPLOAD_BASE_FOLDER = 'static/assets/' # base folder set
-
+    
 # Sets defaults for databases
 username = os.getenv('DB_USERNAME')
 password = os.getenv('DB_PASSWORD')
 host = os.getenv('DB_HOST')
 database_name = os.getenv('DB_NAME')
-
 # Switch statement on DB_TYPE, default is SQLiteDB
 match os.getenv("DB_TYPE"):
     case 'postgresql':
@@ -54,6 +24,9 @@ match os.getenv("DB_TYPE"):
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
         db.init_app(app)
         create_db_tables(app)
+    case 'inmemory':
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        create_db_tables(app, db, 'sqlite')
     case _:
         # Get the absolute path to the 'instance' directory within the current working directory
         db_folder = os.path.abspath(os.path.join(os.getcwd(), 'instance'))
@@ -68,8 +41,4 @@ match os.getenv("DB_TYPE"):
         # Create database tables using the create_db_tables function
         # Pass the Flask app, SQLAlchemy database instance (db), and database type ('sqlite')
         create_db_tables(app, db, 'sqlite')
-
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY") # Security key
-
-
-
+        

@@ -16,7 +16,7 @@ import zipfile
 
 # Import the database instance and the Flask app instance from shared and base modules
 from models.shared import db
-from blueprints.base import app
+from common.base import app
 
 # Import utility functions from the utilities module
 from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, allowed_file, delete_attachment_from_storage, get_asset_upload_folder
@@ -33,7 +33,7 @@ from werkzeug.utils import secure_filename # import filename
 import json 
 
 # Import App
-from .configuration import app
+from ..common.base import app
 
 # Create a Blueprint named 'assets_blueprint' with a template folder path
 assets_blueprint = Blueprint('assets', __name__, template_folder='../templates')
@@ -241,7 +241,8 @@ def all_assets():
         405:
             description: Error occurred
     """
-    if request.args.get('jwt') is None: # Check if JWT token is not provided as a query parameter
+    
+    if request.form.get('jwt') is not None: # Check if JWT token is not provided as a query parameter
         user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Retrieve the user_id from the access token in the request cookies 
         assets = Asset.query.filter_by(user_id=user_id).all() # Query all assets in the Class Asset associated with the user
         return render_template('asset_all.html', assets=assets, loggedIn=True) # Display the asset_all.html template and pass the retrieved assets
@@ -256,7 +257,8 @@ def all_assets():
                 'asset_sn': asset.asset_sn,
                 'description': asset.description,
                 'acquired_date': str(asset.acquired_date),
-                'image_path': asset.image_path
+                'image_path': asset.image_path,
+                'user_id': asset.user_id
             }
             data.append(asset_data)
 

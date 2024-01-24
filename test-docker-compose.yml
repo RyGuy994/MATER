@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: test.dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      SECRET_KEY: secret
+      DB_TYPE: inmemory
+    command: 'python test-runner.py test'

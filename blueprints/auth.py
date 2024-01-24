@@ -42,6 +42,7 @@ def create_user(form_input: dict): # Extract username and password from the form
 rtype: json containing a jwt
 """
 def validate_user(form_input: dict):
+    print(form_input)
     # Extract username and password from the form input dictionary
     username = form_input.get('username')
     password = form_input.get('password')
