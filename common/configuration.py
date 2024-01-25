@@ -31,4 +31,4 @@ def create_app():
     
     return app, database
 
-# app, db = create_app()
+app, db = create_app()

@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 import os
-from models.base import initalize_engine
+
 from models.main import init_db, drop_db
 class Database():
     def __init__(self, app, database_type):
@@ -11,7 +11,6 @@ class Database():
         self.password = os.getenv("PASSWORD")
         self.host = os.getenv("HOST")
         self.database_name = os.getenv("DATABASENAME")
-        self.engine = initalize_engine(self.app.config[f"SQLALCHEMY_DATABASE_URI_{database_type}"])
 
                     
     def init_db(self):
@@ -44,7 +43,8 @@ class Database():
                 # Create database tables using the create_db_tables function
                 # Pass the Flask app, SQLAlchemy database instance (db), and database type ("sqlite")
                 self.db.init_app(self.app)
-                init_db(engine=self.engine)
+                init_db()
     
     def drop_all_tables(self):
-        drop_db(self.engine)
+        with self.app.app_context():
+            drop_db()
