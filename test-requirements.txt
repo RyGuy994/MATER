@@ -1,10 +1,9 @@
 Flask
-Flask-SQLAlchemy
+SQLAlchemy
 icalendar
 cryptography
 bcrypt
 python-ulid
 pyjwt
 flasgger==0.9.7b2
-sqlalchemy
 flake8

@@ -1,11 +1,10 @@
 from icalendar import Event
-from sqlalchemy import MetaData, Column, Integer, String, Text, Date, ForeignKey, Boolean, Float
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Boolean, Float
+
 from sqlalchemy.orm import relationship, backref
-from flask import current_app
 
-Base = declarative_base(metadata=current_app.config["metadata"])
 
+from models.base import Base
 class Service(Base): # Service table
     __tablename__ = "service"
     id = Column(Integer, primary_key=True) # id of the Service

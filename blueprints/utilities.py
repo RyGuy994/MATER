@@ -35,11 +35,11 @@ def delete_attachment_from_storage(attachment_path):
         # Handle other exceptions as needed
         print(f"Error deleting attachment: {e}")
 
-def retrieve_username_jwt(user_jwt):
+def retrieve_username_jwt(user_jwt, secret_key):
     try:
         # Ensure the JWT token is decoded as bytes
         user_jwt_bytes = user_jwt.encode('utf-8') if isinstance(user_jwt, str) else user_jwt
-        decoded_data = jwt.decode(jwt=user_jwt_bytes, key=os.environ.get("SECRET_KEY"), algorithms=["HS256"])
+        decoded_data = jwt.decode(jwt=user_jwt_bytes, key=secret_key, algorithms=["HS256"])
         return decoded_data.get('id')
     except jwt.ExpiredSignatureError:
         # Handle token expiration

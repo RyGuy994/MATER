@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
-from flask import current_app
+from models.base import Base
 
-Base = declarative_base(metadata=current_app.config["metadata"])
 class ServiceAttachment(Base): # ServiceAttachment table
     __tablename__ = 'serviceattachment'  # Add this line to specify the table name
     id = Column(Integer, primary_key=True) #id of attachment

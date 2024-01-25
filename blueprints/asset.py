@@ -132,7 +132,7 @@ def add():
             # Construct a dictionary containing metadata and image data from the request
             request_dict = {'meta_data': request.form, 'image': request.files['image']}
             # Retrieve the user_id from the access token in the request cookies
-            user_id = retrieve_username_jwt(request.cookies.get('access_token'))
+            user_id = retrieve_username_jwt(request.cookies.get('access_token'), current_app.config["CURRENT_SECRET_KEY"])
             # Call the create_asset function to handle asset creation
             success = create_asset(request_dict.get('meta_data'), user_id, request_dict)
 
@@ -147,7 +147,7 @@ def add():
             # Construct a dictionary containing metadata and image data from the request
             request_dict = {'meta_data': request.form, 'image': request.files.getlist('file')[0]}
             # Retrieve the user_id from the JWT token
-            user_id = retrieve_username_jwt(request.form.get('jwt'))
+            user_id = retrieve_username_jwt(request.form.get('jwt'), current_app.config["CURRENT_SECRET_KEY"])
             # Call the create_asset function to handle asset creation
             success = create_asset(request_dict.get('meta_data'), user_id, request_dict)
 
@@ -232,11 +232,11 @@ def all_assets():
     
     if request.form.get('jwt') is not None: # Check if JWT token is not provided as a query parameter
         user_id = retrieve_username_jwt(request.cookies.get('access_token')) # Retrieve the user_id from the access token in the request cookies 
-        assets = Asset.query.filter_by(user_id=user_id).all() # Query all assets in the Class Asset associated with the user
+        assets = current_app.config["current_db"].session.query(Asset).query.filter_by(user_id=user_id).all() # Query all assets in the Class Asset associated with the user
         return render_template('asset_all.html', assets=assets, loggedIn=True) # Display the asset_all.html template and pass the retrieved assets
     else:
-        user_id = retrieve_username_jwt(request.json.get('jwt')) # If JWT token is provided in the query parameters
-        assets = Asset.query.filter_by(user_id=user_id).all()# Query all assets in the Class Asset associated with the user
+        user_id = retrieve_username_jwt(request.json.get('jwt'), current_app.config["CURRENT_SECRET_KEY"]) # If JWT token is provided in the query parameters
+        assets = current_app.config["current_db"].session.query(Asset).filter_by(user_id=user_id).all()# Query all assets in the Class Asset associated with the user
         data = [] # Prepare a list to store asset data in JSON format
         
         for asset in assets:# Iterate through each asset and extract relevant information

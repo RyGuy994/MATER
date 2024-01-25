@@ -1,10 +1,6 @@
-from sqlalchemy import MetaData, Column, Integer, String, Text, Date, ForeignKey, Boolean, Float
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from flask import current_app
-
-Base = declarative_base(metadata=current_app.config["metadata"])
-
+from models.base import Base
 class Asset(Base): # Asset table
     __tablename__ = "asset"
     id = Column(Integer, primary_key=True) # id of asset

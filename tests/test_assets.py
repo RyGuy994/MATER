@@ -3,28 +3,26 @@ import json
 import io
 from datetime import datetime
 import os 
-from common.configuration import create_app
-from common.base import TestingConfig
-os.environ["DATABASETYPE"] = "inmemory"
 
+from common.configuration import create_app
+os.environ["DATABASETYPE"] = "INMEMORY"
+os.environ["APP_SETTINGS"] = "common.base.TestingConfig"
 class TestAssets(unittest.TestCase):
     def setUp(self):  
-        self.app, self.db = create_app(TestingConfig)
-        self.app_ctxt = self.app.app_context()
-        self.app_ctxt.push()
+        self.app, self.database = create_app()
+        self.app.config["current_db"] = self.database.db
+        self.database.init_db()
         self.client = self.app.test_client()
         json_data = {
-            'username': 'test',
+            'username': 'test1',
             'password': 'test'
         }
         jwt_response = self.client.post('/auth/signup', json=json_data)
         self.jwt = json.loads(jwt_response.get_data(as_text=True)).get('jwt')
         
     def tearDown(self):      
-        self.db.drop_all()      
-        self.app_ctxt.pop()        
-        self.app = None        
-        self.app_ctxt = None  
+        self.database.drop_all_tables()      
+        self.app = None         
         self.client = None
         self.jwt = None
 
