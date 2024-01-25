@@ -1,20 +1,28 @@
-
-from flasgger import Swagger
-
-from .swagger import template
-from .configuration import app
-from blueprints.asset import assets_blueprint
-from blueprints.service import services_blueprint
-from blueprints.calendar import calendar_blueprint
-from blueprints.auth import auth_blueprint
+import os
+class BaseConfig:
+    """Base Configuration"""
+    DEBUG = False
+    TESTING = False
+    
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
 
-Swagger(app, template=template)
+class DevelopmentConfig(BaseConfig):
+    """Development Configuration"""
+    DEBUG = True
+    username = os.getenv('DB_USERNAME')
+    password = os.getenv('DB_PASSWORD')
+    host = os.getenv('DB_HOST')
+    database_name = os.getenv('DB_NAME')
 
 
-# Blueprints to import for the various routes
-app.register_blueprint(assets_blueprint, url_prefix='/assets/')
-app.register_blueprint(services_blueprint, url_prefix='/services/')
-app.register_blueprint(calendar_blueprint, url_prefix='/calendar/')
-app.register_blueprint(auth_blueprint, url_prefix='/auth/')
+class TestingConfig(BaseConfig):
+    """Testing Configuration"""
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
+
+class ProductionConfig(BaseConfig):
+    """Production Configuration"""
+    DEBUG = False
+    

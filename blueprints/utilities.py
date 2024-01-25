@@ -1,8 +1,9 @@
 import os
 from flask import send_file
-from common.configuration import UPLOAD_BASE_FOLDER
-
 import jwt
+
+# Define the base upload folder
+UPLOAD_BASE_FOLDER = 'static/assets/' # base folder set
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}  # allowed file extensions
 def allowed_file(filename): # allowed file function

@@ -1,12 +1,11 @@
 # Import necessary modules and classes from Flask and other libraries
-from flask import Blueprint, request, abort, make_response, render_template, redirect
+from flask import Blueprint, request, abort, make_response, render_template, redirect, current_app
 import bcrypt
 from ulid import ULID
 from os import environ
 import jwt 
 
-# Import models and User
-from models.shared import db
+# Import User
 from models.user import User
 
 # Create a Flask Blueprint for authentication-related routes
@@ -22,7 +21,7 @@ def create_user(form_input: dict): # Extract username and password from the form
     user = User.query.filter_by(username=username).all() # Query the database to check if the user already exists
     # If the user exists, then return the user exist error
     try:
-        if(user[0].username == username):
+        if(user.username == username):
             return
     except: # If the user does not exist, proceed to create a new user
         # Encode the password using bcrypt with a randomly generated salt
@@ -32,8 +31,8 @@ def create_user(form_input: dict): # Extract username and password from the form
     
         id = str(ULID()) # Generate a new ULID (Universally Unique Lexicographically Sortable Identifier)
         new_user = User(id=id, username=username, password=hashed_password.decode()) # Create a new User instance with the provided information
-        db.session.add(new_user) # Add the new user to the database
-        db.session.commit() # Commit the changes
+        current_app.config["current_db"].session.add(new_user) # Add the new user to the database
+        current_app.config["current_db"].session.commit() # Commit the changes
         encoded_jwt = jwt.encode({"id": id}, environ.get("SECRET_KEY"), algorithm='HS256') # Generate a JWT (JSON Web Token) for the new user
         return {'jwt': encoded_jwt} # Return the JWT
 
@@ -51,7 +50,7 @@ def validate_user(form_input: dict):
 
     try:
         if bcrypt.checkpw(bytes, user[0].password.encode('utf-8')): # Check if the provided password matches the stored hashed password
-            encoded_jwt = jwt.encode({"id": user[0].id}, environ.get("SECRET_KEY"), algorithm='HS256') # If the passwords match, generate a JWT for the user
+            encoded_jwt = jwt.encode({"id": user.id}, environ.get("SECRET_KEY"), algorithm='HS256') # If the passwords match, generate a JWT for the user
             return encoded_jwt
     except Exception as e:
         # If an exception occurs (e.g., user not found or password mismatch), return a 405 error

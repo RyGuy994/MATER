@@ -1,12 +1,9 @@
 # Import necessary modules and components from Flask and other libraries
-from flask import Blueprint, request, render_template, redirect, send_file, jsonify
+from flask import Blueprint, request, render_template, redirect, send_file, jsonify, current_app
 # Import datetime and timedelta for date and service calculations
-from datetime import datetime, timedelta
+from datetime import datetime
 # Import operating system-related functionality
 import os
-
-# Import CSV-related functionality
-import csv
 
 # Import shutil for file operations
 import shutil
@@ -14,26 +11,18 @@ import shutil
 # Import zipfile for creating and extracting zip archives
 import zipfile
 
-# Import the database instance and the Flask app instance from shared and base modules
-from models.shared import db
-from common.base import app
-
 # Import utility functions from the utilities module
 from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, allowed_file, delete_attachment_from_storage, get_asset_upload_folder
 
-# Import the Service and Asset models, as well as the ServiceAttachment model
+# Import the Service and Asset models
 from models.service import Service
 from models.asset import Asset
-from models.serviceattachment import ServiceAttachment
 
 # Import securefilename
 from werkzeug.utils import secure_filename # import filename
 
 # Import json for API
 import json 
-
-# Import App
-from ..common.base import app
 
 # Create a Blueprint named 'assets_blueprint' with a template folder path
 assets_blueprint = Blueprint('assets', __name__, template_folder='../templates')
@@ -77,11 +66,11 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
             else:
                 acquired_date = None  # change to None
             new_asset = Asset(name=name, asset_sn=asset_sn, description=description, acquired_date=acquired_date, user_id=user_id) # make new_asset and is ready for adding to DB
-            db.session.add(new_asset)  # Add new_asset to Class Assets
-            db.session.commit()  # Commit changes to DB (saving it)
+            current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
+            current_app.config["current_db"].session.commit()  # Commit changes to DB (saving it)
             new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)
-            db.session.add(new_asset) # Add new_asset to Class Assets
-            db.session.commit() # Commit changes to DB (saving it)
+            current_app.config["current_db"].session.add(new_asset) # Add new_asset to Class Assets
+            current_app.config["current_db"].session.commit() # Commit changes to DB (saving it)
     except Exception as e:
                 # Print the detailed error message to the console or log it
         print(f"Error creating asset: {e}")
@@ -180,7 +169,6 @@ def edit(asset_id):
         services = Service.query.filter_by(asset_id=asset_id).all()  # Fetch services associated with the asset
         
         if request.method == 'POST':  # if write
-            print(request.form)
             name = request.form.get('name')  # get the name
             asset_sn = request.form.get('asset_sn')  # get the sn
             description = request.form.get('description')  # get description
@@ -215,7 +203,7 @@ def edit(asset_id):
                             asset.image_path = image_path # save iage path back to the asset image path
                 except:
                     pass
-                db.session.commit()  # commit changes
+                current_app.config["current_db"].session.commit()  # commit changes
             return render_template('asset_edit.html', asset=asset, services=services, asset_id=asset.id, toast=True, loggedIn=True)  # if committed load asset_edit.html and send asset and services and call toast
     else:
         pass
@@ -279,10 +267,10 @@ def delete_service(asset_id):
                         # Delete the file from your storage
                         delete_attachment_from_storage(attachment.attachment_path)
                         # Delete the attachment record from the database
-                        db.session.delete(attachment)
-                    db.session.delete(service)  # Delete the service
-        db.session.delete(asset)  # Delete the asset
-        db.session.commit()  # Commit the changes
+                        current_app.config["current_db"].session.delete(attachment)
+                    current_app.config["current_db"].session.delete(service)  # Delete the service
+        current_app.config["current_db"].session.delete(asset)  # Delete the asset
+        current_app.config["current_db"].session.commit()  # Commit the changes
         if os.path.exists(asset_folder) and os.path.isdir(asset_folder):
             try:
                 shutil.rmtree(asset_folder)
@@ -292,11 +280,11 @@ def delete_service(asset_id):
         else:
             print(f"Directory {asset_folder} does not exist.")
     except Exception as e:
-        db.session.rollback()  # Rollback changes if an error occurs
+        current_app.config["current_db"].session.rollback()  # Rollback changes if an error occurs
         print(f"Error in delete_asset: {e}")
         raise  # Reraise the exception to let the calling function handle it
     finally:
-        db.session.close()  # Close the session
+        current_app.config["current_db"].session.close()  # Close the session
 
     return redirect('/assets/asset_all')
   
@@ -305,7 +293,7 @@ def delete_service(asset_id):
 def generate_zip(asset_id):
     folder_path = get_asset_upload_folder(asset_id)# Get the folder path where asset files are stored    
     zip_filename = f'asset_{asset_id}_files.zip'# Define the ZIP file name with the asset_id
-    zip_filepath = os.path.join(app.root_path, zip_filename)# Use the Flask app root_path to get the correct directory for saving the ZIP file
+    zip_filepath = os.path.join(current_app.root_path, zip_filename)# Use the Flask app root_path to get the correct directory for saving the ZIP file
 
     # Create a ZIP file and write all files from the asset folder into it
     with zipfile.ZipFile(zip_filepath, 'w') as zip_file:

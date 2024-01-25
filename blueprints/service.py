@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, jsonify
+from flask import Blueprint, request, render_template, redirect, jsonify, current_app
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename # import filename
@@ -6,7 +6,6 @@ from werkzeug.utils import secure_filename # import filename
 from models.asset import Asset
 from models.service import Service
 from models.serviceattachment import ServiceAttachment
-from models.shared import db
 from .utilities import delete_attachment_from_storage, get_attachment_upload_folder
 from blueprints.utilities import retrieve_username_jwt
 services_blueprint = Blueprint('service', __name__, template_folder='../templates')
@@ -33,8 +32,8 @@ def save_attachments(attachments, asset_id, service_id, user_id):
 
             new_attachment = ServiceAttachment(service_id=service_id, attachment_path=attachment_path,
                                                            user_id=user_id)
-            db.session.add(new_attachment)
-            db.session.commit()
+            current_app.config["current_db"].session.add(new_attachment)
+            current_app.config["current_db"].session.commit()
 
     return attachment_paths
 
@@ -62,8 +61,8 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
                                       service_cost=service_cost, service_complete=service_complete,
                                       service_notes=service_notes, user_id=user_id)
         # Save attachments and get the list of attachment paths
-            db.session.add(new_service)
-            db.session.commit()
+            current_app.config["current_db"].session.add(new_service)
+            current_app.config["current_db"].session.commit()
             attachments = request.files.getlist('attachments')
             attachment_paths = save_attachments(attachments, asset_id, new_service.id, user_id)
 
@@ -75,8 +74,8 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
                 service_notes = request_dict.get('service_notes') # set service notes form 1st service
                 new_service2 =Service(asset_id=asset_id,service_type=service_type, service_date=service_date_new, # new_service2 Record (aka 2nd recorded based on service_add_new)
                                     service_cost=service_cost, service_complete=service_complete2, service_notes=service_notes, user_id=user_id)
-                db.session.add(new_service2) # add to DB
-                db.session.commit()
+                current_app.config["current_db"].session.add(new_service2) # add to current_app.config["current_db"]
+                current_app.config["current_db"].session.commit()
 
     except Exception as e:
                 # Print the detailed error message to the console or log it
@@ -151,7 +150,7 @@ def service_edit(service_id):
             service_notes = request.form.get('service_notes') # set service notes form 1st service
             new_service2 =Service(asset_id=asset_id,service_type=service_type, service_date=service_date_new, # new_service2 Record (aka 2nd recorded based on service_add_new)
                                 service_cost=service_cost, service_complete=service_complete2, service_notes=service_notes, user_id=user_id)
-            db.session.add(new_service2) # add to DB
+            current_app.config["current_db"].session.add(new_service2) # add to current_app.config["current_db"]
         # Update the service object
         service.asset_id = asset_id # update asset_id
         service.service_type = service_type # update service_type
@@ -179,9 +178,9 @@ def service_edit(service_id):
         # Attachments saved, now store the attachment filenames in the database
         for attachment_path in attachment_paths:
             new_attachment = ServiceAttachment(service_id=service.id, attachment_path=attachment_path, user_id=user_id)
-            db.session.add(new_attachment)
+            current_app.config["current_db"].session.add(new_attachment)
 
-        db.session.commit()  # commit change to DB
+        current_app.config["current_db"].session.commit()  # commit change to current_app.config["current_db"]
         
         return render_template('service_edit.html', service=service, assets=Asset.query.all(), toast=True, loggedIn=True) # if commit then return service_add.html pass service and toast
     return render_template('service_edit.html', service=service, assets=Asset.query.all(), toast=False, loggedIn=True) # on load display service_add.html pass service and don't pass toast
@@ -218,10 +217,10 @@ def delete_service(service_id):
             delete_attachment_from_storage(attachment.attachment_path)
 
             # Delete the attachment record from the database
-            db.session.delete(attachment)
+            current_app.config["current_db"].session.delete(attachment)
 
     # Delete the service
-    db.session.delete(service)
-    db.session.commit()
+    current_app.config["current_db"].session.delete(service)
+    current_app.config["current_db"].session.commit()
 
     return redirect('/services/service_all')

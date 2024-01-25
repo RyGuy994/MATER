@@ -2,14 +2,14 @@ import unittest
 import json 
 import io
 from datetime import datetime
-
-from models.shared import db
-from common.configuration import app
+import os 
+from common.configuration import create_app
+from common.base import TestingConfig
+os.environ["DATABASETYPE"] = "inmemory"
 
 class TestAssets(unittest.TestCase):
     def setUp(self):  
-        self.app = app
-        
+        self.app, self.db = create_app(TestingConfig)
         self.app_ctxt = self.app.app_context()
         self.app_ctxt.push()
         self.client = self.app.test_client()
@@ -21,7 +21,7 @@ class TestAssets(unittest.TestCase):
         self.jwt = json.loads(jwt_response.get_data(as_text=True)).get('jwt')
         
     def tearDown(self):      
-        db.drop_all()      
+        self.db.drop_all()      
         self.app_ctxt.pop()        
         self.app = None        
         self.app_ctxt = None  
