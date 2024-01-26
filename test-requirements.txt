@@ -7,3 +7,4 @@ python-ulid
 pyjwt
 flasgger==0.9.7b2
 flake8
+black
