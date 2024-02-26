@@ -23,15 +23,16 @@ class Database:
                 self.app.config["SQLALCHEMY_DATABASE_URI"] = self.app.config[
                     f"SQLALCHEMY_DATABASE_URI_{self.database_type}"
                 ]
+                print(self.app.config["SQLALCHEMY_DATABASE_URI"])
                 self.db.init_app(self.app)
-                init_db(engine=self.engine)
+                self.engine = init_db(self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"])
             case "MYSQL":
                 # Set url as its own variable to update when necessary
                 self.app.config["SQLALCHEMY_DATABASE_URI"] = self.app.config[
                     f"SQLALCHEMY_DATABASE_URI_{self.database_type}"
                 ]
                 self.db.init_app(self.app)
-                init_db(engine=self.engine)
+                self.engine = init_db(self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"])
             case "TESTING":
                 db_folder = os.path.abspath(os.path.join(os.getcwd(), "instance"))
                 # Create the "instance" directory if it doesn"t exist
@@ -44,7 +45,7 @@ class Database:
                 # Create database tables using the create_db_tables function
                 # Pass the Flask app, SQLAlchemy database instance (db), and database type ("sqlite")
                 self.db.init_app(self.app)
-                self.engine = init_db("TESTING")
+                self.engine = init_db("TESTING", "")
             case "SQLITE":
                 # Get the absolute path to the "instance" directory within the current working directory
                 db_folder = os.path.abspath(os.path.join(os.getcwd(), "instance"))
@@ -58,7 +59,7 @@ class Database:
                 # Create database tables using the create_db_tables function
                 # Pass the Flask app, SQLAlchemy database instance (db), and database type ("sqlite")
                 self.db.init_app(self.app)
-                init_db()
+                init_db("SQLITE", self.app.config["SQLALCHEMY_DATABASE_URI"])
 
     def drop_all_tables(self):
         with self.app.app_context():

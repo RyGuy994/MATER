@@ -24,12 +24,12 @@ def create_app():
     from blueprints.service import services_blueprint
     from blueprints.calendar import calendar_blueprint
     from blueprints.auth import auth_blueprint
-
+    from blueprints.service_attachments import service_attachment_blueprint
     app.register_blueprint(assets_blueprint, url_prefix="/assets/")
     app.register_blueprint(services_blueprint, url_prefix="/services/")
     app.register_blueprint(calendar_blueprint, url_prefix="/calendar/")
     app.register_blueprint(auth_blueprint, url_prefix="/auth/")
-
+    app.register_blueprint(service_attachment_blueprint, url_prefix="/service_attachment/")
     return app, database
 
 

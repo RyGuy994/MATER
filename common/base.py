@@ -17,7 +17,12 @@ class DevelopmentConfig(BaseConfig):
     host = os.getenv("DB_HOST")
     database_name = os.getenv("DB_NAME")
     TESTING = False
-
+    SQLALCHEMY_DATABASE_URI_MYSQL = (
+        f"mysql+pymysql://{username}:{password}@{host}/{database_name}"
+    )
+    SQLALCHEMY_DATABASE_URI_POSTGRESQL = (
+        f"postgresql+psycopg2://{username}:{password}@{host}/{database_name}"
+    )
 
 class TestingConfig(BaseConfig):
     """Testing Configuration"""

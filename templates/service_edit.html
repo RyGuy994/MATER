@@ -103,7 +103,7 @@
     </div>
     <div id="services" class="tab-pane fade">
         <!-- Attachments tab -->
-        <form action="/delete_selected_attachments" method="post" onsubmit="return confirmDelete()">
+        <form action="/service_attachment/delete_selected_attachments" method="post" onsubmit="return confirmDelete()">
             {% if service.serviceattachments %}
                 <ul>
                     {% for attachment in service.serviceattachments %}

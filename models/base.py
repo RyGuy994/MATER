@@ -6,7 +6,7 @@ metaData = MetaData()
 Base = declarative_base(metadata=metaData)
 
 
-def initalize_engine(db_type):
+def initalize_engine(db_type, db_url):
     match db_type:
         case "TESTING":
             # Get the absolute path to the "instance" directory within the current working directory
@@ -27,4 +27,10 @@ def initalize_engine(db_type):
             # Construct the absolute path to the SQLite database file within the "instance" directory
             db_file_path = os.path.join(db_folder, "database.db")
             engine = create_engine(f"sqlite:///{db_file_path}")
+            return engine
+        case "POSTGRESQL":
+            engine = create_engine(db_url)
+            return engine
+        case "MYSQL":
+            engine = create_engine(db_url)
             return engine

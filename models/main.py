@@ -2,10 +2,10 @@ from models.base import Base, initalize_engine
 import os
 
 
-def init_db(db_type):
+def init_db(db_type, db_url):
     from models.user import User
 
-    engine = initalize_engine(db_type)
+    engine = initalize_engine(db_type, db_url)
     Base.metadata.create_all(bind=engine)
     return engine
 

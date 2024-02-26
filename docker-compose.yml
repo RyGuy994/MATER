@@ -15,3 +15,6 @@ services:
       FLASK_ENV: development
       FLASK_DEBUG: 1
       SECRET_KEY: secret
+      APP_SETTINGS: common.base.ProductionConfig
+      TESTING: false
+      DATABASETYPE: POSTGRESQL

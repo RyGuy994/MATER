@@ -5,9 +5,7 @@ from flask import (
     send_file,
     abort,
     Response,
-    redirect,
-    url_for,
-    flash,
+    current_app
 )
 
 # Import datetime and timedelta for date and service calculations
@@ -19,20 +17,19 @@ import os
 # Import zipfile for creating and extracting zip archives
 import zipfile
 
-# Import the database instance and the Flask app instance from shared and base modules
-from models.shared import db
-from common.base import app
+# Create the app
+from common.configuration import create_app
+app, db = create_app()
 
 # Import utility functions from the utilities module
 from blueprints.utilities import (
     retrieve_username_jwt,
     get_image_upload_folder,
-    get_attachment_upload_folder,
-    delete_attachment_from_storage,
+    get_attachment_upload_folder
 )
 
 # Import configutration from the configuration module
-from common.configuration import UPLOAD_BASE_FOLDER
+from blueprints.utilities import UPLOAD_BASE_FOLDER
 
 # Import the Service and Asset models, as well as the ServiceAttachment model
 from models.service import Service
@@ -113,7 +110,7 @@ def uploaded_file(filename, asset_id=None):
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
     # Get a list of table names from the database
-    table_names = db.metadata.tables.keys()
+    table_names = current_app.config["current_db"].metadata.tables.keys()
     return render_template(
         "settings.html", table_names=table_names, loggedIn=True
     )  # return setting.html and pass table_names
@@ -213,47 +210,6 @@ def generate_zip():
     return send_file(
         zip_filepath, as_attachment=True
     )  # Send the generated zip file as an attachment in the HTTP response
-
-
-# Route to delete selected attachments
-@app.route("/delete_selected_attachments", methods=["POST"])
-def delete_selected_attachments():
-    try:  # Iterate through selected_attachments, which contains the IDs of selected attachments to delete
-        selected_attachments = request.form.getlist("selected_attachments[]")
-
-        service_id = None  # Initialize service_id to None
-
-        for (
-            attachment_id
-        ) in (
-            selected_attachments
-        ):  # Retrieve the ServiceAttachment record based on the attachment_id
-            attachment = ServiceAttachment.query.get(attachment_id)
-            if attachment:
-                delete_attachment_from_storage(
-                    attachment.attachment_path
-                )  # Call a function to delete the associated file from storage
-                service_id = attachment.service_id  # stored in service_id
-                # Retrieve the service_id associated with the attachment for potential redirection
-                db.session.delete(
-                    attachment
-                )  # Delete the ServiceAttachment record from the database
-
-        db.session.commit()  # Commit the changes to the database after deleting selected attachments
-        flash("Selected attachments deleted successfully.", "success")
-    except Exception as e:
-        # Handle exceptions appropriately (e.g., log the error, display an error message)
-        flash("An error occurred during the deletion of attachments.", "error")
-        print(f"Error: {e}")
-
-    if service_id is not None:
-        # Redirect to the service_edit page with the obtained service_id
-        return redirect(url_for("service.service_edit", service_id=service_id))
-
-    else:
-        # If service_id is not obtained, redirect to a default page or handle it accordingly
-        return redirect("/services/service_all")
-
 
 if __name__ == "__main__":
     app.run(
