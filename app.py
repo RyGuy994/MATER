@@ -1,12 +1,5 @@
 # Import necessary modules and components from Flask and other libraries
-from flask import (
-    render_template,
-    request,
-    send_file,
-    abort,
-    Response,
-    current_app
-)
+from flask import render_template, request, send_file, abort, Response, current_app
 
 # Import datetime and timedelta for date and service calculations
 from datetime import datetime, timedelta
@@ -19,13 +12,14 @@ import zipfile
 
 # Create the app
 from common.configuration import create_app
+
 app, db = create_app()
 
 # Import utility functions from the utilities module
 from blueprints.utilities import (
     retrieve_username_jwt,
     get_image_upload_folder,
-    get_attachment_upload_folder
+    get_attachment_upload_folder,
 )
 
 # Import configutration from the configuration module
@@ -63,11 +57,16 @@ def home():
         user_id = retrieve_username_jwt(
             request.cookies.get("access_token")
         )  # Retrieve the user_id from the access token in the request cookies
-        upcoming_services = current_app.config["current_db"].session.query(Service).filter(  # Query upcoming services for the user within the next 30 days
-            Service.service_complete == False,  # service completed is false
-            Service.service_date <= current_date + timedelta(days=30),
-            Service.user_id == user_id,
-        ).all()  # query all items
+        upcoming_services = (
+            current_app.config["current_db"]
+            .session.query(Service)
+            .filter(  # Query upcoming services for the user within the next 30 days
+                Service.service_complete == False,  # service completed is false
+                Service.service_date <= current_date + timedelta(days=30),
+                Service.user_id == user_id,
+            )
+            .all()
+        )  # query all items
         return render_template(
             "index.html", upcoming_services=upcoming_services, loggedIn=True
         )  # display index.html and pass upcoming_services
@@ -209,6 +208,7 @@ def generate_zip():
     return send_file(
         zip_filepath, as_attachment=True
     )  # Send the generated zip file as an attachment in the HTTP response
+
 
 if __name__ == "__main__":
     app.run(

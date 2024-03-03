@@ -211,9 +211,7 @@ def add():
                 "image": request.files.getlist("file")[0],
             }
             # Retrieve the user_id from the JWT token
-            user_id = retrieve_username_jwt(
-                request.form.get("jwt")
-            )
+            user_id = retrieve_username_jwt(request.form.get("jwt"))
             # Call the create_asset function to handle asset creation
             success = create_asset(request_dict.get("meta_data"), user_id, request_dict)
 
@@ -239,9 +237,12 @@ def add():
 def edit(asset_id):
     if request.args.get("jwt") is None:
         asset = Asset.query.get_or_404(asset_id)  # query or get 404
-        services = current_app.config["current_db"].session.query(Service).query.filter_by(
-            asset_id=asset_id
-        ).all()  # Fetch services associated with the asset
+        services = (
+            current_app.config["current_db"]
+            .session.query(Service)
+            .query.filter_by(asset_id=asset_id)
+            .all()
+        )  # Fetch services associated with the asset
 
         if request.method == "POST":  # if write
             name = request.form.get("name")  # get the name

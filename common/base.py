@@ -25,6 +25,7 @@ class DevelopmentConfig(BaseConfig):
         f"postgresql+psycopg2://{username}:{password}@{host}/{database_name}"
     )
 
+
 class TestingConfig(BaseConfig):
     """Testing Configuration"""
 

@@ -31,13 +31,12 @@ def create_user(
     username = form_input.get("username")
     password = form_input.get("password")
     user = (
-        current_app
-        .config["current_db"]
+        current_app.config["current_db"]
         .session.query(User)
         .filter_by(username=username)
         .all()
     )  # Query the database to check if the user already exists
-    
+
     # If the user exists, then return the user exist error
     try:
         if user[0].username == username:
@@ -57,14 +56,12 @@ def create_user(
         current_app.config["current_db"].session.add(
             new_user
         )  # Add the new user to the database
-        current_app.config[
-            "current_db"
-        ].session.commit()  # Commit the changes
-        
+        current_app.config["current_db"].session.commit()  # Commit the changes
+
         encoded_jwt = jwt.encode(
             {"id": id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
         )  # Generate a JWT (JSON Web Token) for the new user
-        
+
         return {"jwt": encoded_jwt}  # Return the JWT
 
 
@@ -79,8 +76,7 @@ def validate_user(form_input: dict):
     username = form_input.get("username")
     password = form_input.get("password")
     user = (
-        current_app
-        .config["current_db"]
+        current_app.config["current_db"]
         .session.query(User)
         .filter_by(username=username)
         .all()
@@ -93,9 +89,10 @@ def validate_user(form_input: dict):
         if bcrypt.checkpw(
             bytes, user[0].password.encode("utf-8")
         ):  # Check if the provided password matches the stored hashed password
-            
             encoded_jwt = jwt.encode(
-                {"id": user[0].id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
+                {"id": user[0].id},
+                current_app.config["CURRENT_SECRET_KEY"],
+                algorithm="HS256",
             )  # If the passwords match, generate a JWT for the user
             return encoded_jwt
     except Exception as e:
@@ -131,7 +128,6 @@ def signup():
         request.form.get("username") is not None
     ):  # If using the web app, grab the form data submitted
         try:
-            
             jwt_dict = create_user(
                 request.form
             )  # Attempt to create a user with the provided form data

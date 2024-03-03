@@ -24,14 +24,18 @@ class Database:
                     f"SQLALCHEMY_DATABASE_URI_{self.database_type}"
                 ]
                 self.db.init_app(self.app)
-                self.engine = init_db(self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"])
+                self.engine = init_db(
+                    self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"]
+                )
             case "MYSQL":
                 # Set url as its own variable to update when necessary
                 self.app.config["SQLALCHEMY_DATABASE_URI"] = self.app.config[
                     f"SQLALCHEMY_DATABASE_URI_{self.database_type}"
                 ]
                 self.db.init_app(self.app)
-                self.engine = init_db(self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"])
+                self.engine = init_db(
+                    self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"]
+                )
             case "TESTING":
                 db_folder = os.path.abspath(os.path.join(os.getcwd(), "instance"))
                 # Create the "instance" directory if it doesn"t exist

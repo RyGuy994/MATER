@@ -3,7 +3,11 @@ from blueprints.utilities import delete_attachment_from_storage
 from models.serviceattachment import ServiceAttachment
 
 
-service_attachment_blueprint = Blueprint("service_attachment", __name__, template_folder="../templates")
+service_attachment_blueprint = Blueprint(
+    "service_attachment", __name__, template_folder="../templates"
+)
+
+
 # Route to delete selected attachments
 @service_attachment_blueprint.route("/delete_selected_attachments", methods=["POST"])
 def delete_selected_attachments():
@@ -28,7 +32,9 @@ def delete_selected_attachments():
                     attachment
                 )  # Delete the ServiceAttachment record from the database
 
-        current_app.config["current_db"].session.commit()  # Commit the changes to the database after deleting selected attachments
+        current_app.config[
+            "current_db"
+        ].session.commit()  # Commit the changes to the database after deleting selected attachments
         flash("Selected attachments deleted successfully.", "success")
     except Exception as e:
         # Handle exceptions appropriately (e.g., log the error, display an error message)

@@ -1,6 +1,7 @@
 from tests.base import BaseTest
 import json
 
+
 class TestAssets(BaseTest):
     def test_login_user(self):
         login_response = self.client.post("/auth/login", json=self.user_signup_data)

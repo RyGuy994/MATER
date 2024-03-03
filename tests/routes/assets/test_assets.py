@@ -4,8 +4,8 @@ import io
 from datetime import datetime
 from tests.base import BaseTest
 
+
 class TestAssets(BaseTest):
-    
     def test_add_asset(self):
         current_date = datetime.now()
         acquired_date = current_date.strftime("%Y-%m-%d")
@@ -17,8 +17,7 @@ class TestAssets(BaseTest):
             "jwt": self.jwt,
             "file": (io.BytesIO(b"this is a test"), "test.pdf"),
         }
-        
-        
+
         response = self.client.post(
             "/assets/asset_add", data=asset_data, content_type="multipart/form-data"
         )

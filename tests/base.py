@@ -3,6 +3,7 @@ import json
 import os
 from common.configuration import create_app
 
+
 class BaseTest(unittest.TestCase):
     def setUp(self):
         os.environ["DATABASETYPE"] = "TESTING"
@@ -16,7 +17,7 @@ class BaseTest(unittest.TestCase):
         self.user_signup_data = {"username": "test1", "password": "test"}
         jwt_response = self.client.post("/auth/signup", json=self.user_signup_data)
         self.jwt = json.loads(jwt_response.get_data(as_text=True)).get("jwt")
-    
+
     def tearDown(self):
         self.database.drop_all_tables()
         self.app = None
