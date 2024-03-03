@@ -23,7 +23,6 @@ class Database:
                 self.app.config["SQLALCHEMY_DATABASE_URI"] = self.app.config[
                     f"SQLALCHEMY_DATABASE_URI_{self.database_type}"
                 ]
-                print(self.app.config["SQLALCHEMY_DATABASE_URI"])
                 self.db.init_app(self.app)
                 self.engine = init_db(self.database_type, self.app.config["SQLALCHEMY_DATABASE_URI"])
             case "MYSQL":

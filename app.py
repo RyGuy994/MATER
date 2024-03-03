@@ -63,7 +63,7 @@ def home():
         user_id = retrieve_username_jwt(
             request.cookies.get("access_token")
         )  # Retrieve the user_id from the access token in the request cookies
-        upcoming_services = Service.query.filter(  # Query upcoming services for the user within the next 30 days
+        upcoming_services = current_app.config["current_db"].session.query(Service).filter(  # Query upcoming services for the user within the next 30 days
             Service.service_complete == False,  # service completed is false
             Service.service_date <= current_date + timedelta(days=30),
             Service.user_id == user_id,
@@ -72,7 +72,6 @@ def home():
             "index.html", upcoming_services=upcoming_services, loggedIn=True
         )  # display index.html and pass upcoming_services
     except Exception as e:
-        print(e)
         return render_template("signin.html")
 
 

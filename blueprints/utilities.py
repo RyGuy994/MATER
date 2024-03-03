@@ -1,5 +1,4 @@
 import os
-from flask import send_file
 import jwt
 
 # Define the base upload folder
@@ -44,14 +43,14 @@ def delete_attachment_from_storage(attachment_path):
         print(f"Error deleting attachment: {e}")
 
 
-def retrieve_username_jwt(user_jwt, secret_key):
+def retrieve_username_jwt(user_jwt):
     try:
         # Ensure the JWT token is decoded as bytes
         user_jwt_bytes = (
             user_jwt.encode("utf-8") if isinstance(user_jwt, str) else user_jwt
         )
         decoded_data = jwt.decode(
-            jwt=user_jwt_bytes, key=secret_key, algorithms=["HS256"]
+            jwt=user_jwt_bytes, key=os.getenv("SECRET_KEY"), algorithms=["HS256"]
         )
         return decoded_data.get("id")
     except jwt.ExpiredSignatureError:

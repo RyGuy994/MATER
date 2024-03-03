@@ -13,7 +13,7 @@ def create_app():
     app.config.from_object(app_settings)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")  # Security key
     database = Database(app=app, database_type=os.getenv("DATABASETYPE"))
-
+    
     Swagger(app, template=template)
     if app.config["TESTING"] == False:
         database.init_db()
@@ -35,3 +35,5 @@ def create_app():
 
 if os.getenv("TESTING") == "true":
     app, db = create_app()
+
+

@@ -31,18 +31,18 @@ def create_user(
     username = form_input.get("username")
     password = form_input.get("password")
     user = (
-        form_input.get("app")
+        current_app
         .config["current_db"]
         .session.query(User)
         .filter_by(username=username)
         .all()
     )  # Query the database to check if the user already exists
-
+    
     # If the user exists, then return the user exist error
     try:
         if user[0].username == username:
             return "User exist!"
-    except:
+    except Exception as e:
         # Encode the password using bcrypt with a randomly generated salt
         bytes = password.encode("utf-8")
         password_salt = bcrypt.gensalt()
@@ -54,16 +54,17 @@ def create_user(
         new_user = User(
             id=id, username=username, password=hashed_password.decode()
         )  # Create a new User instance with the provided information
-        form_input.get("app").config["current_db"].session.add(
+        current_app.config["current_db"].session.add(
             new_user
         )  # Add the new user to the database
-        form_input.get("app").config[
+        current_app.config[
             "current_db"
         ].session.commit()  # Commit the changes
-
+        
         encoded_jwt = jwt.encode(
-            {"id": id}, form_input.get("SECRET_KEY"), algorithm="HS256"
+            {"id": id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
         )  # Generate a JWT (JSON Web Token) for the new user
+        
         return {"jwt": encoded_jwt}  # Return the JWT
 
 
@@ -78,7 +79,7 @@ def validate_user(form_input: dict):
     username = form_input.get("username")
     password = form_input.get("password")
     user = (
-        form_input.get("app")
+        current_app
         .config["current_db"]
         .session.query(User)
         .filter_by(username=username)
@@ -92,8 +93,9 @@ def validate_user(form_input: dict):
         if bcrypt.checkpw(
             bytes, user[0].password.encode("utf-8")
         ):  # Check if the provided password matches the stored hashed password
+            
             encoded_jwt = jwt.encode(
-                {"id": user[0].id}, form_input.get("SECRET_KEY"), algorithm="HS256"
+                {"id": user[0].id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
             )  # If the passwords match, generate a JWT for the user
             return encoded_jwt
     except Exception as e:
@@ -129,6 +131,7 @@ def signup():
         request.form.get("username") is not None
     ):  # If using the web app, grab the form data submitted
         try:
+            
             jwt_dict = create_user(
                 request.form
             )  # Attempt to create a user with the provided form data
@@ -146,8 +149,6 @@ def signup():
         request.json.get("username") is not None
     ):  # If using a non-web client, retrieve the JSON input
         # Call the create_user function with the provided JSON data
-        request.json["SECRET_KEY"] = current_app.config["CURRENT_SECRET_KEY"]
-        request.json["app"] = current_app
         return create_user(request.json)
 
 
@@ -178,8 +179,6 @@ def login():
 
     # If using a non web client, retrieve the json input
     elif request.json.get("username") != None:
-        request.json["SECRET_KEY"] = current_app.config["CURRENT_SECRET_KEY"]
-        request.json["app"] = current_app
         jwt = validate_user(request.json)
         return {"jwt": jwt}
 

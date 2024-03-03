@@ -12,6 +12,7 @@ class DevelopmentConfig(BaseConfig):
     """Development Configuration"""
 
     DEBUG = True
+    CURRENT_SECRET_KEY = os.getenv("SECRET_KEY")
     username = os.getenv("DB_USERNAME")
     password = os.getenv("DB_PASSWORD")
     host = os.getenv("DB_HOST")
