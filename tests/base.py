@@ -8,6 +8,7 @@ class BaseTest(unittest.TestCase):
         os.environ["DATABASETYPE"] = "TESTING"
         os.environ["APP_SETTINGS"] = "common.base.TestingConfig"
         os.environ["TESTING"] = "true"
+        os.environ["SECRET_KEY"] = "secret"
         self.app, self.database = create_app()
         self.app.config["current_db"] = self.database.db
         self.database.init_db()

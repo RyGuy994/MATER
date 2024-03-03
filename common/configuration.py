@@ -33,7 +33,7 @@ def create_app():
     return app, database
 
 
-if os.getenv("TESTING") == "true":
+if os.getenv("TESTING") == True:
     app, db = create_app()
 
 

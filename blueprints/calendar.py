@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, jsonify, Response
+from flask import Blueprint, request, render_template, jsonify, Response, current_app
 from icalendar import Calendar
 
 from blueprints.utilities import retrieve_username_jwt
@@ -18,7 +18,7 @@ def calendar():
 @calendar_blueprint.route("/calendar/api/events")  # Normal endpoint for all events
 def api_events():
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    services = Service.query.filter(Service.user_id == user_id).all()
+    services = current_app.config["current_db"].session.query(Service).query.filter(Service.user_id == user_id).all()
     calendar_events = [service.to_calendar_event() for service in services]
     return jsonify(calendar_events)
 
@@ -28,7 +28,7 @@ def api_events():
 )  # Endpoint for completed events
 def api_events_completed():
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    complete_services = Service.query.filter(
+    complete_services = current_app.config["current_db"].session.query(Service).query.filter(
         Service.service_complete
         == True,  # set service_completed to true for completed services
         Service.user_id == user_id,
@@ -44,7 +44,7 @@ def api_events_completed():
 )  # Endpoint for incomplete events
 def api_events_incomplete():
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    incomplete_services = Service.query.filter(
+    incomplete_services = current_app.config["current_db"].session.query(Service).query.filter(
         Service.service_complete
         == False,  # set service_completed to false for incompleted services
         Service.user_id == user_id,
@@ -58,7 +58,7 @@ def api_events_incomplete():
 @calendar_blueprint.route("/calendar/ical/events")  # ical events
 def ical_events():
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    services = Service.query.filter_by(user_id=user_id).all()  # query all services
+    services = current_app.config["current_db"].session.query(Service).query.filter_by(user_id=user_id).all()  # query all services
     cal = Calendar()  # set calendar
     for service in services:  # for services in Class services
         cal_event = service.to_icalendar_event()  # change to event
@@ -77,7 +77,7 @@ def ical_subscribe():
     base_url = request.url_root  # Retrieve the base URL of your application
     cal = Calendar()  # Generate iCalendar data for subscription
     user_id = retrieve_username_jwt()
-    services = Service.query.filter_by(user_id=user_id).all()  # get services
+    services = current_app.config["current_db"].session.query(Service).query.filter_by(user_id=user_id).all()  # get services
     for service in services:  # for services in Class services
         cal_event = service.to_icalendar_event()  # change to event
         cal.add_component(cal_event)  # add event

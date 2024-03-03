@@ -30,7 +30,7 @@ class TestingConfig(BaseConfig):
 
     SQLALCHEMY_DATABASE_URI_INMEMORY = "sqlite:///:memory:"
     TESTING = True
-    CURRENT_SECRET_KEY = "secret"
+    CURRENT_SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 class ProductionConfig(BaseConfig):

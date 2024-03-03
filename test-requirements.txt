@@ -1,5 +1,5 @@
 Flask
-SQLAlchemy
+Flask-SQLAlchemy
 icalendar
 cryptography
 bcrypt

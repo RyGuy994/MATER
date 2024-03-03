@@ -180,7 +180,7 @@ def add_service():
 )  # service_edit.html route with the service id on the back
 def service_edit(service_id):
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    service = Service.query.filter_by(
+    service = current_app.config["current_db"].session.query(Service).query.filter_by(
         id=service_id, user_id=user_id
     ).first_or_404()  # set service from query Class Service or return 404
     service_complete2 = False  # set completed 2 to false (if they add another service based off completed one)
@@ -289,13 +289,13 @@ def service_edit(service_id):
 def all_services():
     # Query all services
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    all_services = Service.query.filter_by(user_id=user_id).all()
+    all_services = current_app.config["current_db"].session.query(Service).query.filter_by(user_id=user_id).all()
 
     # Filter services based on your criteria (if any)
     # For example, you can filter services based on asset name
     filter_asset_name = request.args.get("filter_asset_name")
     if filter_asset_name:
-        services = Service.query.filter(
+        services = current_app.config["current_db"].session.query(Service).query.filter(
             asset_name=filter_asset_name, user_id=user_id
         ).all()
     else:
