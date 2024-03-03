@@ -1,4 +1,3 @@
-import unittest
 import json
 import io
 from datetime import datetime
