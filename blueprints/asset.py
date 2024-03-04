@@ -236,11 +236,16 @@ def add():
 )  # asset_edit.html route
 def edit(asset_id):
     if request.args.get("jwt") is None:
-        asset = Asset.query.get_or_404(asset_id)  # query or get 404
+        asset = (
+            current_app.config["current_db"]
+            .session.query(Asset)
+            .filter_by(id=asset_id)
+            .first_or_404()
+        )
         services = (
             current_app.config["current_db"]
             .session.query(Service)
-            .query.filter_by(asset_id=asset_id)
+            .filter_by(asset_id=asset_id)
             .all()
         )  # Fetch services associated with the asset
 
