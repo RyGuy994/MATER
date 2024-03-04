@@ -332,17 +332,14 @@ def all_assets():
         405:
             description: Error occurred
     """
-
-    if (
-        request.form.get("jwt") is not None
-    ):  # Check if JWT token is not provided as a query parameter
+    if request.form.get("jwt") is None: # Check if JWT token is not provided as a query parameter
         user_id = retrieve_username_jwt(
-            request.cookies.get("access_token")
-        )  # Retrieve the user_id from the access token in the request cookies
+            request.cookies.get("access_token"),
+        ) # Retrieve the user_id from the access token in the request cookies
         assets = (
             current_app.config["current_db"]
             .session.query(Asset)
-            .query.filter_by(user_id=user_id)
+            .filter_by(user_id=user_id)
             .all()
         )  # Query all assets in the Class Asset associated with the user
         return render_template(

@@ -1,8 +1,9 @@
 # Import necessary modules and components from Flask and other libraries
-from flask import render_template, request, send_file, abort, Response, current_app
+from flask import render_template, request, send_file, abort, Response, current_app, jsonify
 
 # Import datetime and timedelta for date and service calculations
-from datetime import datetime, timedelta
+from blueprints.service import get_upcoming_services
+from datetime import datetime
 
 # Import operating system-related functionality
 import os
@@ -57,21 +58,14 @@ def home():
         user_id = retrieve_username_jwt(
             request.cookies.get("access_token")
         )  # Retrieve the user_id from the access token in the request cookies
-        upcoming_services = (
-            current_app.config["current_db"]
-            .session.query(Service)
-            .filter(  # Query upcoming services for the user within the next 30 days
-                Service.service_complete == False,  # service completed is false
-                Service.service_date <= current_date + timedelta(days=30),
-                Service.user_id == user_id,
-            )
-            .all()
-        )  # query all items
+        upcoming_services = get_upcoming_services(user_id, 30)  # Call the function with user_id and days
+        print(upcoming_services)  # Debugging line
         return render_template(
             "index.html", upcoming_services=upcoming_services, loggedIn=True
         )  # display index.html and pass upcoming_services
     except Exception as e:
         return render_template("signin.html")
+
 
 
 # Route to serve images
@@ -88,7 +82,6 @@ def serve_image(image_name, asset_id=None):
     else:
         # Handle the case where asset_id is None
         abort(404)
-
 
 # Route to serve uploaded files (attachments)
 @app.route("/<filename>", methods=["GET"])  # get attachment name
@@ -109,10 +102,10 @@ def uploaded_file(filename, asset_id=None):
 def settings():
     # Get a list of table names from the database
     table_names = current_app.config["current_db"].metadata.tables.keys()
+    print("Table Names:", table_names)  # Print table names for debugging
     return render_template(
         "settings.html", table_names=table_names, loggedIn=True
     )  # return setting.html and pass table_names
-
 
 # Route to handle the form submission and export data to CSV
 @app.route("/export_csv", methods=["POST"])

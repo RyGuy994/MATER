@@ -45,7 +45,7 @@ body.dark-mode {
 }
 
 .custom-dropdown:hover{
- background-color: #4CAF50;
+    background-color: #4CAF50;
 }
 
 .custom-dropdown .dropbtn {
@@ -84,67 +84,67 @@ body.dark-mode {
     display: block;
 }
 
-       /* Add styles for the dropdown button and its container */
-       .dropdown1 {
-        position: relative;
-        display: inline-block;
-    }
+/* Add styles for the dropdown button and its container */
+.dropdown1 {
+    position: relative;
+    display: inline-block;
+}
 
-    /* Style the button */
-    .dropdown1 button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        font-size: 16px;
-        border: none;
-        cursor: pointer;
-    }
+/* Style the button */
+.dropdown1 button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+}
 
-    /* Style the dropdown content (hidden by default) */
-    .dropdown-content1 {
-        display: none;
-        position: absolute;
-        background-color: #f9f9f9;
-        min-width: 400px;
-        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-        z-index: 1;
-        column-count: 2; /* Two columns */
-        column-gap: 8px; /* Adjust the gap between columns as needed */
-    }
+/* Style the dropdown content (hidden by default) */
+.dropdown-content1 {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 400px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    column-count: 2;
+    column-gap: 8px;
+}
 
-    /* Style the links inside the dropdown */
-    .dropdown-content1 a {
-        color: black;
-        padding: 4px 4px;
-        text-decoration: none;
-        display: block;
-        width: 100%;
-        break-inside: avoid-column; /* Ensures even distribution of items in both columns */
-    }
+/* Style the links inside the dropdown */
+.dropdown-content1 a {
+    color: black;
+    padding: 4px 4px;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    break-inside: avoid-column;
+}
 
-    .dropdown-content1 li {
-        color: black;
-        padding: 4px 4px;
-        text-decoration: none;
-        display: block;
-        width: 100%;
-        break-inside: avoid-column; /* Ensures even distribution of items in both columns */
-    }
+.dropdown-content1 li {
+    color: black;
+    padding: 4px 4px;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    break-inside: avoid-column;
+}
 
-        /* Change color of dropdown links on hover */
-    .dropdown-content1 li:hover {
-        background-color: #45a049;
-    }
+/* Change color of dropdown links on hover */
+.dropdown-content1 li:hover {
+    background-color: #45a049;
+}
 
-    /* Change color of dropdown links on hover */
-    .dropdown-content1 a:hover {
-        background-color: #45a049;
-    }
+/* Change color of dropdown links on hover */
+.dropdown-content1 a:hover {
+    background-color: #45a049;
+}
 
-    /* Show the dropdown menu on hover */
-    .dropdown1:hover .dropdown-content1 {
-        display: block;
-    }
+/* Show the dropdown menu on hover */
+.dropdown1:hover .dropdown-content1 {
+    display: block;
+}
 
 /* standard button */
 .standard-btn {
@@ -152,7 +152,7 @@ body.dark-mode {
     margin: 10px;
     border: none;
     border-radius: 5px;
-    background-color: #4CAF50; /* Green */
+    background-color: #4CAF50;
     color: white;
     text-align: center;
     text-decoration: none;
@@ -162,7 +162,7 @@ body.dark-mode {
 }
 
 .standard-btn:hover {
-    background-color: #45a049; /* Darker Green */
+    background-color: #45a049;
 }
 
 /* Toggle Switch Styles */
@@ -187,9 +187,8 @@ body.dark-mode {
     right: 0;
     bottom: 0;
     background-color: #ccc;
-    -webkit-transition: .4s;
     transition: .4s;
-    border-radius: 34px; /* Rounded border */
+    border-radius: 34px;
 }
 
 .slider:before {
@@ -200,9 +199,8 @@ body.dark-mode {
     left: 4px;
     bottom: 4px;
     background-color: white;
-    -webkit-transition: .4s;
     transition: .4s;
-    border-radius: 50%; /* Rounded button */
+    border-radius: 50%;
 }
 
 input:checked + .slider {
@@ -214,12 +212,28 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
     transform: translateX(26px);
 }
 
 /* Content Styles */
 #content {
     padding: 20px;
+}
+
+/* Table Styles */
+.standard-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.standard-table th,
+.standard-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.standard-table th {
+    background-color: #f2f2f2;
 }

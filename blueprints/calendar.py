@@ -21,7 +21,7 @@ def api_events():
     services = (
         current_app.config["current_db"]
         .session.query(Service)
-        .query.filter(Service.user_id == user_id)
+        .filter(Service.user_id == user_id)
         .all()
     )
     calendar_events = [service.to_calendar_event() for service in services]
@@ -36,9 +36,8 @@ def api_events_completed():
     complete_services = (
         current_app.config["current_db"]
         .session.query(Service)
-        .query.filter(
-            Service.service_complete
-            == True,  # set service_completed to true for completed services
+        .filter(
+            Service.service_complete == True,  # set service_completed to true for completed services
             Service.user_id == user_id,
         )
         .all()
@@ -57,9 +56,8 @@ def api_events_incomplete():
     incomplete_services = (
         current_app.config["current_db"]
         .session.query(Service)
-        .query.filter(
-            Service.service_complete
-            == False,  # set service_completed to false for incompleted services
+        .filter(
+            Service.service_complete == False,  # set service_completed to false for incompleted services
             Service.user_id == user_id,
         )
         .all()
@@ -76,7 +74,7 @@ def ical_events():
     services = (
         current_app.config["current_db"]
         .session.query(Service)
-        .query.filter_by(user_id=user_id)
+        .filter_by(user_id=user_id)
         .all()
     )  # query all services
     cal = Calendar()  # set calendar
@@ -100,7 +98,7 @@ def ical_subscribe():
     services = (
         current_app.config["current_db"]
         .session.query(Service)
-        .query.filter_by(user_id=user_id)
+        .filter_by(user_id=user_id)
         .all()
     )  # get services
     for service in services:  # for services in Class services
