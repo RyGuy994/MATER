@@ -44,7 +44,7 @@
             <form action="/services/service_edit/{{ service.id }}" method="post" enctype="multipart/form-data">
                 <!-- Form fields for general service information -->
                 <label for="asset_name" class="required-field">Asset Name:</label><br>
-            <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()" required><br><br>
+            <input type="text" id="asset_name_input" name="asset_name" value="{{ service.asset.name }}" oninput="updateAssetId()"><br><br>
             <input type="hidden" id="asset_id_input" name="asset_id" value="{{ service.asset_id }}">
 
             <label for="service_type" class="required-field">Service Type:</label><br>
@@ -103,7 +103,7 @@
     </div>
     <div id="services" class="tab-pane fade">
         <!-- Attachments tab -->
-        <form action="/delete_selected_attachments" method="post" onsubmit="return confirmDelete()">
+        <form action="/service_attachment/delete_selected_attachments" method="post" onsubmit="return confirmDelete()">
             {% if service.serviceattachments %}
                 <ul>
                     {% for attachment in service.serviceattachments %}

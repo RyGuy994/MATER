@@ -15,6 +15,13 @@ services:
       FLASK_ENV: development
       FLASK_DEBUG: 1
       SECRET_KEY: secret
+      APP_SETTINGS: common.base.DevelopmentConfig
+      TESTING: false
+      DATABASETYPE: POSTGRESQL
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: mater-postgres
+      DB_NAME: postgres
     depends_on:
       - postgresqldb
   postgresqldb:

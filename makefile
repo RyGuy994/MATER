@@ -1,5 +1,7 @@
 DEV_FILE = dev-docker-compose.yml
 DEV_DOCKER_COMPOSE=docker-compose -f $(DEV_FILE)
+TEST_FILE = test-docker-compose.yml
+TEST_DOCKER_COMPOSE = docker-compose -f $(TEST_FILE)
 default: build
 
 #=========================================================#
@@ -20,3 +22,6 @@ stop:
 detached-pg: # Runs the containers in daemon mode
 	@echo "Running MATER in detached mode!"
 	@$(DEV_DOCKER_COMPOSE) up -d --build
+test:
+	@echo "Running MATER tests!"
+	@$(TEST_DOCKER_COMPOSE) up
