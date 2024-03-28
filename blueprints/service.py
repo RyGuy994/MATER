@@ -112,6 +112,11 @@ def get_upcoming_services(user_id, days):
 
 @services_blueprint.route("/service_add", methods=["GET", "POST"])
 def add_service():
+    assets = (
+        current_app.config["current_db"]
+        .session.query(Asset)
+        .all()  # Fetch all assets from the database
+    )
     if request.method == "POST":
         if request.form.get("jwt") is None:
             request_dict = {
@@ -136,7 +141,7 @@ def add_service():
             else:
                 return jsonify({"error": "Failed to create service.", "status_code": 500})
     else:
-        return render_template("service_add.html", loggedIn=True)
+        return render_template("service_add.html", assets=assets, loggedIn=True)
 
 @services_blueprint.route("/service_edit/<int:service_id>", methods=["GET", "POST"])
 def service_edit(service_id):

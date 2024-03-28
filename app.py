@@ -97,17 +97,17 @@ def uploaded_file(filename, asset_id=None):
         abort(404)
 
 
-# Route to handle the settings page
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
-    # Get a list of table names from the database
-    table_names = current_app.config["current_db"].metadata.tables.keys()
-    print("Table Names:", table_names)  # Print table names for debugging
-    return render_template(
-        "settings.html", table_names=table_names, loggedIn=True
-    )  # return setting.html and pass table_names
+    try:
+        # Get a list of table names from the database
+        table_names = current_app.config["current_db"].metadata.tables.keys()
+        print("Table Names:", table_names)  # Print table names for debugging
+        return render_template("settings.html", table_names=table_names, loggedIn=True)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return abort(500)
 
-# Route to handle the form submission and export data to CSV
 @app.route("/export_csv", methods=["POST"])
 def export_csv():
     try:
@@ -148,8 +148,11 @@ def export_csv():
                 [str(getattr(row, column)) for column in column_names]
             )  # Append data values for each row in the CSV data
 
-        # Create a CSV response using the generator function
-        response = Response(csv_generator(csv_data), content_type="text/csv")
+        # Convert CSV data to string format
+        csv_string = '\n'.join([','.join(row) for row in csv_data])
+
+        # Create a CSV response using the CSV string
+        response = Response(csv_string, content_type="text/csv")
         response.headers[
             "Content-Disposition"
         ] = f"attachment; filename={table_name}.csv"
