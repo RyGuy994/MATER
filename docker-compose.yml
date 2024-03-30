@@ -15,3 +15,6 @@ services:
       FLASK_ENV: development
       FLASK_DEBUG: 1
       SECRET_KEY: secret
+      DATABASETYPE: SQLITE
+      APP_SETTINGS: common.base.DevelopmentConfig
+      TESTING: false

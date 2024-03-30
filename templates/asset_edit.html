@@ -82,7 +82,6 @@
                 <!-- Button to submit the form -->
                 <input type="submit" class="standard-btn" value="Update Asset">
                 <button type="button" class="standard-btn" data-toggle="modal" data-target="#addServiceModal" data-asset-id="{{ asset.id }}" data-asset-name="{{ asset.name }}">Add Service</button>
-                <!-- {% include 'service_add_button_new.html' %} -->
                 <br>
             </form>
 
@@ -108,7 +107,7 @@
     <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
     
     <!-- Table to display services -->
-    <table id="service-table">
+    <table id="service-table" class="standard-table">
         <tr>
             <th class="sortable-header" data-column="0">Service Type</th>
             <th class="sortable-header" data-column="1">Service Date</th>

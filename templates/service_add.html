@@ -30,7 +30,12 @@
 
         <!-- Asset Name input -->
         <label for="asset_name" class="required-field">Asset Name:</label><br>
-        <input type="text" id="asset_name_input" name="asset_name" oninput="updateAssetId()" required><br><br>
+        <select id="asset_name_input" name="asset_name" required>
+            <option value="">Select Asset Name</option>
+            {% for asset in assets %}
+                <option value="{{ asset.id }}">{{ asset.name }}</option>
+            {% endfor %}
+        </select><br><br>
         <input type="hidden" id="asset_id_input" name="asset_id" value="">
 
         <!-- Service Type input -->
@@ -106,40 +111,10 @@
             window.location.href = "/services/service_all";
         }
 
-        function showToast() {
-            // Display a toast notification for successful service addition
-            Toastify({
-                text: "Service successfully added!",
-                duration: 3000, // 3 seconds
-                gravity: "top", // `top` or `bottom`
-                position: 'right', // `left`, `center` or `right`
-                backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
-                stopOnFocus: true // Prevents dismissing of toast on hover
-            }).showToast();
-        }
-
-        // jQuery UI autocomplete for asset name input
-        $(function() {
-            var assetData = [
-                // Array of asset data containing both ID and name
-                {% for asset in assets %}
-                    { label: "{{ asset.name | safe }}", value: "{{ asset.id }}" },
-                {% endfor %}
-            ];
-
-            // Initialize autocomplete
-            $("#asset_name_input").autocomplete({
-                source: assetData,
-                select: function(event, ui) {
-                    $("#asset_name_input").val(ui.item.label);
-                    $("#asset_id_input").val(ui.item.value);
-                    return false;
-                }
-            }).data("ui-autocomplete")._renderItem = function(ul, item) {
-                return $("<li>")
-                    .append("<div>" + item.label + "</div>")
-                    .appendTo(ul);
-            };
+        // Handle change event on the asset name dropdown
+        $('#asset_name_input').change(function() {
+            var selectedOption = $(this).find(':selected');
+            $('#asset_id_input').val(selectedOption.val());
         });
 
         // Show/hide secondary checkboxes based on the service completion status
@@ -183,12 +158,37 @@
             var day = date.getDate().toString().padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
-    </script>
 
-    <!-- Show toast if specified in the template -->
-    {% if toast %}
-        <script>
-            showToast();
-        </script>
-    {% endif %}
+// Function to display a toast message
+function showToast(message) {
+    Toastify({
+        text: message,
+        duration: 3000, // 3 seconds
+        gravity: "top", // 'top' or 'bottom'
+        position: 'right', // 'left', 'center' or 'right'
+        backgroundColor: "linear-gradient(to right, #4CAF50, #96c93d)",
+        stopOnFocus: true // Prevents dismissing of toast on hover
+    }).showToast();
+}
+
+// Submit form event listener
+$('form').submit(function(event) {
+    event.preventDefault(); // Prevent default form submission
+    var formData = new FormData(this); // Get form data
+    // Send form data using fetch API
+    fetch('/services/service_add', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json()) // Parse response as JSON
+    .then(data => {
+        // Display toast message with the response message
+        showToast(data.message);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+
+    </script>
 {% endblock %}
