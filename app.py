@@ -103,6 +103,8 @@ def settings():
         # Get a list of table names from the database
         table_names = current_app.config["current_db"].metadata.tables.keys()
         print("Table Names:", table_names)  # Print table names for debugging
+        check12 = current_app.config["current_db"]
+        print (check12)
         return render_template("settings.html", table_names=table_names, loggedIn=True)
     except Exception as e:
         print(f"An error occurred: {e}")

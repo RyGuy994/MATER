@@ -14,3 +14,5 @@ COPY . /app
 RUN pip install --no-cache-dir -r test-requirements.txt
 # Run app.py when the container launches
 CMD ["python", "-m", "unittest"]
+
+EXPOSE 5000

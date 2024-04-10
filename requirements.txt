@@ -3,6 +3,7 @@ Flask-SQLAlchemy
 icalendar
 psycopg2-binary
 pymysql
+flask_cors
 cryptography
 bcrypt
 python-ulid

@@ -6,6 +6,7 @@ from flask import (
     make_response,
     render_template,
     redirect,
+    jsonify,
     current_app,
 )
 import bcrypt
@@ -24,87 +25,39 @@ auth_blueprint = Blueprint("auth", __name__, template_folder="../templates")
 rtype: json containing a jwt
 """
 
+def validate_user(json_data: dict):
+    # Extract username and password from the JSON input dictionary
+    username = json_data.get("username")
+    password = json_data.get("password")
 
-def create_user(
-    form_input: dict,
-):  # Extract username and password from the form input dictionary
-    username = form_input.get("username")
-    password = form_input.get("password")
+    # Query the database to retrieve the user with the given username
     user = (
         current_app.config["current_db"]
         .session.query(User)
         .filter_by(username=username)
-        .all()
-    )  # Query the database to check if the user already exists
+        .first()
+    )
 
-    # If the user exists, then return the user exist error
-    try:
-        if user[0].username == username:
-            return "User exist!"
-    except Exception as e:
-        # Encode the password using bcrypt with a randomly generated salt
-        bytes = password.encode("utf-8")
-        password_salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(bytes, password_salt)
+    if user is not None:
+        # Encode the provided password for comparison with the stored hashed password
+        bytes_password = password.encode("utf-8")
 
-        id = str(
-            ULID()
-        )  # Generate a new ULID (Universally Unique Lexicographically Sortable Identifier)
-        new_user = User(
-            id=id, username=username, password=hashed_password.decode()
-        )  # Create a new User instance with the provided information
-        current_app.config["current_db"].session.add(
-            new_user
-        )  # Add the new user to the database
-        current_app.config["current_db"].session.commit()  # Commit the changes
-
-        encoded_jwt = jwt.encode(
-            {"id": id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
-        )  # Generate a JWT (JSON Web Token) for the new user
-
-        return {"jwt": encoded_jwt}  # Return the JWT
-
-
-"""
-:param form_input: dictionary containing user info
-rtype: json containing a jwt
-"""
-
-
-def validate_user(form_input: dict):
-    # Extract username and password from the form input dictionary
-    username = form_input.get("username")
-    password = form_input.get("password")
-    user = (
-        current_app.config["current_db"]
-        .session.query(User)
-        .filter_by(username=username)
-        .all()
-    )  # Query the database to check if the user already exists # Query the database to retrieve the user with the given username
-    bytes = password.encode(
-        "utf-8"
-    )  # Encode the provided password for comparison with the stored hashed password
-
-    try:
-        if bcrypt.checkpw(
-            bytes, user[0].password.encode("utf-8")
-        ):  # Check if the provided password matches the stored hashed password
+        # Check if the provided password matches the stored hashed password
+        if bcrypt.checkpw(bytes_password, user.password.encode("utf-8")):
+            # If the passwords match, generate a JWT for the user
             encoded_jwt = jwt.encode(
-                {"id": user[0].id},
+                {"id": user.id},
                 current_app.config["CURRENT_SECRET_KEY"],
                 algorithm="HS256",
-            )  # If the passwords match, generate a JWT for the user
+            )
             return encoded_jwt
-    except Exception as e:
-        # If an exception occurs (e.g., user not found or password mismatch), return a 405 error
-        abort(405)
 
+    # If user not found or password mismatch, return None
+    return None
 
 """
 rtype: json containing a jwt
 """
-
-
 @auth_blueprint.route("/signup", methods=["POST"])
 def signup():
     """Api endpoint that creates a user
@@ -120,64 +73,81 @@ def signup():
     responses:
         200:
             description: User was created
-        405:
-            description: User existed
+        400:
+            description: Bad request
     """
-
-    if (
-        request.form.get("username") is not None
-    ):  # If using the web app, grab the form data submitted
+    if request.json:
+        json_data = request.json
         try:
-            jwt_dict = create_user(
-                request.form
-            )  # Attempt to create a user with the provided form data
+            jwt_dict = create_user(json_data)
+            return jsonify({"jwt": jwt_dict.get("jwt")}), 200  # Return a JSON response
+        except UserExistsError as e:
+            return jsonify({"error": str(e)}), 400  # Return error message as JSON response
+    else:
+        return jsonify({"error": "Invalid request data"}), 400  # Return error message as JSON response
 
-            response = make_response(
-                redirect("/home")
-            )  # Create a response with a JWT cookie and redirect to the home page
-            response.set_cookie("access_token", value=jwt_dict.get("jwt"))
-            return response
-        except Exception as e:
-            # If an exception occurs (e.g., user already exists), render the signup page with an error message
-            return render_template("signup.html", message="User already exists!")
+class UserExistsError(Exception):
+    """Exception raised when a user with the provided username already exists."""
+    pass
 
-    elif (
-        request.json.get("username") is not None
-    ):  # If using a non-web client, retrieve the JSON input
-        # Call the create_user function with the provided JSON data
-        return create_user(request.json)
+def create_user(json_data: dict):
+    # Extract username and password from the JSON data
+    username = json_data.get("username")
+    password = json_data.get("password")
+
+    # Check if a user with the provided username already exists
+    user = (
+        current_app.config["current_db"]
+        .session.query(User)
+        .filter_by(username=username)
+        .first()
+    )
+
+    if user:
+        # Raise an exception if the user already exists
+        raise UserExistsError("User with this username already exists")
+
+    # Hash the password using bcrypt with a randomly generated salt
+    bytes_password = password.encode("utf-8")
+    password_salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(bytes_password, password_salt)
+
+    # Generate a new ULID for the user
+    id = str(ULID())
+    # Create a new User instance with the provided information
+    new_user = User(
+        id=id, username=username, password=hashed_password.decode()
+    )
+    # Add the new user to the database
+    current_app.config["current_db"].session.add(new_user)
+    # Commit the changes to the database
+    current_app.config["current_db"].session.commit()
+
+    # Generate a JWT for the new user
+    encoded_jwt = jwt.encode(
+        {"id": id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
+    )
+    # Return the JWT
+    return {"jwt": encoded_jwt}
 
 
-@auth_blueprint.route("/login", methods=["POST"])
+
+
+@auth_blueprint.route("/login", methods=["GET", "POST"])
 def login():
-    """Api endpoint that logs a user in
-    This post logs the user in and gives a jwt
-    ---
-    tags:
-      - auth
-    parameters:
-        - in: body
-          name: body
-          required: true
-          example: {"username": "test", "password": "test"}
-    responses:
-        200:
-            description: User was logged in successfully
-        405:
-            description: User existed
-    """
-    # If using the web app, grab the form data submitted
-    if request.form.get("username") != None:
-        jwt_dict = validate_user(request.form)
-        response = make_response(redirect("/home"))
-        response.set_cookie("access_token", jwt_dict)
-        return response
+    """Api endpoint that logs a user in and returns a JWT."""
+    # Extract the JSON data from the request
+    data = request.json
 
-    # If using a non web client, retrieve the json input
-    elif request.json.get("username") != None:
-        jwt = validate_user(request.json)
+    # Check if the JSON data contains the "username" and "password" fields
+    if "username" in data and "password" in data:
+        # Validate the user using the provided credentials
+        jwt = validate_user(data)
+        # Return the JWT in a JSON response
         return {"jwt": jwt}
 
+    # If the JSON data is missing required fields, return a 400 error
+    return make_response({"error": "Invalid request data"}, 400)
 
 @auth_blueprint.route("/logout", methods=["GET", "POST"])
 def logout():

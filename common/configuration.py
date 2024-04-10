@@ -1,6 +1,8 @@
 from flask import Flask
 import os
 from flasgger import Swagger
+from flask_cors import CORS
+
 
 
 from .swagger import template
@@ -9,6 +11,7 @@ from models.shared import Database
 
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="../static")
+    CORS(app)
     app_settings = os.getenv("APP_SETTINGS", "common.base.ProductionConfig")
     app.config.from_object(app_settings)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")  # Security key
