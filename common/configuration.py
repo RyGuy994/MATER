@@ -2,12 +2,8 @@ from flask import Flask
 import os
 from flasgger import Swagger
 from flask_cors import CORS
-
-
-
 from .swagger import template
 from models.shared import Database
-
 
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="../static")

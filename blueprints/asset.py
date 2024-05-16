@@ -89,48 +89,39 @@ def create_image(request_image, new_asset, asset_id):
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
     try:
-        name = request_dict.get("name")  # get the name from form element 'name'
-        asset_sn = request_dict.get(
-            "asset_sn"
-        )  # get the asset sn from form 'easset_sn'
-        description = request_dict.get(
-            "description"
-        )  # get the description from form element 'desription'
-        acquired_date = request_dict.get(
-            "acquired_date"
-        )  # get the acquired_date from form element 'acquired_date'
+        name = request_dict.get("name")  # Get the name from the form element 'name'
+        asset_sn = request_dict.get("asset_sn")  # Get the asset serial number from form 'asset_sn'
+        description = request_dict.get("description")  # Get the description from form element 'description'
+        acquired_date = request_dict.get("acquired_date")  # Get the acquired date from form element 'acquired_date'
+
         # Check if the necessary fields are provided
-        if name and asset_sn:  # required fields
-            if acquired_date:  # optional
-                acquired_date = datetime.strptime(
-                    acquired_date, "%Y-%m-%d"
-                ).date()  # change to python
+        if name and asset_sn:  # Required fields
+            if acquired_date:  # Optional
+                acquired_date = datetime.strptime(acquired_date, "%Y-%m-%d").date()  # Convert to Python datetime
             else:
-                acquired_date = None  # change to None
+                acquired_date = None  # Set to None if not provided
+
             new_asset = Asset(
                 name=name,
                 asset_sn=asset_sn,
                 description=description,
                 acquired_date=acquired_date,
                 user_id=user_id,
-            )  # make new_asset and is ready for adding to DB
-            current_app.config["current_db"].session.add(
-                new_asset
-            )  # Add new_asset to Class Assets
-            current_app.config[
-                "current_db"
-            ].session.commit()  # Commit changes to DB (saving it)
-            new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)
-            current_app.config["current_db"].session.add(
-                new_asset
-            )  # Add new_asset to Class Assets
-            current_app.config[
-                "current_db"
-            ].session.commit()  # Commit changes to DB (saving it)
+            )  # Create new_asset ready for adding to DB
+
+            current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
+            current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
+
+            new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)  # Call create_image function
+
+            current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
+            current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
+
     except Exception as e:
         # Print the detailed error message to the console or log it
         print(f"Error creating asset: {e}")
         return False
+
     return True
 
 
