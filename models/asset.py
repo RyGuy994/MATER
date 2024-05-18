@@ -12,6 +12,7 @@ class Asset(Base):  # Asset table
     acquired_date = Column(Date, nullable=True)  # date acquired of asset
     image_path = Column(String(255), nullable=True)  # image path of asset
     user_id = Column(Text, ForeignKey("user.id"), nullable=False)  # owner of asset
+    asset_status = Column(String(50), nullable=False, default='Ready')  # New field
     asset_owner = relationship(
         "User", backref=backref("asset_owner", lazy=True)
     )  # relation to Asset

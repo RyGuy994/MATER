@@ -93,6 +93,7 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
         asset_sn = request_dict.get("asset_sn")  # Get the asset serial number from form 'asset_sn'
         description = request_dict.get("description")  # Get the description from form element 'description'
         acquired_date = request_dict.get("acquired_date")  # Get the acquired date from form element 'acquired_date'
+        asset_status = request_dict.get("asset_status")  # Get the asset status from form element 'asset_status'
 
         # Check if the necessary fields are provided
         if name and asset_sn:  # Required fields
@@ -107,15 +108,19 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
                 description=description,
                 acquired_date=acquired_date,
                 user_id=user_id,
+                asset_status=asset_status,
+                image_path=None  # Set default image_path to None
             )  # Create new_asset ready for adding to DB
 
             current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
             current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
 
-            new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)  # Call create_image function
+            # If an image is provided, handle image upload
+            if request_image.get('image'):
+                new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)  # Call create_image function
 
-            current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
-            current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
+                current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
+                current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
 
     except Exception as e:
         # Print the detailed error message to the console or log it
@@ -124,12 +129,10 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
 
     return True
 
-
-# Define a route for adding assets, accessible through both GET and POST requests
 @assets_blueprint.route("/asset_add", methods=["GET", "POST"])  # asset_add.html route
 def add():
-    """Api endpoint that creates a asset
-    This api creates an asset, using the get route will render in the web ui
+    """Api endpoint that creates an asset
+    This api creates an asset, using the get route will render in the web UI
     ---
     tags:
       - assets
@@ -160,67 +163,44 @@ def add():
            example: description
 
         -  in: formData
-           name: jwt
-           type: string
-           example: jwt
-
-        -  in: formData
            name: acquired_date
            type: string
            example: 2023-10-11
+
+        -  in: formData
+           name: asset_status
+           type: string
+           example: Ready
     responses:
         200:
             description: Asset is created
         405:
-            description: Error occured
+            description: Error occurred
     """
     if request.method == "POST":
-        # Check if JWT token is not provided in the form data
-        if request.form.get("jwt") is None:
-            # Construct a dictionary containing metadata and image data from the request
-            request_dict = {"meta_data": request.form, "image": request.files["image"]}
-            # Retrieve the user_id from the access token in the request cookies
-            user_id = retrieve_username_jwt(
-                request.cookies.get("access_token"),
+        # Retrieve the user_id from the access token in the request cookies
+        user_id = retrieve_username_jwt(request.cookies.get("access_token"))
+
+        # Construct a dictionary containing metadata and image data from the request
+        request_dict = {
+            "meta_data": request.form,
+            "image": request.files.get("image")  # Use .get() to safely retrieve the image
+        }
+
+        # Call the create_asset function to handle asset creation
+        success = create_asset(request_dict.get("meta_data"), user_id, request_dict)
+
+        if success:
+            # Return a success message in JSON format
+            return jsonify(
+                {"message": "Asset successfully added!", "status_code": 200}
             )
-            # Call the create_asset function to handle asset creation
-            success = create_asset(request_dict.get("meta_data"), user_id, request_dict)
-
-            if success:
-                # Return a success message in JSON format
-                return jsonify(
-                    {"message": "Asset successfully added!", "status_code": 200}
-                )
-            else:
-                # Return an error message in JSON format
-                return jsonify({"error": "Failed to add asset.", "status_code": 500})
         else:
-            # If JWT token is provided in the form data
-            # Construct a dictionary containing metadata and image data from the request
-            request_dict = {
-                "meta_data": request.form,
-                "image": request.files.getlist("file")[0],
-            }
-            # Retrieve the user_id from the JWT token
-            user_id = retrieve_username_jwt(request.form.get("jwt"))
-            # Call the create_asset function to handle asset creation
-            success = create_asset(request_dict.get("meta_data"), user_id, request_dict)
-
-            if success:
-                # Return a success message in JSON format
-                return jsonify(
-                    {
-                        "message": f'Successfully created asset {request.form.get("name")}',
-                        "status_code": 200,
-                    }
-                )
-            else:
-                # Return an error message in JSON format
-                return jsonify({"error": "Failed to create asset.", "status_code": 500})
+            # Return an error message in JSON format
+            return jsonify({"error": "Failed to add asset.", "status_code": 500})
 
     # If the request method is GET, display the asset_add.html template
     return render_template("asset_add.html", loggedIn=True)
-
 
 @assets_blueprint.route(
     "/asset_edit/<int:asset_id>", methods=["GET", "POST"]
@@ -245,6 +225,7 @@ def edit(asset_id):
             asset_sn = request.form.get("asset_sn")  # get the sn
             description = request.form.get("description")  # get description
             acquired_date = request.form.get("acquired_date")  # get the acquired date
+            asset_status = request.form.get("asset_status")  # get the asset status
             new_image_path = None
             # Check if the necessary fields are provided
             if name and asset_sn:  # required fields
@@ -255,38 +236,28 @@ def edit(asset_id):
                     acquired_date = None
                 asset.name = name  # set name
                 asset.asset_sn = asset_sn  # set sn
-                asset.description = description  # set asset
+                asset.description = description  # set description
                 asset.acquired_date = acquired_date  # set acquired date
+                asset.asset_status = asset_status  # set asset status
                 try:
                     # Handle image upload
                     if "image" in request.files:
                         image_path = asset.image_path  # get the image path
-                        file = request.files[
-                            "image"
-                        ]  # get the file from element 'image'
-                        # If the user does not   select a file, the browser submits an empty file without a filename
+                        file = request.files["image"]  # get the file from element 'image'
+                        # If the user does not select a file, the browser submits an empty file without a filename
                         if file.filename == "":  # Check if the name is blank
                             print("No selected file")  # no selected file
-                        if file and allowed_file(
-                            file.filename
-                        ):  # if there is a file and it passes the allowed_file function
+                        if file and allowed_file(file.filename):  # if there is a file and it passes the allowed_file function
                             filename = secure_filename(file.filename)  # get filename
-                            new_image_path = get_image_upload_folder(
-                                asset_id
-                            )  # call get_image_upload_folder and apss asset id
-                            if not os.path.exists(
-                                new_image_path
-                            ):  # if path doesn't exist
+                            new_image_path = get_image_upload_folder(asset_id)  # call get_image_upload_folder and pass asset id
+                            if not os.path.exists(new_image_path):  # if path doesn't exist
                                 os.makedirs(new_image_path)  # then create
-                            file.save(
-                                os.path.join(new_image_path, filename)
-                            )  # place file in folder
-                            image_path = os.path.join(
-                                new_image_path, filename
-                            )  # Save the image path to the database
-                            asset.image_path = image_path  # save iage path back to the asset image path
-                except:
-                    pass
+                            file.save(os.path.join(new_image_path, filename))  # place file in folder
+                            image_path = os.path.join(new_image_path, filename)  # Save the image path to the database
+                            asset.image_path = image_path  # save image path back to the asset image path
+                except Exception as e:
+                    print(f"Error uploading image: {e}")  # Print error message if any
+
                 current_app.config["current_db"].session.commit()  # commit changes
             return render_template(
                 "asset_edit.html",
