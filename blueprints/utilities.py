@@ -52,10 +52,11 @@ def retrieve_username_jwt(user_jwt):
         decoded_data = jwt.decode(
             jwt=user_jwt_bytes, key=os.getenv("SECRET_KEY"), algorithms=["HS256"]
         )
+        print(f"Decoded JWT data: {decoded_data}")  # debug
         return decoded_data.get("id")
     except jwt.ExpiredSignatureError:
-        # Handle token expiration
+        print("Token has expired")  # debug
         return None
     except jwt.InvalidTokenError:
-        # Handle invalid token
+        print("Invalid token")  # debug
         return None

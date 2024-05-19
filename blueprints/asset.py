@@ -48,36 +48,20 @@ assets_blueprint = Blueprint("assets", __name__, template_folder="../templates")
 def create_image(request_image, new_asset, asset_id):
     try:
         if "image" in request_image:  # Check if 'image' is present in the request_image
-            file = request_image.get(
-                "image"
-            )  # Get the file from the 'image' element in the request
+            file = request_image.get("image")  # Get the file from the 'image' element in the request
 
-            if (
-                file.filename == ""
-            ):  # If the user does not select a file, the browser submits an empty file without a filename
+            if file.filename == "":  # If the user does not select a file, the browser submits an empty file without a filename
                 print("No selected file")  # Print message indicating no selected file
 
-            if file and allowed_file(
-                file.filename
-            ):  # Check if there is a file and it passes the allowed_file function
-                filename = secure_filename(
-                    file.filename
-                )  # Get the filename in a secure manner
-                image_upload_folder = get_image_upload_folder(
-                    asset_id
-                )  # Call the utility function to get the image upload folder path for the specific asset
+            if file and allowed_file(file.filename):  # Check if there is a file and it passes the allowed_file function
+                filename = secure_filename(file.filename)  # Get the filename in a secure manner
+                image_upload_folder = get_image_upload_folder(asset_id)  # Call the utility function to get the image upload folder path for the specific asset
 
-                if not os.path.exists(
-                    image_upload_folder
-                ):  # Check if the image upload folder path exists, and create it if it doesn't
+                if not os.path.exists(image_upload_folder):  # Check if the image upload folder path exists, and create it if it doesn't
                     os.makedirs(image_upload_folder)
 
-                file.save(
-                    os.path.join(image_upload_folder, filename)
-                )  # Save the file to the image upload folder with the original filename
-                new_asset.image_path = os.path.join(
-                    image_upload_folder, filename
-                )  # Save the image path to the new_asset object in the database
+                file.save(os.path.join(image_upload_folder, filename))  # Save the file to the image upload folder with the original filename
+                new_asset.image_path = os.path.join(image_upload_folder, filename)  # Save the image path to the new_asset object in the database
 
     except Exception as e:
         # Handle exceptions and print an error message
@@ -115,12 +99,20 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
             current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
             current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
 
+            print(f"Asset created: {new_asset}")  # debug
+
             # If an image is provided, handle image upload
             if request_image.get('image'):
                 new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)  # Call create_image function
 
                 current_app.config["current_db"].session.add(new_asset)  # Add new_asset to Class Assets
                 current_app.config["current_db"].session.commit()  # Commit changes to DB (save it)
+
+            print(f"Asset after image processing: {new_asset}")  # debug
+
+            # Verify asset saved
+            saved_asset = current_app.config["current_db"].session.query(Asset).filter_by(id=new_asset.id).first()
+            print(f"Saved asset from DB: {saved_asset}")
 
     except Exception as e:
         # Print the detailed error message to the console or log it
@@ -306,6 +298,7 @@ def all_assets():
         return jsonify({"error": "JWT token is required"}), 400
 
     user_id = retrieve_username_jwt(data["jwt"])
+    print(f"User ID retrieved from JWT: {user_id}")
     if not user_id:
         return jsonify({"error": "Invalid JWT token"}), 401
 
@@ -323,9 +316,12 @@ def all_assets():
         "acquired_date": str(asset.acquired_date),
         "image_path": asset.image_path,
         "user_id": asset.user_id,
+        "asset_status": asset.asset_status
     } for asset in assets]
 
-    return jsonify(asset_list), 200
+    print(f"Assets retrieved: {asset_list}") #debug
+
+    return jsonify(asset_list), 200 
 
 
 @assets_blueprint.route("/asset_delete/<int:asset_id>", methods=["POST"])
