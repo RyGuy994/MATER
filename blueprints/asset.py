@@ -279,11 +279,10 @@ def edit(asset_id):
     )  # if committed load asset_edit.html and send asset and services and NO BUTTER TOAST
 
 
-# Define a route for retrieving all assets, accessible through a GET request
-@assets_blueprint.route("/asset_all", methods=["GET"])
+@assets_blueprint.route("/asset_all", methods=["POST"])
 def all_assets():
     """
-    Api endpoint that gets all assets
+    API endpoint that gets all assets
     This API gets all assets associated with a user.
     ---
     tags:
@@ -299,45 +298,34 @@ def all_assets():
         405:
             description: Error occurred
     """
-    if request.form.get("jwt") is None: # Check if JWT token is not provided as a query parameter
-        user_id = retrieve_username_jwt(
-            request.cookies.get("access_token"),
-        ) # Retrieve the user_id from the access token in the request cookies
-        assets = (
-            current_app.config["current_db"]
-            .session.query(Asset)
-            .filter_by(user_id=user_id)
-            .all()
-        )  # Query all assets in the Class Asset associated with the user
-        return render_template(
-            "asset_all.html", assets=assets, loggedIn=True
-        )  # Display the asset_all.html template and pass the retrieved assets
-    else:
-        user_id = retrieve_username_jwt(
-            request.json.get("jwt")
-        )  # If JWT token is provided in the query parameters
-        assets = (
-            current_app.config["current_db"]
-            .session.query(Asset)
-            .filter_by(user_id=user_id)
-            .all()
-        )  # Query all assets in the Class Asset associated with the user
-        data = []  # Prepare a list to store asset data in JSON format
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
 
-        for (
-            asset
-        ) in assets:  # Iterate through each asset and extract relevant information
-            asset_data = {
-                "name": asset.name,
-                "asset_sn": asset.asset_sn,
-                "description": asset.description,
-                "acquired_date": str(asset.acquired_date),
-                "image_path": asset.image_path,
-                "user_id": asset.user_id,
-            }
-            data.append(asset_data)
+    data = request.json
+    if not data or "jwt" not in data:
+        return jsonify({"error": "JWT token is required"}), 400
 
-        return json.dumps(data)  # Return the asset data in JSON format
+    user_id = retrieve_username_jwt(data["jwt"])
+    if not user_id:
+        return jsonify({"error": "Invalid JWT token"}), 401
+
+    assets = (
+        current_app.config["current_db"]
+        .session.query(Asset)
+        .filter_by(user_id=user_id)
+        .all()
+    )
+
+    asset_list = [{
+        "name": asset.name,
+        "asset_sn": asset.asset_sn,
+        "description": asset.description,
+        "acquired_date": str(asset.acquired_date),
+        "image_path": asset.image_path,
+        "user_id": asset.user_id,
+    } for asset in assets]
+
+    return jsonify(asset_list), 200
 
 
 @assets_blueprint.route("/asset_delete/<int:asset_id>", methods=["POST"])
