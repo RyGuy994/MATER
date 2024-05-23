@@ -8,6 +8,7 @@ from flask import (
     jsonify,
     current_app,
 )
+from base64 import b64decode
 
 # Import datetime and timedelta for date and service calculations
 from datetime import datetime
@@ -121,62 +122,89 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
 
     return True
 
-@assets_blueprint.route("/asset_add", methods=["GET", "POST"])  # asset_add.html route
+from flask import request, jsonify
+from base64 import b64decode
+
+@assets_blueprint.route("/asset_add", methods=["POST"])
 def add():
-    """Api endpoint that creates an asset
-    This api creates an asset, using the get route will render in the web UI
+    """API endpoint that creates an asset
+    This API creates an asset from a JSON payload.
     ---
     tags:
       - assets
     consumes:
-        - multipart/form-data
+        - application/json
     produces:
         - application/json
     parameters:
-        -  in: formData
-           name: file
-           required: true
-           description: file to upload
-           type: file
+        - in: body
+          name: asset
+          description: The asset to create
+          schema:
+            type: object
+            required:
+              - name
+              - asset_sn
+              - description
+              - acquired_date
+              - asset_status
+              - file
+              - jwt
+            properties:
+              name:
+                type: string
+                example: asset1
+              asset_sn:
+                type: string
+                example: asset1
+              description:
+                type: string
+                example: description
+              acquired_date:
+                type: string
+                example: 2023-10-11
+              asset_status:
+                type: string
+                example: Ready
+              file:
+                type: string
+                format: binary
+                description: file to upload
+              jwt:
+                type: string
+                description: JWT for authentication
 
-        -  in: formData
-           name: name
-           type: string
-           example: asset1
-
-        -  in: formData
-           name: asset_sn
-           type: string
-           example: asset1
-
-        -  in: formData
-           name: description
-           type: string
-           example: description
-
-        -  in: formData
-           name: acquired_date
-           type: string
-           example: 2023-10-11
-
-        -  in: formData
-           name: asset_status
-           type: string
-           example: Ready
     responses:
         200:
             description: Asset is created
-        405:
+        500:
             description: Error occurred
     """
     if request.method == "POST":
-        # Retrieve the user_id from the access token in the request cookies
-        user_id = retrieve_username_jwt(request.cookies.get("access_token"))
+        data = request.get_json()
 
-        # Construct a dictionary containing metadata and image data from the request
+        # Extract the JWT from the request data
+        jwt_token = data.get("jwt")
+        if not jwt_token:
+            return jsonify({"error": "JWT token is missing", "status_code": 400})
+
+        # Extract the user_id from the JWT
+        user_id = retrieve_username_jwt(jwt_token)
+        
+        # Decode the base64 image data if it exists
+        image_data = data.get("file")
+        image_file = b64decode(image_data) if image_data else None
+
+        # Construct a dictionary containing metadata and image data
         request_dict = {
-            "meta_data": request.form,
-            "image": request.files.get("image")  # Use .get() to safely retrieve the image
+            "meta_data": {
+                "name": data.get("name"),
+                "asset_sn": data.get("asset_sn"),
+                "description": data.get("description"),
+                "acquired_date": data.get("acquired_date"),
+                "asset_status": data.get("asset_status"),
+            },
+            "image": image_file  # Binary data of the image
         }
 
         # Call the create_asset function to handle asset creation
@@ -191,8 +219,9 @@ def add():
             # Return an error message in JSON format
             return jsonify({"error": "Failed to add asset.", "status_code": 500})
 
-    # If the request method is GET, display the asset_add.html template
-    return render_template("asset_add.html", loggedIn=True)
+    # Return an error if method is not POST
+    return jsonify({"error": "Method not allowed", "status_code": 405})
+
 
 @assets_blueprint.route(
     "/asset_edit/<int:asset_id>", methods=["GET", "POST"]
