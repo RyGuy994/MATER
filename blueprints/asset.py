@@ -1,4 +1,4 @@
-# Import necessary modules and components from Flask and other libraries
+import os
 from flask import (
     Blueprint,
     request,
@@ -13,9 +13,6 @@ import os
 import shutil
 import zipfile
 from werkzeug.utils import secure_filename
-import json
-
-# Import utility functions from the utilities module
 from blueprints.utilities import (
     retrieve_username_jwt,
     get_image_upload_folder,
@@ -23,20 +20,14 @@ from blueprints.utilities import (
     delete_attachment_from_storage,
     get_asset_upload_folder,
 )
-
-# Import the Service and Asset models
 from models.service import Service
 from models.asset import Asset
 
-# Create a Blueprint named 'assets_blueprint' with a template folder path
 assets_blueprint = Blueprint("assets", __name__, template_folder="../templates")
 
-
-# Function to handle image creation for a new asset
-def create_image(request_image, new_asset, asset_id):
+def create_image(file, new_asset, asset_id):
     try:
-        if "image" in request_image:
-            file = request_image.get("image")
+        if file:
             if file.filename == "":
                 print("No selected file")
                 return new_asset
@@ -55,7 +46,6 @@ def create_image(request_image, new_asset, asset_id):
         print(f"Error uploading image: {e}")
 
     return new_asset
-
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
     try:
@@ -89,7 +79,7 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
         print(f"Asset created: {new_asset}")
 
         if request_image.get("image"):
-            new_asset = create_image(request_image, new_asset, asset_id=new_asset.id)
+            new_asset = create_image(request_image.get("image"), new_asset, asset_id=new_asset.id)
             current_app.config["current_db"].session.add(new_asset)
             current_app.config["current_db"].session.commit()
 
@@ -106,51 +96,43 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
 
     return True
 
-
 @assets_blueprint.route("/asset_add", methods=["POST"])
 def add():
-    if request.content_type != 'application/json':
-        return jsonify({"error": "Content-Type must be application/json"}), 400
+    if request.content_type.startswith('multipart/form-data'):
+        data = request.form.to_dict()
+        file = request.files.get('image')
+        
+        jwt_token = data.get("jwt")
+        if not jwt_token:
+            return jsonify({"error": "JWT token is missing", "status_code": 400})
 
-    data = request.get_json()
+        user_id = retrieve_username_jwt(jwt_token)
+        if not user_id:
+            return jsonify({"error": "Invalid JWT token", "status_code": 401})
 
-    jwt_token = data.get("jwt")
-    if not jwt_token:
-        return jsonify({"error": "JWT token is missing", "status_code": 400})
-
-    user_id = retrieve_username_jwt(jwt_token)
-    if not user_id:
-        return jsonify({"error": "Invalid JWT token", "status_code": 401})
-
-    image_data = data.get("file")
-    image_file = b64decode(image_data) if image_data else None
-
-    request_dict = {
-        "meta_data": {
+        request_dict = {
             "name": data.get("name"),
             "asset_sn": data.get("asset_sn"),
             "description": data.get("description"),
             "acquired_date": data.get("acquired_date"),
             "asset_status": data.get("asset_status"),
-        },
-        "image": image_file
-    }
+        }
 
-    success = create_asset(request_dict.get("meta_data"), user_id, request_dict)
+        request_image = {
+            "image": file
+        }
 
-    if success:
-        return jsonify({"message": "Asset successfully added!", "status_code": 200})
+        success = create_asset(request_dict, user_id, request_image)
+
+        if success:
+            return jsonify({"message": "Asset successfully added!", "status_code": 200})
+        else:
+            return jsonify({"error": "Failed to add asset.", "status_code": 500})
     else:
-        return jsonify({"error": "Failed to add asset.", "status_code": 500})
-
+        return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
 
 @assets_blueprint.route("/asset_edit/<int:asset_id>", methods=["GET", "POST"])
 def edit_asset(asset_id):
-    if request.content_type != 'application/json':
-        return jsonify({"error": "Content-Type must be application/json"}), 400
-
-    data = request.json
-
     if request.method == "GET":
         asset = current_app.config["current_db"].session.query(Asset).filter_by(id=asset_id).first()
         if not asset:
@@ -168,11 +150,10 @@ def edit_asset(asset_id):
         return jsonify(asset_details), 200
 
     elif request.method == "POST":
-        required_fields = ["jwt", "name", "asset_sn", "description", "acquired_date", "asset_status"]
-        if not all(field in data for field in required_fields):
-            return jsonify({"error": "Missing required fields"}), 400
+        if 'jwt' not in request.form:
+            return jsonify({"error": "JWT token is missing"}), 400
 
-        user_id = retrieve_username_jwt(data["jwt"])
+        user_id = retrieve_username_jwt(request.form['jwt'])
         if not user_id:
             return jsonify({"error": "Invalid JWT token"}), 401
 
@@ -180,30 +161,25 @@ def edit_asset(asset_id):
         if not asset:
             return jsonify({"error": "Asset not found"}), 404
 
-        asset.name = data["name"]
-        asset.asset_sn = data["asset_sn"]
-        asset.description = data["description"]
+        asset.name = request.form.get("name")
+        asset.asset_sn = request.form.get("asset_sn")
+        asset.description = request.form.get("description")
         try:
-            asset.acquired_date = datetime.strptime(data["acquired_date"], "%Y-%m-%d").date()
+            asset.acquired_date = datetime.strptime(request.form.get("acquired_date"), "%Y-%m-%d").date()
         except ValueError as e:
             return jsonify({"error": f"Invalid date format: {e}"}), 400
-        asset.asset_status = data["asset_status"]
+        asset.asset_status = request.form.get("asset_status")
 
-        if "image" in data:
-            image_data = data["image"]
-            if image_data:
-                try:
-                    image_path = asset.image_path
-                    filename = secure_filename(f"{asset_id}.png")
-                    new_image_path = get_image_upload_folder(asset_id)
-                    if not os.path.exists(new_image_path):
-                        os.makedirs(new_image_path)
-                    image_full_path = os.path.join(new_image_path, filename)
-                    with open(image_full_path, "wb") as img_file:
-                        img_file.write(base64.b64decode(image_data))
-                    asset.image_path = image_full_path
-                except Exception as e:
-                    return jsonify({"error": f"Error uploading image: {e}"}), 500
+        if "image" in request.files:
+            file = request.files["image"]
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                image_upload_folder = get_image_upload_folder(asset_id)
+                if not os.path.exists(image_upload_folder):
+                    os.makedirs(image_upload_folder)
+                file_path = os.path.join(image_upload_folder, filename)
+                file.save(file_path)
+                asset.image_path = file_path
 
         current_app.config["current_db"].session.commit()
 
@@ -220,7 +196,6 @@ def edit_asset(asset_id):
         return jsonify(updated_asset), 200
 
     return jsonify({"error": "Invalid request method"}), 405
-
 
 @assets_blueprint.route("/asset_all", methods=["POST"])
 def all_assets():
@@ -294,8 +269,6 @@ def delete_service(asset_id):
 
     return redirect("/assets/asset_all")
 
-
-# Define a route for generating a ZIP file containing all files associated with an asset
 @assets_blueprint.route("/generate_zip/<int:asset_id>")
 def generate_zip(asset_id):
     folder_path = get_asset_upload_folder(

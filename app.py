@@ -31,43 +31,6 @@ from models.service import Service
 from models.asset import Asset
 from models.serviceattachment import ServiceAttachment
 
-
-# Define a route for the signup page (index.html)
-@app.route("/signup")  # for signup.html route
-def signup_page():
-    return render_template("signup.html")  # display signup.html
-
-
-# Define a route for the default page (signin.html)
-@app.route("/")  # for signin.html route
-def signin_page():
-    try:
-        retrieve_username_jwt(
-            request.cookies.get("access_token")
-        )  # Try to retrieve the user_id from the access token in the request cookies
-        return render_template("signin.html")  # display signin.html
-    except:
-        return render_template("signin.html")  # display signin.html
-
-
-# Define a route for the home page (index.html)
-@app.route("/home")  # for index.html route
-def home():
-    try:
-        current_date = datetime.now().date()  # Get the current date
-        user_id = retrieve_username_jwt(
-            request.cookies.get("access_token")
-        )  # Retrieve the user_id from the access token in the request cookies
-        upcoming_services = get_upcoming_services(user_id, 30)  # Call the function with user_id and days
-        print(upcoming_services)  # Debugging line
-        return render_template(
-            "index.html", upcoming_services=upcoming_services, loggedIn=True
-        )  # display index.html and pass upcoming_services
-    except Exception as e:
-        return render_template("signin.html")
-
-
-
 # Route to serve images
 @app.route("/<image_name>", methods=["GET"])
 def serve_image(image_name, asset_id=None):
