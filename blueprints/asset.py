@@ -230,44 +230,53 @@ def all_assets():
         current_app.config["current_db"].session.close()
 
 @assets_blueprint.route("/asset_delete/<int:asset_id>", methods=["POST"])
-def delete_service(asset_id):
+def delete_asset(asset_id):
     try:
-        asset = Asset.query.get_or_404(asset_id)  # Get asset by id
-        user_id = retrieve_username_jwt(request.cookies.get("access_token"))
+        # Extract the JWT token from the request body
+        data = request.get_json()
+        jwt = data.get('jwt')
+
+        if not jwt:
+            return jsonify({"error": "JWT token is missing"}), 400
+
+        user_id = retrieve_username_jwt(jwt)
+        asset = current_app.config["current_db"].session.query(Asset).filter_by(id=asset_id).first()
         asset_folder = get_asset_upload_folder(asset_id)
+
         # Check if the asset has associated services
         if asset.services:
             for service in asset.services:
                 if service.serviceattachments and service.user_id == user_id:
                     # If yes, delete the associated attachments first
                     for attachment in service.serviceattachments:
-                        # Delete the file from your storage
-                        delete_attachment_from_storage(attachment.attachment_path)
-                        # Delete the attachment record from the database
-                        current_app.config["current_db"].session.delete(attachment)
-                    current_app.config["current_db"].session.delete(
-                        service
-                    )  # Delete the service
-        current_app.config["current_db"].session.delete(asset)  # Delete the asset
-        current_app.config["current_db"].session.commit()  # Commit the changes
+                        try:
+                            delete_attachment_from_storage(attachment.attachment_path)
+                            current_app.config["current_db"].session.delete(attachment)
+                        except Exception as attachment_error:
+                            current_app.logger.error(f"Error deleting attachment {attachment.id}: {attachment_error}")
+                            raise attachment_error
+                    current_app.config["current_db"].session.delete(service)
+
+        current_app.config["current_db"].session.delete(asset)
+        current_app.config["current_db"].session.commit()
+
         if os.path.exists(asset_folder) and os.path.isdir(asset_folder):
             try:
                 shutil.rmtree(asset_folder)
-                print(f"Directory {asset_folder} successfully deleted.")
-            except OSError as e:
-                print(f"Error deleting directory {asset_folder}: {e}")
+                current_app.logger.info(f"Directory {asset_folder} successfully deleted.")
+            except OSError as dir_error:
+                current_app.logger.error(f"Error deleting directory {asset_folder}: {dir_error}")
+                raise dir_error
         else:
-            print(f"Directory {asset_folder} does not exist.")
-    except Exception as e:
-        current_app.config[
-            "current_db"
-        ].session.rollback()  # Rollback changes if an error occurs
-        print(f"Error in delete_asset: {e}")
-        raise  # Reraise the exception to let the calling function handle it
-    finally:
-        current_app.config["current_db"].session.close()  # Close the session
+            current_app.logger.warning(f"Directory {asset_folder} does not exist.")
 
-    return redirect("/assets/asset_all")
+        return jsonify({"message": "Asset deleted successfully"}), 200
+    except Exception as e:
+        current_app.config["current_db"].session.rollback()
+        current_app.logger.error(f"Error in delete_asset: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        current_app.config["current_db"].session.close()
 
 @assets_blueprint.route("/generate_zip/<int:asset_id>")
 def generate_zip(asset_id):
