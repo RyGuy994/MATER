@@ -110,38 +110,41 @@ def get_upcoming_services(user_id, days):
         # Handle exceptions
         raise Exception("Error in retrieving upcoming services: " + str(e))
 
-@services_blueprint.route("/service_add", methods=["GET", "POST"])
+@services_blueprint.route("/service_add", methods=["POST"])
 def add_service():
-    assets = (
-        current_app.config["current_db"]
-        .session.query(Asset)
-        .all()  # Fetch all assets from the database
-    )
-    if request.method == "POST":
-        if request.form.get("jwt") is None:
-            request_dict = {
-                "meta_data": request.form,
-                "attachments": request.files["attachments"],
-            }
-            user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-            success = create_service(request_dict.get("meta_data"), user_id, request_dict)
-            if success:
-                return jsonify({"message": "Service successfully added!", "status_code": 200})
-            else:
-                return jsonify({"error": "Failed to add service.", "status_code": 500})
+    if request.content_type.startswith('multipart/form-data'):
+        data = request.form.to_dict()
+        files = request.files
+
+        jwt_token = data.get("jwt")
+        if not jwt_token:
+            return jsonify({"error": "JWT token is missing", "status_code": 400})
+
+        user_id = retrieve_username_jwt(jwt_token)
+        if not user_id:
+            return jsonify({"error": "Invalid JWT token", "status_code": 401})
+
+        request_dict = {
+            "name": data.get("name"),
+            "description": data.get("description"),
+            "start_date": data.get("start_date"),
+            "end_date": data.get("end_date"),
+            "service_status": data.get("service_status"),
+        }
+
+        request_attachments = {
+            "attachments": files.getlist("attachments")
+        }
+
+        success = create_service(request_dict, user_id, request_attachments)
+
+        if success:
+            return jsonify({"message": "Service successfully added!", "status_code": 200})
         else:
-            request_dict = {
-                "meta_data": request.form,
-                "image": request.files.getlist("file")[0],
-            }
-            user_id = retrieve_username_jwt(request.form.get("jwt"))
-            success = create_service(request_dict.get("meta_data"), user_id, request_dict)
-            if success:
-                return jsonify({"message": "Success!", "status_code": 200})
-            else:
-                return jsonify({"error": "Failed to create service.", "status_code": 500})
+            return jsonify({"error": "Failed to add service.", "status_code": 500})
     else:
-        return render_template("service_add.html", assets=assets, loggedIn=True)
+        return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
+
 
 @services_blueprint.route("/service_edit/<int:service_id>", methods=["GET", "POST"])
 def service_edit(service_id):
