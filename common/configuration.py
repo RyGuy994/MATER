@@ -6,6 +6,7 @@ from flask_cors import CORS
 from .swagger import template
 from models.shared import Database
 from models.appsettings import AppSettings
+from models.initflag import InitFlag
 
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="../static")
@@ -22,20 +23,44 @@ def create_app():
 
     # Create some default settings within the application context
     with app.app_context():
-        default_settings = [
-            AppSettings(whatfor='global_service_status', value='Yes', globalsetting=True),
-            AppSettings(whatfor='global_asset_status', value='Yes', globalsetting=True),
-            AppSettings(whatfor='service_status', value='Pending', globalsetting=True),
-            AppSettings(whatfor='service_status', value='On Hold', globalsetting=True),
-            AppSettings(whatfor='service_status', value='Completed', globalsetting=True),
-            AppSettings(whatfor='asset_status', value='Ready', globalsetting=True),
-            AppSettings(whatfor='asset_status', value='Needs Attention', globalsetting=True),
-            AppSettings(whatfor='asset_status', value='Removed', globalsetting=True)
-        ]
-        for setting in default_settings:
-            current_app.config["current_db"].session.add(setting)
+        # Check if the default settings have been initialized
+        init_flag = current_app.config["current_db"].session.query(InitFlag).filter_by(name='default_settings').first()
+        
+        if not init_flag:
+            default_settings = [
+                {'whatfor': 'global_service_status', 'value': 'Yes', 'globalsetting': True},
+                {'whatfor': 'global_asset_status', 'value': 'Yes', 'globalsetting': True},
+                {'whatfor': 'service_status', 'value': 'Pending', 'globalsetting': True},
+                {'whatfor': 'service_status', 'value': 'On Hold', 'globalsetting': True},
+                {'whatfor': 'service_status', 'value': 'Completed', 'globalsetting': True},
+                {'whatfor': 'asset_status', 'value': 'Ready', 'globalsetting': True},
+                {'whatfor': 'asset_status', 'value': 'Needs Attention', 'globalsetting': True},
+                {'whatfor': 'asset_status', 'value': 'Removed', 'globalsetting': True}
+            ]
 
-        current_app.config["current_db"].session.commit()
+            for setting in default_settings:
+                exists = current_app.config["current_db"].session.query(
+                    current_app.config["current_db"].session.query(AppSettings).filter_by(
+                        whatfor=setting['whatfor'],
+                        value=setting['value'],
+                        globalsetting=setting['globalsetting']
+                    ).exists()
+                ).scalar()
+
+                if not exists:
+                    new_setting = AppSettings(
+                        whatfor=setting['whatfor'],
+                        value=setting['value'],
+                        globalsetting=setting['globalsetting']
+                    )
+                    current_app.config["current_db"].session.add(new_setting)
+
+            current_app.config["current_db"].session.commit()
+
+            # Set the initialization flag
+            new_flag = InitFlag(name='default_settings')
+            current_app.config["current_db"].session.add(new_flag)
+            current_app.config["current_db"].session.commit()
 
     # Blueprints to import for the various routes
     from blueprints.asset import assets_blueprint
