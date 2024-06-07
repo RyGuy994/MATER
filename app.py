@@ -2,7 +2,6 @@
 from flask import render_template, request, send_file, abort, Response, current_app, jsonify
 
 # Import datetime and timedelta for date and service calculations
-from blueprints.service import get_upcoming_services
 from datetime import datetime
 
 # Import operating system-related functionality

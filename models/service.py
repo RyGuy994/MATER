@@ -1,11 +1,7 @@
 from icalendar import Event
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Boolean, Float
-
 from sqlalchemy.orm import relationship, backref
-
-
 from models.base import Base
-
 
 class Service(Base):  # Service table
     __tablename__ = "service"
@@ -19,7 +15,7 @@ class Service(Base):  # Service table
     service_type = Column(String(100))  # type of service
     service_date = Column(Date)  # date of service
     service_cost = Column(Float)  # cost of service
-    service_complete = Column(Boolean)  # if the service is complete
+    service_status = Column(String(100)) # status of service
     service_notes = Column(Text)  # notes of service
     user_id = Column(Text, ForeignKey("user.id"), nullable=False)  # owner of service
     service_owner = relationship(

@@ -7,9 +7,7 @@ from werkzeug.utils import secure_filename
 from models.asset import Asset
 from models.service import Service
 from models.serviceattachment import ServiceAttachment
-from .utilities import delete_attachment_from_storage, get_attachment_upload_folder
-from blueprints.utilities import retrieve_username_jwt
-
+from .utilities import delete_attachment_from_storage, get_attachment_upload_folder, retrieve_username_jwt
 services_blueprint = Blueprint("service", __name__, template_folder="../templates")
 
 def save_attachments(attachments, asset_id, service_id, user_id):
@@ -30,101 +28,103 @@ def save_attachments(attachments, asset_id, service_id, user_id):
             current_app.config["current_db"].session.commit()
     return attachment_paths
 
-    def create_service(request_dict: dict, user_id: str, request_image: dict):
-        try:
-            asset_id = request.form.get("asset_id")
-            service_id = None
-            service_complete2 = False
+def create_service(request_dict: dict, user_id: str, request_image: dict):
+    try:
+        asset_id = request_dict.get("asset_id")
+        service_id = None
+        service_type = request_dict.get("service_type")
+        service_date = request_dict.get("service_date")
+        service_cost = request_dict.get("service_cost")
+        service_status = request_dict.get("service_status")
+        service_notes = request_dict.get("service_notes")
+        service_add_new = request_dict.get("service_add_again_check") == "on"
+
+        if service_date:
+            service_date = datetime.strptime(service_date, "%Y-%m-%d").date()
+        else:
+            service_date = None
+
+        if service_cost == "":
+            service_cost = 0
+
+        new_service = Service(
+            asset_id=asset_id,
+            service_type=service_type,
+            service_date=service_date,
+            service_cost=service_cost,
+            service_status=service_status,
+            service_notes=service_notes,
+            user_id=user_id,
+        )
+
+        current_app.config["current_db"].session.add(new_service)
+        current_app.config["current_db"].session.commit()
+
+        attachments = request_image.get("attachments")
+        attachment_paths = save_attachments(attachments, asset_id, new_service.id, user_id)
+
+        if service_add_new:
             service_type = request_dict.get("service_type")
-            service_date = request_dict.get("service_date")
+            service_date_new = request_dict.get("service_add_again_days_cal")
+            service_date_new = datetime.strptime(service_date_new, "%Y-%m-%d").date()
             service_cost = request_dict.get("service_cost")
-            service_complete = True if request_dict.get("service_complete") == "on" else False
             service_notes = request_dict.get("service_notes")
-            service_add_new = True if request_dict.get("service_add_again_check") == "on" else False
-
-            if service_date:
-                service_date = datetime.strptime(service_date, "%Y-%m-%d").date()
-            else:
-                service_date = None
-
-            if service_cost == "":
-                service_cost = 0
-
-            new_service = Service(
+            new_service2 = Service(
                 asset_id=asset_id,
                 service_type=service_type,
-                service_date=service_date,
+                service_date=service_date_new,
                 service_cost=service_cost,
-                service_complete=service_complete,
+                service_status="Pending", 
                 service_notes=service_notes,
                 user_id=user_id,
             )
-
-            current_app.config["current_db"].session.add(new_service)
+            current_app.config["current_db"].session.add(new_service2)
             current_app.config["current_db"].session.commit()
 
-            attachments = request.files.getlist("attachments")
-            attachment_paths = save_attachments(
-                attachments, asset_id, new_service.id, user_id
-            )
+    except Exception as e:
+        print(f"Error creating service: {e}")
+        return False
+    return True
 
-            if service_add_new == True:
-                service_type = request_dict.get("service_type")
-                service_date_new = request_dict.get("service_add_again_days_cal")
-                service_date_new = datetime.strptime(service_date_new, "%Y-%m-%d").date()
-                service_cost = request_dict.get("service_cost")
-                service_notes = request_dict.get("service_notes")
-                new_service2 = Service(
-                    asset_id=asset_id,
-                    service_type=service_type,
-                    service_date=service_date_new,
-                    service_cost=service_cost,
-                    service_complete=service_complete2,
-                    service_notes=service_notes,
-                    user_id=user_id,
-                )
-                current_app.config["current_db"].session.add(new_service2)
-                current_app.config["current_db"].session.commit()
+@services_blueprint.route("/service_add", methods=["POST"])
+def add_service():
+    if request.content_type.startswith('multipart/form-data'):
+        data = request.form.to_dict()
+        files = request.files
 
-        except Exception as e:
-            print(f"Error creating service: {e}")
-            return False
-        return True
+        jwt_token = data.get("jwt")
+        if not jwt_token:
+            return jsonify({"error": "JWT token is missing", "status_code": 400})
 
-    @services_blueprint.route("/service_add", methods=["POST"])
-    def add_service():
-        if request.content_type.startswith('multipart/form-data'):
-            data = request.form.to_dict()
-            files = request.files
+        user_id = retrieve_username_jwt(jwt_token)
+        if not user_id:
+            return jsonify({"error": "Invalid JWT token", "status_code": 401})
 
-            jwt_token = data.get("jwt")
-            if not jwt_token:
-                return jsonify({"error": "JWT token is missing", "status_code": 400})
+        request_dict = {
+            "asset_id": data.get("asset_id"),
+            "service_type": data.get("service_type"),
+            "service_date": data.get("service_date"),
+            "service_cost": data.get("service_cost"),
+            "service_status": data.get("service_status"),
+            "service_notes": data.get("service_notes"),
+            "service_add_again_check": data.get("service_add_again_check"),
+            "service_add_again_days_cal": data.get("service_add_again_days_cal"),
+        }
 
-            user_id = retrieve_username_jwt(jwt_token)
-            if not user_id:
-                return jsonify({"error": "Invalid JWT token", "status_code": 401})
+        request_attachments = {
+            "attachments": files.getlist("attachments")
+        }
 
-            request_dict = {
-                "name": data.get("name"),
-                "description": data.get("description"),
-                "start_date": data.get("start_date"),
-                "end_date": data.get("end_date"),
-                "service_status": data.get("service_status"),
-            }
+        success = create_service(request_dict, user_id, request_attachments)
 
-            request_attachments = {
-                "attachments": files.getlist("attachments")
-            }
-
-            success = create_service(request_dict, user_id, request_attachments)
-
-            if success:
-                return jsonify({"message": "Service successfully added!", "status_code": 200})
-            else:
-                return jsonify({"error": "Failed to add service.", "status_code": 500})
+        if success:
+            return jsonify({"message": "Service successfully added!", "status_code": 200})
         else:
-            return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
+            return jsonify({"error": "Failed to add service.", "status_code": 500})
+    else:
+        return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
+
+
 
 
 @services_blueprint.route("/service_edit/<int:service_id>", methods=["GET", "POST"])
