@@ -20,6 +20,8 @@ The current primary goals for the MATER project include:
 
 - **Mobile App:** Develop a mobile application for seamless asset tracking on the go.
   
+- **Seperate Frontend** Develop a frontend to seprate the backend for better use and development of API and Mobile Applications
+
 - ~**Break-away Database:** Implement a modular and scalable database architecture to enhance data management and give the user the option to use an exteneral database.~
 
 - ~**Calendar Integration:** Integrate calendar features for scheduling and managing maintenance activities and syncing to various calendar systems.~
@@ -39,7 +41,7 @@ The current primary goals for the MATER project include:
 
 ## About the Code
 
-Apologies for any perceived shortcomings in the code quality. This project is an ongoing learning experience for me who is passionate about creating something valuable. Contributions, suggestions, and improvements are always welcome!
+Apologies for any perceived shortcomings in the code quality. This project is an ongoing learning experience for myself who is passionate about creating something valuable. Contributions, suggestions, and improvements are always welcome!
 
 ## Getting Started
 
@@ -56,9 +58,6 @@ To get started with MATER, follow these steps:
    pip install -r requirements.txt
 
 Visit http://localhost:5000 in your browser to explore MATER.
-
-## About the Dev
-Just a father with hardly any free time trying to learn something while giving back to the Community.
 
 ## Contributions
 
