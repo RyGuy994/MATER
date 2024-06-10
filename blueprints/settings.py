@@ -155,11 +155,10 @@ def get_appsettings_assets_status():
 @settings_blueprint.route('/appsettings/services/status', methods=['POST'])
 def get_appsettings_services_status():
     data = request.get_json()
-    # Logging incoming request data
     current_app.logger.info(f"Request Data: {data}")
 
     global_setting = current_app.config["current_db"].session.query(AppSettings).filter_by(whatfor="global_service_status").first()
-
+    current_app.logger.info(f"global_setting: {global_setting.whatfor} {global_setting.value}")
     jwt_token = data.get("jwt")
     if not jwt_token:
         current_app.logger.error("JWT token is missing")
@@ -173,19 +172,53 @@ def get_appsettings_services_status():
     current_app.logger.info(f"User ID: {user_id}")
 
     if global_setting:
-        # Handle the case when global setting is found
-        if global_setting.value:
-            settings = current_app.config["current_db"].session.query(AppSettings).filter_by(user_id=user_id)
+        if global_setting.value == "Yes":
+            settings = current_app.config["current_db"].session.query(AppSettings).filter_by(globalsetting=True, whatfor="service_status").all()
         else:
             settings = current_app.config["current_db"].session.query(AppSettings).filter(
                 or_(
-                    AppSettings.user_id == user_id,
-                    AppSettings.globalsetting == True
+                    and_(AppSettings.user_id == user_id, AppSettings.whatfor == "service_status"),
+                    and_(AppSettings.globalsetting == True, AppSettings.whatfor == "service_status")
                 )
             ).all()
     else:
-        # Handle the case when global setting is not found
-        settings = current_app.config["current_db"].session.query(AppSettings).filter_by(user_id=user_id)
+        settings = current_app.config["current_db"].session.query(AppSettings).filter_by(user_id=user_id, whatfor="service_status").all()
+
+    return jsonify([{
+        'value': setting.value,
+    } for setting in settings]), 200
+
+@settings_blueprint.route('/appsettings/services/type', methods=['POST'])
+def get_appsettings_services_type():
+    data = request.get_json()
+    current_app.logger.info(f"Request Data: {data}")
+
+    global_setting = current_app.config["current_db"].session.query(AppSettings).filter_by(whatfor="global_service_type").first()
+    current_app.logger.info(f"global_setting: {global_setting.whatfor} {global_setting.value}")
+    jwt_token = data.get("jwt")
+    if not jwt_token:
+        current_app.logger.error("JWT token is missing")
+        return jsonify({"error": "JWT token is missing"}), 400
+
+    user_id = retrieve_username_jwt(jwt_token)
+    if not user_id:
+        current_app.logger.error("Invalid JWT token")
+        return jsonify({"error": "Invalid JWT token"}), 401
+
+    current_app.logger.info(f"User ID: {user_id}")
+
+    if global_setting:
+        if global_setting.value == "Yes":
+            settings = current_app.config["current_db"].session.query(AppSettings).filter_by(globalsetting=True, whatfor="service_type").all()
+        else:
+            settings = current_app.config["current_db"].session.query(AppSettings).filter(
+                or_(
+                    and_(AppSettings.user_id == user_id, AppSettings.whatfor == "service_type"),
+                    and_(AppSettings.globalsetting == True, AppSettings.whatfor == "service_type")
+                )
+            ).all()
+    else:
+        settings = current_app.config["current_db"].session.query(AppSettings).filter_by(user_id=user_id, whatfor="service_type").all()
 
     return jsonify([{
         'value': setting.value,

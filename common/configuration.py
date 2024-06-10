@@ -30,12 +30,17 @@ def create_app():
             default_settings = [
                 {'whatfor': 'global_service_status', 'value': 'Yes', 'globalsetting': True},
                 {'whatfor': 'global_asset_status', 'value': 'Yes', 'globalsetting': True},
+                {'whatfor': 'global_service_type', 'value': 'Yes', 'globalsetting': True},
                 {'whatfor': 'service_status', 'value': 'Pending', 'globalsetting': True},
                 {'whatfor': 'service_status', 'value': 'On Hold', 'globalsetting': True},
-                {'whatfor': 'service_status', 'value': 'Completed', 'globalsetting': True},
+                {'whatfor': 'service_status', 'value': 'Complete', 'globalsetting': True},
                 {'whatfor': 'asset_status', 'value': 'Ready', 'globalsetting': True},
                 {'whatfor': 'asset_status', 'value': 'Needs Attention', 'globalsetting': True},
-                {'whatfor': 'asset_status', 'value': 'Removed', 'globalsetting': True}
+                {'whatfor': 'asset_status', 'value': 'Removed', 'globalsetting': True},
+                {'whatfor': 'service_type', 'value': 'Oil Change', 'globalsetting': True},
+                {'whatfor': 'service_type', 'value': 'Tire Rotation', 'globalsetting': True},
+                {'whatfor': 'service_type', 'value': 'OS Upgrade', 'globalsetting': True},
+                {'whatfor': 'service_type', 'value': 'Placeholder', 'globalsetting': True}
             ]
 
             for setting in default_settings:
