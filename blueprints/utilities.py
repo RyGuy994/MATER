@@ -1,5 +1,8 @@
 import os
 import jwt
+from functools import wraps
+from flask import request, jsonify, current_app
+from models.user import User
 
 # Define the base upload folder
 UPLOAD_BASE_FOLDER = "static/assets/"  # base folder set
@@ -60,3 +63,21 @@ def retrieve_username_jwt(user_jwt):
     except jwt.InvalidTokenError:
         print("Invalid token")  # debug
         return None
+
+def check_admin(request):
+    token = request.json.get('jwt')
+    if not token:
+        return {'error': 'Token is missing'}, 403
+
+    try:
+        data = jwt.decode(token, current_app.config["CURRENT_SECRET_KEY"], algorithms=["HS256"])
+        user_id = data["id"]
+        user = current_app.config["current_db"].session.query(User).filter_by(id=user_id).first()
+        if not user or not user.is_admin:
+            return {'error': 'Admin privileges required'}, 403
+    except jwt.ExpiredSignatureError:
+        return {'error': 'Token has expired'}, 403
+    except jwt.InvalidTokenError:
+        return {'error': 'Invalid token'}, 403
+
+    return None

@@ -1,9 +1,10 @@
 from models.base import Base, initalize_engine
 import os
 
-
 def init_db(db_type, db_url):
     from models.user import User
+    from models.asset import Asset
+    from models.service import Service
 
     engine = initalize_engine(db_type, db_url)
     Base.metadata.create_all(bind=engine)

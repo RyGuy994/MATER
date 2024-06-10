@@ -1,10 +1,9 @@
+#/bluerpints/auth.py
 # Import necessary modules and classes from Flask and other libraries
 from flask import (
     Blueprint,
     request,
-    abort,
     make_response,
-    render_template,
     redirect,
     jsonify,
     current_app,
@@ -114,10 +113,16 @@ def create_user(json_data: dict):
 
     # Generate a new ULID for the user
     id = str(ULID())
+
+    # Check if there are any existing users
+    user_count = current_app.config["current_db"].session.query(User).count()
+    is_admin = user_count == 0  # First user is set as admin
+
     # Create a new User instance with the provided information
     new_user = User(
-        id=id, username=username, password=hashed_password.decode()
+        id=id, username=username, password=hashed_password.decode(), is_admin=is_admin
     )
+
     # Add the new user to the database
     current_app.config["current_db"].session.add(new_user)
     # Commit the changes to the database
@@ -129,9 +134,6 @@ def create_user(json_data: dict):
     )
     # Return the JWT
     return {"jwt": encoded_jwt}
-
-
-
 
 @auth_blueprint.route("/login", methods=["GET", "POST"])
 def login():
@@ -177,3 +179,20 @@ def logout():
     elif request.json.get("jwt") is not None:
         # Add logic for handling logout from a non-web client if needed
         pass
+
+@auth_blueprint.route('/reset_password/<int:user_id>', methods=['POST'])
+def reset_password(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    new_password = request.json.get('password')
+
+    # Hash the password using bcrypt with a randomly generated salt
+    bytes_password = new_password.encode("utf-8")
+    password_salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(bytes_password, password_salt)
+
+    user.password = password=hashed_password.decode()
+    current_app.config["current_db"].session.commit()
+    return jsonify({'message': 'Password reset successfully'}), 200

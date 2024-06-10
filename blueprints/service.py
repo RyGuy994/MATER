@@ -7,9 +7,7 @@ from werkzeug.utils import secure_filename
 from models.asset import Asset
 from models.service import Service
 from models.serviceattachment import ServiceAttachment
-from .utilities import delete_attachment_from_storage, get_attachment_upload_folder
-from blueprints.utilities import retrieve_username_jwt
-
+from .utilities import delete_attachment_from_storage, get_attachment_upload_folder, retrieve_username_jwt
 services_blueprint = Blueprint("service", __name__, template_folder="../templates")
 
 def save_attachments(attachments, asset_id, service_id, user_id):
@@ -32,15 +30,14 @@ def save_attachments(attachments, asset_id, service_id, user_id):
 
 def create_service(request_dict: dict, user_id: str, request_image: dict):
     try:
-        asset_id = request.form.get("asset_id")
+        asset_id = request_dict.get("asset_id")
         service_id = None
-        service_complete2 = False
         service_type = request_dict.get("service_type")
         service_date = request_dict.get("service_date")
         service_cost = request_dict.get("service_cost")
-        service_complete = True if request_dict.get("service_complete") == "on" else False
+        service_status = request_dict.get("service_status")
         service_notes = request_dict.get("service_notes")
-        service_add_new = True if request_dict.get("service_add_again_check") == "on" else False
+        service_add_new = request_dict.get("service_add_again_check") == "on"
 
         if service_date:
             service_date = datetime.strptime(service_date, "%Y-%m-%d").date()
@@ -55,7 +52,7 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
             service_type=service_type,
             service_date=service_date,
             service_cost=service_cost,
-            service_complete=service_complete,
+            service_status=service_status,
             service_notes=service_notes,
             user_id=user_id,
         )
@@ -63,12 +60,10 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
         current_app.config["current_db"].session.add(new_service)
         current_app.config["current_db"].session.commit()
 
-        attachments = request.files.getlist("attachments")
-        attachment_paths = save_attachments(
-            attachments, asset_id, new_service.id, user_id
-        )
+        attachments = request_image.get("attachments")
+        attachment_paths = save_attachments(attachments, asset_id, new_service.id, user_id)
 
-        if service_add_new == True:
+        if service_add_new:
             service_type = request_dict.get("service_type")
             service_date_new = request_dict.get("service_add_again_days_cal")
             service_date_new = datetime.strptime(service_date_new, "%Y-%m-%d").date()
@@ -79,7 +74,7 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
                 service_type=service_type,
                 service_date=service_date_new,
                 service_cost=service_cost,
-                service_complete=service_complete2,
+                service_status="Pending", 
                 service_notes=service_notes,
                 user_id=user_id,
             )
@@ -91,57 +86,46 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
         return False
     return True
 
-def get_upcoming_services(user_id, days):
-    try:
-        current_date = datetime.now().date()  # Get the current date
-        # Query upcoming services for the user within the specified number of days
-        upcoming_services = (
-            current_app.config["current_db"]
-            .session.query(Service)
-            .filter(
-                Service.service_complete == False,  # service completed is false
-                Service.service_date <= current_date + timedelta(days=days),
-                Service.user_id == user_id,
-            )
-            .all()
-        )
-        return upcoming_services
-    except Exception as e:
-        # Handle exceptions
-        raise Exception("Error in retrieving upcoming services: " + str(e))
-
-@services_blueprint.route("/service_add", methods=["GET", "POST"])
+@services_blueprint.route("/service_add", methods=["POST"])
 def add_service():
-    assets = (
-        current_app.config["current_db"]
-        .session.query(Asset)
-        .all()  # Fetch all assets from the database
-    )
-    if request.method == "POST":
-        if request.form.get("jwt") is None:
-            request_dict = {
-                "meta_data": request.form,
-                "attachments": request.files["attachments"],
-            }
-            user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-            success = create_service(request_dict.get("meta_data"), user_id, request_dict)
-            if success:
-                return jsonify({"message": "Service successfully added!", "status_code": 200})
-            else:
-                return jsonify({"error": "Failed to add service.", "status_code": 500})
+    if request.content_type.startswith('multipart/form-data'):
+        data = request.form.to_dict()
+        files = request.files
+
+        jwt_token = data.get("jwt")
+        if not jwt_token:
+            return jsonify({"error": "JWT token is missing", "status_code": 400})
+
+        user_id = retrieve_username_jwt(jwt_token)
+        if not user_id:
+            return jsonify({"error": "Invalid JWT token", "status_code": 401})
+
+        request_dict = {
+            "asset_id": data.get("asset_id"),
+            "service_type": data.get("service_type"),
+            "service_date": data.get("service_date"),
+            "service_cost": data.get("service_cost"),
+            "service_status": data.get("service_status"),
+            "service_notes": data.get("service_notes"),
+            "service_add_again_check": data.get("service_add_again_check"),
+            "service_add_again_days_cal": data.get("service_add_again_days_cal"),
+        }
+
+        request_attachments = {
+            "attachments": files.getlist("attachments")
+        }
+
+        success = create_service(request_dict, user_id, request_attachments)
+
+        if success:
+            return jsonify({"message": "Service successfully added!", "status_code": 200})
         else:
-            request_dict = {
-                "meta_data": request.form,
-                "image": request.files.getlist("file")[0],
-            }
-            user_id = retrieve_username_jwt(request.form.get("jwt"))
-            success = create_service(request_dict.get("meta_data"), user_id, request_dict)
-            if success:
-                return jsonify({"message": "Success!", "status_code": 200})
-            else:
-                return jsonify({"error": "Failed to create service.", "status_code": 500})
+            return jsonify({"error": "Failed to add service.", "status_code": 500})
     else:
-        return render_template("service_add.html", assets=assets, loggedIn=True)
+        return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
+
+
+
 
 @services_blueprint.route("/service_edit/<int:service_id>", methods=["GET", "POST"])
 def service_edit(service_id):
@@ -262,3 +246,22 @@ def delete_service(service_id):
     current_app.config["current_db"].session.delete(service)
     current_app.config["current_db"].session.commit()
     return redirect("/services/service_all")
+
+def get_upcoming_services(user_id, days):
+    try:
+        current_date = datetime.now().date()  # Get the current date
+        # Query upcoming services for the user within the specified number of days
+        upcoming_services = (
+            current_app.config["current_db"]
+            .session.query(Service)
+            .filter(
+                Service.service_complete == False,  # service completed is false
+                Service.service_date <= current_date + timedelta(days=days),
+                Service.user_id == user_id,
+            )
+            .all()
+        )
+        return upcoming_services
+    except Exception as e:
+        # Handle exceptions
+        raise Exception("Error in retrieving upcoming services: " + str(e))
