@@ -7,14 +7,6 @@ from models.service import Service
 calendar_blueprint = Blueprint("calendar", __name__, template_folder="../templates")
 
 
-@calendar_blueprint.route("/calendar")
-def calendar():
-    print(request.cookies)
-    return render_template(
-        "calendar.html", loggedIn=True
-    )  # Assuming the user is logged in
-
-
 @calendar_blueprint.route("/calendar/api/events")  # Normal endpoint for all events
 def api_events():
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))

@@ -209,43 +209,64 @@ def service_edit(service_id):
         loggedIn=True,
     )
 
-@services_blueprint.route("/service_all", methods=["GET"])
+@services_blueprint.route("/service_all", methods=["POST"])
 def all_services():
-    user_id = retrieve_username_jwt(request.cookies.get("access_token"))
-    all_services = (
-        current_app.config["current_db"]
-        .session.query(Service)
-        .filter_by(user_id=user_id)
-        .all()
-    )
-    filter_asset_name = request.args.get("filter_asset_name")
-    if filter_asset_name:
-        services = (
-            current_app.config["current_db"]
-            .session.query(Service)
-            .filter(Service.asset_name == filter_asset_name, Service.user_id == user_id)
-            .all()
-        )
-    else:
-        services = all_services
-    total_service_cost = sum(service.service_cost for service in services)
-    return render_template(
-        "service_all.html",
-        services=services,
-        total_service_cost=total_service_cost,
-        loggedIn=True,
-    )
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
 
-@services_blueprint.route("/service_delete/<int:service_id>", methods=["POST"])
-def delete_service(service_id):
-    service = Service.query.get_or_404(service_id)
-    if service.serviceattachments:
-        for attachment in service.serviceattachments:
-            delete_attachment_from_storage(attachment.attachment_path)
-            current_app.config["current_db"].session.delete(attachment)
-    current_app.config["current_db"].session.delete(service)
-    current_app.config["current_db"].session.commit()
-    return redirect("/services/service_all")
+    data = request.get_json()
+
+    # Validate JWT token
+    jwt_token = data.get("jwt")
+    if not jwt_token:
+        return jsonify({"error": "JWT token is missing"}), 400
+    user_id = retrieve_username_jwt(jwt_token)
+    if not user_id:
+        return jsonify({"error": "Invalid JWT token"}), 401
+
+    try:
+        filter_asset_id = data.get("filter_asset_name")
+
+        # Query services for the user
+        query = current_app.config["current_db"].session.query(Service).filter_by(user_id=user_id)
+        if filter_asset_id:
+            query = query.filter(Service.asset_id == filter_asset_id)
+
+        services = query.all()
+
+        total_service_cost = sum(service.service_cost for service in services)
+
+        services_data = []
+        for service in services:
+            # Look up the asset name from the Asset table using the service.asset_id
+            asset = current_app.config["current_db"].session.query(Asset).filter_by(id=service.asset_id).first()
+            asset_name = asset.name if asset else "Unknown"  # Handle case if asset is not found
+
+            # Add the service data including the asset name
+            services_data.append({
+                'id': service.id,
+                'asset_name': asset_name,  # Include the asset name here
+                'service_type': service.service_type,
+                'service_date': service.service_date.isoformat(),
+                'service_cost': service.service_cost,
+                'service_status': service.service_status,
+            })
+
+        return jsonify({
+            'services': services_data,
+            'total_service_cost': total_service_cost
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error in /service_all: {e}")
+        return jsonify({"error": "Internal server error", "status_code": 500}), 500
+
+    finally:
+        current_app.config["current_db"].session.close()  # Ensure session is closed
+
+
+
+
 
 def get_upcoming_services(user_id, days):
     try:

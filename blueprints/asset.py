@@ -1,69 +1,63 @@
-import os
-from flask import (
-    Blueprint,
-    request,
-    redirect,
-    send_file,
-    jsonify,
-    current_app,
-)
-from base64 import b64decode
-from datetime import datetime
+#/bluerpints/asset.py
 import os
 import shutil
 import zipfile
+from datetime import datetime
+from flask import (
+    Blueprint,
+    request,
+    jsonify,
+    current_app,
+)
 from werkzeug.utils import secure_filename
 from blueprints.utilities import (
     retrieve_username_jwt,
     get_image_upload_folder,
     allowed_file,
-    delete_attachment_from_storage,
     get_asset_upload_folder,
 )
 from models.service import Service
 from models.asset import Asset
 
+# Create a Blueprint for asset-related routes
 assets_blueprint = Blueprint("assets", __name__, template_folder="../templates")
 
 def create_image(file, new_asset, asset_id):
+    # Save the image file to the designated folder and update the asset with the image path
     try:
-        if file:
-            if file.filename == "":
-                print("No selected file")
-                return new_asset
-
-            if file and allowed_file(file.filename):
+        if file and file.filename != "":
+            if allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 image_upload_folder = get_image_upload_folder(asset_id)
-                if not os.path.exists(image_upload_folder):
-                    os.makedirs(image_upload_folder)
-
+                os.makedirs(image_upload_folder, exist_ok=True)  # Create folder if it doesn't exist
                 file_path = os.path.join(image_upload_folder, filename)
-                file.save(file_path)
+                file.save(file_path)  # Save the image file
                 new_asset.image_path = file_path
-
     except Exception as e:
         print(f"Error uploading image: {e}")
-
     return new_asset
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):
+    # Create a new asset and save it to the database. Also process the image if provided
     try:
+        # Extract asset details from request
         name = request_dict.get("name")
         asset_sn = request_dict.get("asset_sn")
         description = request_dict.get("description")
         acquired_date = request_dict.get("acquired_date")
         asset_status = request_dict.get("asset_status")
 
+        # Validate required fields
         if not (name and asset_sn):
             print("Missing required fields: name or asset_sn")
             return False
 
-        if acquired_date:
-            acquired_date = datetime.strptime(acquired_date, "%Y-%m-%d").date()
-        else:
-            acquired_date = None
+        # Parse the acquired_date if present
+        acquired_date = (
+            datetime.strptime(acquired_date, "%Y-%m-%d").date() if acquired_date else None
+        )
 
+        # Create a new Asset instance
         new_asset = Asset(
             name=name,
             asset_sn=asset_sn,
@@ -74,42 +68,44 @@ def create_asset(request_dict: dict, user_id: str, request_image: dict):
             image_path=None,
         )
 
-        current_app.config["current_db"].session.add(new_asset)
-        current_app.config["current_db"].session.commit()
-        print(f"Asset created: {new_asset}")
+        # Save the asset to the database
+        session = current_app.config["current_db"].session
+        session.add(new_asset)
+        session.commit()
 
+        # Process the image if provided
         if request_image.get("image"):
             new_asset = create_image(request_image.get("image"), new_asset, asset_id=new_asset.id)
-            current_app.config["current_db"].session.add(new_asset)
-            current_app.config["current_db"].session.commit()
+            session.add(new_asset)
+            session.commit()
 
-        print(f"Asset after image processing: {new_asset}")
-        saved_asset = current_app.config["current_db"].session.query(Asset).filter_by(id=new_asset.id).first()
+        # Fetch and return the saved asset
+        saved_asset = session.query(Asset).filter_by(id=new_asset.id).first()
         print(f"Saved asset from DB: {saved_asset}")
-
+        return True
     except Exception as e:
         print(f"Error creating asset: {e}")
-        current_app.config["current_db"].session.rollback()
+        session.rollback()  # Rollback changes on error
         return False
     finally:
-        current_app.config["current_db"].session.close()
-
-    return True
+        session.close()  # Close the session
 
 @assets_blueprint.route("/asset_add", methods=["POST"])
 def add():
+    # Handle the addition of a new asset, including processing the image and saving to the database
     if request.content_type.startswith('multipart/form-data'):
         data = request.form.to_dict()
         file = request.files.get('image')
-        
+
+        # Validate JWT token
         jwt_token = data.get("jwt")
         if not jwt_token:
             return jsonify({"error": "JWT token is missing", "status_code": 400})
-
         user_id = retrieve_username_jwt(jwt_token)
         if not user_id:
             return jsonify({"error": "Invalid JWT token", "status_code": 401})
 
+        # Prepare request dictionary and image data
         request_dict = {
             "name": data.get("name"),
             "asset_sn": data.get("asset_sn"),
@@ -117,13 +113,10 @@ def add():
             "acquired_date": data.get("acquired_date"),
             "asset_status": data.get("asset_status"),
         }
+        request_image = {"image": file}
 
-        request_image = {
-            "image": file
-        }
-
+        # Create asset
         success = create_asset(request_dict, user_id, request_image)
-
         if success:
             return jsonify({"message": "Asset successfully added!", "status_code": 200})
         else:
@@ -133,7 +126,9 @@ def add():
 
 @assets_blueprint.route("/asset_edit/<int:asset_id>", methods=["GET", "POST"])
 def edit_asset(asset_id):
+    # Handle asset editing, including updating details and processing a new image
     if request.method == "GET":
+        # Fetch and return asset details
         asset = current_app.config["current_db"].session.query(Asset).filter_by(id=asset_id).first()
         if not asset:
             return jsonify({"error": "Asset not found"}), 404
@@ -150,17 +145,19 @@ def edit_asset(asset_id):
         return jsonify(asset_details), 200
 
     elif request.method == "POST":
+        # Validate JWT token
         if 'jwt' not in request.form:
             return jsonify({"error": "JWT token is missing"}), 400
-
         user_id = retrieve_username_jwt(request.form['jwt'])
         if not user_id:
             return jsonify({"error": "Invalid JWT token"}), 401
 
+        # Fetch asset to edit
         asset = current_app.config["current_db"].session.query(Asset).filter_by(user_id=user_id, id=asset_id).first()
         if not asset:
             return jsonify({"error": "Asset not found"}), 404
 
+        # Update asset details
         asset.name = request.form.get("name")
         asset.asset_sn = request.form.get("asset_sn")
         asset.description = request.form.get("description")
@@ -170,19 +167,21 @@ def edit_asset(asset_id):
             return jsonify({"error": f"Invalid date format: {e}"}), 400
         asset.asset_status = request.form.get("asset_status")
 
+        # Process and save new image if provided
         if "image" in request.files:
             file = request.files["image"]
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 image_upload_folder = get_image_upload_folder(asset_id)
-                if not os.path.exists(image_upload_folder):
-                    os.makedirs(image_upload_folder)
+                os.makedirs(image_upload_folder, exist_ok=True)
                 file_path = os.path.join(image_upload_folder, filename)
                 file.save(file_path)
                 asset.image_path = file_path
 
+        # Commit changes
         current_app.config["current_db"].session.commit()
 
+        # Return updated asset details
         updated_asset = {
             "name": asset.name,
             "asset_sn": asset.asset_sn,
@@ -192,27 +191,28 @@ def edit_asset(asset_id):
             "user_id": asset.user_id,
             "asset_status": asset.asset_status,
         }
-
         return jsonify(updated_asset), 200
 
     return jsonify({"error": "Invalid request method"}), 405
 
 @assets_blueprint.route("/asset_all", methods=["POST"])
 def all_assets():
+    # Retrieve all assets for a user and return as a list
     if request.content_type != 'application/json':
         return jsonify({"error": "Content-Type must be application/json"}), 400
 
     data = request.get_json()
 
+    # Validate JWT token
     jwt_token = data.get("jwt")
     if not jwt_token:
         return jsonify({"error": "JWT token is missing"}), 400
-
     user_id = retrieve_username_jwt(jwt_token)
     if not user_id:
         return jsonify({"error": "Invalid JWT token"}), 401
 
     try:
+        # Fetch assets for the user
         assets = current_app.config["current_db"].session.query(Asset).filter_by(user_id=user_id).all()
         asset_list = [{
             "id": asset.id,
@@ -227,76 +227,45 @@ def all_assets():
     except Exception as e:
         return jsonify({"error": f"Error retrieving assets: {e}"}), 500
     finally:
-        current_app.config["current_db"].session.close()
+        current_app.config["current_db"].session.close()  # Ensure session is closed
 
 @assets_blueprint.route("/asset_delete/<int:asset_id>", methods=["POST"])
 def delete_asset(asset_id):
+    # Delete an asset along with its associated services and files
     try:
-        # Extract the JWT token from the request body
+        # Extract JWT token from the request
         data = request.get_json()
-        jwt = data.get('jwt')
-
-        if not jwt:
+        jwt_token = data.get('jwt')
+        if not jwt_token:
             return jsonify({"error": "JWT token is missing"}), 400
+        user_id = retrieve_username_jwt(jwt_token)
 
-        user_id = retrieve_username_jwt(jwt)
+        # Fetch asset to delete
         asset = current_app.config["current_db"].session.query(Asset).filter_by(id=asset_id).first()
         asset_folder = get_asset_upload_folder(asset_id)
 
-        # Check if the asset has associated services
-        if asset.services:
-            for service in asset.services:
-                if service.serviceattachments and service.user_id == user_id:
-                    # If yes, delete the associated attachments first
-                    for attachment in service.serviceattachments:
-                        try:
-                            delete_attachment_from_storage(attachment.attachment_path)
-                            current_app.config["current_db"].session.delete(attachment)
-                        except Exception as attachment_error:
-                            current_app.logger.error(f"Error deleting attachment {attachment.id}: {attachment_error}")
-                            raise attachment_error
-                    current_app.config["current_db"].session.delete(service)
+        # Check if asset exists
+        if not asset:
+            return jsonify({"error": "Asset not found"}), 404
 
+        # Delete associated files
+        if asset.image_path and os.path.exists(asset.image_path):
+            os.remove(asset.image_path)
+        
+        if os.path.exists(asset_folder):
+            shutil.rmtree(asset_folder)
+
+        # Delete associated services
+        services = current_app.config["current_db"].session.query(Service).filter_by(asset_id=asset_id).all()
+        for service in services:
+            current_app.config["current_db"].session.delete(service)
+        
+        # Delete asset
         current_app.config["current_db"].session.delete(asset)
         current_app.config["current_db"].session.commit()
 
-        if os.path.exists(asset_folder) and os.path.isdir(asset_folder):
-            try:
-                shutil.rmtree(asset_folder)
-                current_app.logger.info(f"Directory {asset_folder} successfully deleted.")
-            except OSError as dir_error:
-                current_app.logger.error(f"Error deleting directory {asset_folder}: {dir_error}")
-                raise dir_error
-        else:
-            current_app.logger.warning(f"Directory {asset_folder} does not exist.")
-
-        return jsonify({"message": "Asset deleted successfully"}), 200
+        return jsonify({"message": "Asset successfully deleted!"}), 200
     except Exception as e:
-        current_app.config["current_db"].session.rollback()
-        current_app.logger.error(f"Error in delete_asset: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Error deleting asset: {e}"}), 500
     finally:
-        current_app.config["current_db"].session.close()
-
-@assets_blueprint.route("/generate_zip/<int:asset_id>")
-def generate_zip(asset_id):
-    folder_path = get_asset_upload_folder(
-        asset_id
-    )  # Get the folder path where asset files are stored
-    zip_filename = (
-        f"asset_{asset_id}_files.zip"  # Define the ZIP file name with the asset_id
-    )
-    zip_filepath = os.path.join(
-        current_app.root_path, zip_filename
-    )  # Use the Flask app root_path to get the correct directory for saving the ZIP file
-
-    # Create a ZIP file and write all files from the asset folder into it
-    with zipfile.ZipFile(zip_filepath, "w") as zip_file:
-        for foldername, subfolders, filenames in os.walk(folder_path):
-            for filename in filenames:
-                file_path = os.path.join(foldername, filename)
-                arcname = os.path.relpath(file_path, folder_path)
-                zip_file.write(file_path, arcname)
-
-    # Send the generated ZIP file as an attachment for download
-    return send_file(zip_filepath, as_attachment=True)
+        current_app.config["current_db"].session.close()  # Ensure session is closed
