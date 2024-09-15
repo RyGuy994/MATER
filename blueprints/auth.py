@@ -1,198 +1,159 @@
 #/bluerpints/auth.py
-# Import necessary modules and classes from Flask and other libraries
-from flask import (
-    Blueprint,
-    request,
-    make_response,
-    redirect,
-    jsonify,
-    current_app,
-)
+from flask import Blueprint, request, jsonify, make_response, redirect, current_app
 import bcrypt
 from ulid import ULID
-from os import environ
 import jwt
-
-# Import User
 from models.user import User
 
-# Create a Flask Blueprint for authentication-related routes
+# Create a Blueprint for authentication routes
 auth_blueprint = Blueprint("auth", __name__, template_folder="../templates")
 
-"""
-:param form_input: dictionary containing user info
-rtype: json containing a jwt
-"""
-
-def validate_user(json_data: dict):
-    # Extract username and password from the JSON input dictionary
-    username = json_data.get("username")
-    password = json_data.get("password")
-
-    # Query the database to retrieve the user with the given username
-    user = (
+def get_user_by_username(username: str) -> User:
+    """Helper function to retrieve a user by username."""
+    return (
         current_app.config["current_db"]
         .session.query(User)
         .filter_by(username=username)
         .first()
     )
 
-    if user is not None:
-        # Encode the provided password for comparison with the stored hashed password
-        bytes_password = password.encode("utf-8")
+def generate_jwt(user_id: str) -> str:
+    """Generate a JWT for the given user ID."""
+    return jwt.encode(
+        {"id": user_id},
+        current_app.config["CURRENT_SECRET_KEY"],
+        algorithm="HS256",
+    )
 
-        # Check if the provided password matches the stored hashed password
-        if bcrypt.checkpw(bytes_password, user.password.encode("utf-8")):
-            # If the passwords match, generate a JWT for the user
-            encoded_jwt = jwt.encode(
-                {"id": user.id},
-                current_app.config["CURRENT_SECRET_KEY"],
-                algorithm="HS256",
-            )
-            return encoded_jwt
+def validate_user(json_data: dict) -> str:
+    """Validate user credentials and return JWT if valid."""
+    username = json_data.get("username")
+    password = json_data.get("password")
 
-    # If user not found or password mismatch, return None
+    user = get_user_by_username(username)
+
+    if user and bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
+        return generate_jwt(user.id)
+
     return None
 
-"""
-rtype: json containing a jwt
-"""
 @auth_blueprint.route("/signup", methods=["POST"])
 def signup():
-    """Api endpoint that creates a user
-    This post call creates a user using a username + password
-    ---
-    tags:
-      - auth
-    parameters:
-        - in: body
-          name: body
-          required: true
-          example: {"username": "test", "password": "test"}
-    responses:
-        200:
-            description: User was created
-        400:
-            description: Bad request
     """
-    if request.json:
-        json_data = request.json
-        try:
-            jwt_dict = create_user(json_data)
-            return jsonify({"jwt": jwt_dict.get("jwt")}), 200  # Return a JSON response
-        except UserExistsError as e:
-            return jsonify({"error": str(e)}), 400  # Return error message as JSON response
-    else:
-        return jsonify({"error": "Invalid request data"}), 400  # Return error message as JSON response
+    Create a new user and return JWT.
 
-class UserExistsError(Exception):
-    """Exception raised when a user with the provided username already exists."""
-    pass
+    This endpoint registers a new user with a username and password.
+    Example request:
+    POST /signup
+    {
+        "username": "testuser",
+        "password": "testpassword"
+    }
+    Response:
+    {
+        "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    """
+    json_data = request.json
 
-def create_user(json_data: dict):
-    # Extract username and password from the JSON data
-    username = json_data.get("username")
-    password = json_data.get("password")
+    if not json_data or 'username' not in json_data or 'password' not in json_data:
+        return jsonify({"error": "Invalid request data"}), 400
 
-    # Check if a user with the provided username already exists
-    user = (
-        current_app.config["current_db"]
-        .session.query(User)
-        .filter_by(username=username)
-        .first()
-    )
+    username = json_data["username"]
+    password = json_data["password"]
 
+    user = get_user_by_username(username)
     if user:
-        # Raise an exception if the user already exists
-        raise UserExistsError("User with this username already exists")
+        return jsonify({"error": "User with this username already exists"}), 400
 
-    # Hash the password using bcrypt with a randomly generated salt
-    bytes_password = password.encode("utf-8")
-    password_salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(bytes_password, password_salt)
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode()
+    user_id = str(ULID())
+    is_admin = User.query.count() == 0  # Set the first user as admin
 
-    # Generate a new ULID for the user
-    id = str(ULID())
-
-    # Check if there are any existing users
-    user_count = current_app.config["current_db"].session.query(User).count()
-    is_admin = user_count == 0  # First user is set as admin
-
-    # Create a new User instance with the provided information
-    new_user = User(
-        id=id, username=username, password=hashed_password.decode(), is_admin=is_admin
-    )
-
-    # Add the new user to the database
+    new_user = User(id=user_id, username=username, password=hashed_password, is_admin=is_admin)
     current_app.config["current_db"].session.add(new_user)
-    # Commit the changes to the database
     current_app.config["current_db"].session.commit()
 
-    # Generate a JWT for the new user
-    encoded_jwt = jwt.encode(
-        {"id": id}, current_app.config["CURRENT_SECRET_KEY"], algorithm="HS256"
-    )
-    # Return the JWT
-    return {"jwt": encoded_jwt}
+    return jsonify({"jwt": generate_jwt(user_id)}), 200
 
-@auth_blueprint.route("/login", methods=["GET", "POST"])
+@auth_blueprint.route("/login", methods=["POST"])
 def login():
-    """Api endpoint that logs a user in and returns a JWT."""
-    # Extract the JSON data from the request
-    data = request.json
-
-    # Check if the JSON data contains the "username" and "password" fields
-    if "username" in data and "password" in data:
-        # Validate the user using the provided credentials
-        jwt = validate_user(data)
-        # Return the JWT in a JSON response
-        return {"jwt": jwt}
-
-    # If the JSON data is missing required fields, return a 400 error
-    return make_response({"error": "Invalid request data"}, 400)
-
-@auth_blueprint.route("/logout", methods=["GET", "POST"])
-def logout():
-    """Api endpoint that logs a user out
-    This post logs the user out, revokes the JWT
-    ---
-    tags:
-      - auth
-    parameters:
-        - in: body
-          name: body
-          required: true
-          example: {"jwt": "test"}
-    responses:
-        200:
-            description: User is logged out
-        405:
-            description: Error occurred
     """
-    # Check if the "access_token" cookie is present in the request
+    Log in a user and return JWT.
+
+    This endpoint authenticates a user and returns a JWT if the credentials are valid.
+    Example request:
+    POST /login
+    {
+        "username": "testuser",
+        "password": "testpassword"
+    }
+    Response:
+    {
+        "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    """
+    json_data = request.json
+
+    if not json_data or 'username' not in json_data or 'password' not in json_data:
+        return jsonify({"error": "Invalid request data"}), 400
+
+    jwt_token = validate_user(json_data)
+    if jwt_token:
+        return jsonify({"jwt": jwt_token}), 200
+
+    return jsonify({"error": "Invalid username or password"}), 401
+
+@auth_blueprint.route("/logout", methods=["POST"])
+def logout():
+    """
+    Log out a user by revoking the JWT.
+
+    This endpoint logs out a user by clearing the "access_token" cookie.
+    Example request:
+    POST /logout
+    {
+        "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    Response:
+    {
+        "message": "Logged out"
+    }
+    """
     if "access_token" in request.cookies:
-        # Create a response with a redirect to the home page and expire the "access_token" cookie
         response = make_response(redirect("/"))
         response.set_cookie("access_token", "", expires=0)
         return response
-    # If the request is coming from a non-web client (JSON input), additional handling can be added
-    elif request.json.get("jwt") is not None:
-        # Add logic for handling logout from a non-web client if needed
-        pass
+
+    # Handle non-web client logout if necessary
+    return jsonify({"message": "Logged out"}), 200
 
 @auth_blueprint.route('/reset_password/<int:user_id>', methods=['POST'])
-def reset_password(user_id):
+def reset_password(user_id: int):
+    """
+    Reset user password.
+
+    This endpoint allows resetting the password for a user identified by user_id.
+    Example request:
+    POST /reset_password/1
+    {
+        "password": "newpassword"
+    }
+    Response:
+    {
+        "message": "Password reset successfully"
+    }
+    """
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
     new_password = request.json.get('password')
+    if not new_password:
+        return jsonify({'error': 'Password is required'}), 400
 
-    # Hash the password using bcrypt with a randomly generated salt
-    bytes_password = new_password.encode("utf-8")
-    password_salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(bytes_password, password_salt)
-
-    user.password = password=hashed_password.decode()
+    hashed_password = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode()
+    user.password = hashed_password
     current_app.config["current_db"].session.commit()
+
     return jsonify({'message': 'Password reset successfully'}), 200

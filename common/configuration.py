@@ -10,7 +10,7 @@ from models.initflag import InitFlag
 
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="../static")
-    CORS(app)
+    CORS(app, supports_credentials=True, expose_headers=["Authorization"])
     app_settings = os.getenv("APP_SETTINGS", "common.base.ProductionConfig")
     app.config.from_object(app_settings)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")  # Security key
