@@ -41,18 +41,6 @@ def validate_user(json_data: dict) -> str:
 def signup():
     """
     Create a new user and return JWT.
-
-    This endpoint registers a new user with a username and password.
-    Example request:
-    POST /signup
-    {
-        "username": "testuser",
-        "password": "testpassword"
-    }
-    Response:
-    {
-        "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    }
     """
     json_data = request.json
 
@@ -62,19 +50,31 @@ def signup():
     username = json_data["username"]
     password = json_data["password"]
 
+    # Check if user already exists
     user = get_user_by_username(username)
     if user:
         return jsonify({"error": "User with this username already exists"}), 400
 
+    # Hash the password
     hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode()
+
+    # Generate a new user ID
     user_id = str(ULID())
-    is_admin = User.query.count() == 0  # Set the first user as admin
 
+    # Use current_db.session for queries instead of User.query
+    session = current_app.config["current_db"].session
+    is_admin = session.query(User).count() == 0  # Set the first user as admin
+
+    # Create new user object
     new_user = User(id=user_id, username=username, password=hashed_password, is_admin=is_admin)
-    current_app.config["current_db"].session.add(new_user)
-    current_app.config["current_db"].session.commit()
 
+    # Add new user to the database
+    session.add(new_user)
+    session.commit()
+
+    # Generate JWT for the new user
     return jsonify({"jwt": generate_jwt(user_id)}), 200
+
 
 @auth_blueprint.route("/login", methods=["POST"])
 def login():

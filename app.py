@@ -26,9 +26,9 @@ from blueprints.utilities import (
 from blueprints.utilities import UPLOAD_BASE_FOLDER
 
 # Import the Service and Asset models, as well as the ServiceAttachment model
+from models.serviceattachment import ServiceAttachment
 from models.service import Service
 from models.asset import Asset
-from models.serviceattachment import ServiceAttachment
 
 # Route to serve images
 @app.route("/<image_name>", methods=["GET"])

@@ -3,8 +3,10 @@ import os
 
 def init_db(db_type, db_url):
     from models.user import User
-    from models.asset import Asset
+    from models.serviceattachment import ServiceAttachment
     from models.service import Service
+    from models.asset import Asset
+    from models.appsettings import AppSettings
 
     engine = initalize_engine(db_type, db_url)
     Base.metadata.create_all(bind=engine)

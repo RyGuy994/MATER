@@ -3,24 +3,27 @@ from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Boolean,
 from sqlalchemy.orm import relationship, backref
 from models.base import Base
 
-class Service(Base):  # Service table
+class Service(Base):
     __tablename__ = "service"
-    id = Column(Integer, primary_key=True)  # id of the Service
-    asset_id = Column(
-        Integer, ForeignKey("asset.id"), nullable=False
-    )  # Asset ID this goes to in Class Asset
-    asset = relationship(
-        "Asset", backref=backref("services", lazy=True)
-    )  # relation to Asset
-    service_type = Column(String(100))  # type of service
-    service_date = Column(Date)  # date of service
-    service_cost = Column(Float)  # cost of service
-    service_status = Column(String(100)) # status of service
-    service_notes = Column(Text)  # notes of service
-    user_id = Column(Text, ForeignKey("user.id"), nullable=False)  # owner of service
-    service_owner = relationship(
-        "User", backref=backref("service_owner", lazy=True)
-    )  # relation to service
+    
+    id = Column(Integer, primary_key=True)
+    asset_id = Column(Integer, ForeignKey("asset.id", ondelete="CASCADE"), nullable=False)
+    service_type = Column(String(100))
+    service_date = Column(Date)
+    service_cost = Column(Float)
+    service_status = Column(String(100))
+    service_notes = Column(Text)
+    
+    user_id = Column(Text, ForeignKey("user.id"), nullable=False)
+    
+    # Use back_populates for the relationship with User
+    service_owner = relationship("User", back_populates="services")
+    
+    # Use back_populates for the relationship with ServiceAttachment
+    serviceattachments = relationship('ServiceAttachment', back_populates='service', cascade="all, delete-orphan")
+    
+    # Use back_populates for the relationship with Asset
+    asset = relationship("Asset", back_populates="services")
 
     def to_calendar_event(self):  # pull info for FullCalendar
         return {

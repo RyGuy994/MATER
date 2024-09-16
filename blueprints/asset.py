@@ -8,6 +8,7 @@ from flask import (
     request,
     jsonify,
     current_app,
+    send_file,
 )
 from werkzeug.utils import secure_filename
 from blueprints.utilities import (
@@ -16,8 +17,10 @@ from blueprints.utilities import (
     allowed_file,
     get_asset_upload_folder,
 )
+
 from models.service import Service
 from models.asset import Asset
+from models.serviceattachment import ServiceAttachment
 
 # Create a Blueprint for asset-related routes
 assets_blueprint = Blueprint("assets", __name__, template_folder="../templates")
@@ -255,12 +258,7 @@ def delete_asset(asset_id):
         if os.path.exists(asset_folder):
             shutil.rmtree(asset_folder)
 
-        # Delete associated services
-        services = current_app.config["current_db"].session.query(Service).filter_by(asset_id=asset_id).all()
-        for service in services:
-            current_app.config["current_db"].session.delete(service)
-        
-        # Delete asset
+        # Delete asset (this will cascade delete services and service attachments)
         current_app.config["current_db"].session.delete(asset)
         current_app.config["current_db"].session.commit()
 
@@ -269,3 +267,29 @@ def delete_asset(asset_id):
         return jsonify({"error": f"Error deleting asset: {e}"}), 500
     finally:
         current_app.config["current_db"].session.close()  # Ensure session is closed
+
+@assets_blueprint.route("/generate_zip/<int:asset_id>", methods=["GET"])
+def generate_zip(asset_id):
+    # Fetch the asset
+    asset = current_app.config["current_db"].session.query(Asset).filter_by(id=asset_id).first()
+    if not asset:
+        return jsonify({"error": "Asset not found"}), 404
+
+    # Get the upload folder path for the asset
+    folder_path = get_asset_upload_folder(asset_id)
+    if not os.path.exists(folder_path):
+        return jsonify({"error": "Folder not found"}), 404
+
+    # Create a zip file
+    zip_filename = f"Asset_{asset_id}_Files.zip"
+    zip_filepath = os.path.join(current_app.root_path, zip_filename)
+
+    with zipfile.ZipFile(zip_filepath, "w") as zip_file:
+        # Add all files from the asset folder to the zip file
+        for foldername, subfolders, filenames in os.walk(folder_path):
+            for filename in filenames:
+                file_path = os.path.join(foldername, filename)
+                arcname = os.path.relpath(file_path, folder_path)
+                zip_file.write(file_path, arcname)
+    
+    return send_file(zip_filepath, as_attachment=True)
