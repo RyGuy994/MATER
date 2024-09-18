@@ -226,11 +226,12 @@ def all_assets():
             "image_path": asset.image_path,
             "asset_status": asset.asset_status
         } for asset in assets]
-        return jsonify(asset_list), 200
+        return jsonify({"assets": asset_list}), 200
     except Exception as e:
         return jsonify({"error": f"Error retrieving assets: {e}"}), 500
     finally:
         current_app.config["current_db"].session.close()  # Ensure session is closed
+
 
 @assets_blueprint.route("/asset_delete/<int:asset_id>", methods=["POST"])
 def delete_asset(asset_id):
