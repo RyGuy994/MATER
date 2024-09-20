@@ -4,6 +4,7 @@ import bcrypt
 from ulid import ULID
 import jwt
 from models.user import User
+from .utilities import check_admin, get_global_setting, retrieve_username_jwt
 
 # Create a Blueprint for authentication routes
 auth_blueprint = Blueprint("auth", __name__, template_folder="../templates")
@@ -42,6 +43,11 @@ def signup():
     """
     Create a new user and return JWT.
     """
+    # Check if self-registration is allowed
+    allow_self_register = get_global_setting("allowselfregister")
+    if not allow_self_register or allow_self_register.value != "Yes":
+        return jsonify({"error": "Self-registration is currently disabled"}), 403
+
     json_data = request.json
 
     if not json_data or 'username' not in json_data or 'password' not in json_data:
@@ -74,6 +80,7 @@ def signup():
 
     # Generate JWT for the new user
     return jsonify({"jwt": generate_jwt(user_id)}), 200
+
 
 
 @auth_blueprint.route("/login", methods=["POST"])
@@ -128,32 +135,137 @@ def logout():
     # Handle non-web client logout if necessary
     return jsonify({"message": "Logged out"}), 200
 
-@auth_blueprint.route('/reset_password/<int:user_id>', methods=['POST'])
-def reset_password(user_id: int):
-    """
-    Reset user password.
+@auth_blueprint.route('/reset_password/<string:user_id>', methods=['POST'])
+def reset_password(user_id: str):
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
 
-    This endpoint allows resetting the password for a user identified by user_id.
-    Example request:
-    POST /reset_password/1
-    {
-        "password": "newpassword"
-    }
-    Response:
-    {
-        "message": "Password reset successfully"
-    }
-    """
-    user = User.query.get(user_id)
+    data = request.get_json()
+    admin_check = check_admin(data)
+    if admin_check:
+        return admin_check  # Directly return the response from check_admin
+    
+    # Use the user_id directly as a string
+    session = current_app.config["current_db"].session
+    user = session.query(User).get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    new_password = request.json.get('password')
+    new_password = data.get('password')
     if not new_password:
         return jsonify({'error': 'Password is required'}), 400
 
     hashed_password = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode()
     user.password = hashed_password
-    current_app.config["current_db"].session.commit()
+    
+    # Commit the changes to the database
+    try:
+        session = current_app.config["current_db"].session
+        session.commit()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
     return jsonify({'message': 'Password reset successfully'}), 200
+
+@auth_blueprint.route('/delete_user/<string:user_id>', methods=['DELETE'])
+def delete_user(user_id: str):
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+
+    data = request.get_json()
+
+    # Ensure the request JSON contains the JWT token
+    admin_check = check_admin(data)
+    if admin_check:
+        return admin_check  # Return the admin check response directly
+
+    # Get the ID of the authenticated user from the JWT token
+    auth_user_id = retrieve_username_jwt(data.get('jwt'))
+
+    if auth_user_id == user_id:
+        return jsonify({"error": "Cannot delete your own account"}), 403
+
+    session = current_app.config["current_db"].session
+    user = session.query(User).get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    try:
+        session.delete(user)
+        session.commit()
+        return jsonify({'message': 'User deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@auth_blueprint.route("/create_user", methods=["POST"])
+def create_user():
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+
+    data = request.get_json()
+
+    # Ensure the request JSON contains the JWT token
+    admin_check = check_admin(data)
+    if admin_check:
+        return admin_check  # Return admin check response directly
+
+    username = data.get('username')
+    password = data.get('password')
+    is_admin = data.get('is_admin', False)
+
+    # Validate the input
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
+    # Hash the password for security
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode()
+
+    # Generate a new user ID using ULID
+    user_id = str(ULID())
+
+    # Create the user
+    new_user = User(id=user_id, username=username, password=hashed_password, is_admin=is_admin)
+    
+    # Add the user to the database
+    try:
+        session = current_app.config["current_db"].session
+        session.add(new_user)
+        session.commit()
+        return jsonify({"message": "User created successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@auth_blueprint.route("/users/all", methods=["POST"])
+def users_all():
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+
+    data = request.get_json()
+
+    # Ensure the request JSON contains the JWT token
+    admin_check = check_admin(data)
+    if admin_check:
+        print("Admin check failed")  # Add logging
+        return admin_check  # Return admin check directly
+
+    try:
+        # Fetch all users
+        users = current_app.config["current_db"].session.query(User).all()
+        user_list = [{
+            "id": user.id,
+            "username": user.username,
+            "is_admin": user.is_admin,
+        } for user in users]
+        return jsonify({"users": user_list}), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching users: {str(e)}")
+        return jsonify({"error": "Failed to fetch users"}), 500
+
+    finally:
+        current_app.config["current_db"].session.close()
