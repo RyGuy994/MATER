@@ -28,6 +28,7 @@ def create_app():
         
         if not init_flag:
             default_settings = [
+                {'whatfor': 'allowselfregister', 'value': 'Yes', 'globalsetting': True},
                 {'whatfor': 'global_service_status', 'value': 'Yes', 'globalsetting': True},
                 {'whatfor': 'global_asset_status', 'value': 'Yes', 'globalsetting': True},
                 {'whatfor': 'global_service_type', 'value': 'Yes', 'globalsetting': True},

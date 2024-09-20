@@ -9,6 +9,7 @@ from flask import (
     jsonify,
     current_app,
     send_file,
+    after_this_request,
 )
 from werkzeug.utils import secure_filename
 from blueprints.utilities import (
@@ -292,5 +293,13 @@ def generate_zip(asset_id):
                 file_path = os.path.join(foldername, filename)
                 arcname = os.path.relpath(file_path, folder_path)
                 zip_file.write(file_path, arcname)
+    
+    @after_this_request
+    def remove_file(response):
+        try:
+            os.remove(zip_filepath)
+        except Exception as error:
+            current_app.logger.error(f"Error deleting file {zip_filepath}: {error}")
+        return response
     
     return send_file(zip_filepath, as_attachment=True)
