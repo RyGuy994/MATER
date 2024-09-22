@@ -55,8 +55,8 @@ def retrieve_username_jwt(user_jwt):
     return None
 
 def check_admin(data):
-    # Check if the request is from an admin user based on JWT token
     token = data.get('jwt')
+    current_app.logger.info(f"Checking admin for token: {token}")
     if not token:
         return jsonify({'error': 'Token is missing'}), 403
 
@@ -68,6 +68,7 @@ def check_admin(data):
         )
         user_id = decoded_data["id"]
         user = current_app.config["current_db"].session.query(User).filter_by(id=user_id).first()
+        current_app.logger.info(f"User found: {user}")
         if not user or not user.is_admin:
             return jsonify({'error': 'Admin privileges required'}), 403
     except jwt.ExpiredSignatureError:
@@ -75,4 +76,4 @@ def check_admin(data):
     except jwt.InvalidTokenError:
         return jsonify({'error': 'Invalid token'}), 403
 
-    return None  # No issues, return None
+    return None
