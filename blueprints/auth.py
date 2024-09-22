@@ -169,6 +169,50 @@ def reset_password(user_id: str):
 
     return jsonify({'message': 'Password reset successfully'}), 200
 
+@auth_blueprint.route('/reset_password/self', methods=['POST'])
+def user_reset_password_self():
+    if request.content_type != 'application/json':
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+
+    data = request.get_json()
+    jwt = data.get('jwt')
+    if not jwt:
+        return jsonify({"error": "JWT token is missing"}), 400
+
+    # Retrieve user_id from JWT
+    user_id = retrieve_username_jwt(jwt)
+    if not user_id:
+        return jsonify({"error": "Invalid JWT token"}), 400
+
+    session = current_app.config["current_db"].session
+    user = session.query(User).filter_by(id=user_id).first()  # Query by id (ULID)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'Both current and new passwords are required'}), 400
+
+    # Check if current password is correct
+    if not bcrypt.checkpw(current_password.encode('utf-8'), user.password.encode('utf-8')):
+        return jsonify({'error': 'Current password is incorrect'}), 400
+
+    # Hash and update new password
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode()
+    user.password = hashed_password
+
+    try:
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+    return jsonify({'message': 'Password updated successfully'}), 200
+
 @auth_blueprint.route('/delete_user/<string:user_id>', methods=['DELETE'])
 def delete_user(user_id: str):
     if request.content_type != 'application/json':
