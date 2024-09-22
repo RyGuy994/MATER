@@ -169,6 +169,15 @@ def generate_zip():
         zip_filepath, as_attachment=True
     )  # Send the generated zip file as an attachment in the HTTP response
 
+# Status check route
+@app.route('/status', methods=['GET'])
+def status():
+    return jsonify({'status': 'App is running'})
+
+# Root route for homepage
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 if __name__ == "__main__":
     app.run(

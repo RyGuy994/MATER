@@ -8,7 +8,6 @@
 {% block head %}
     <!-- CSS for the heading text -->
     <style>
-        /* Styling for the heading text */
         .cool-text {
             font-family: 'Arial Black', Gadget, sans-serif;
             font-size: 60px;
@@ -19,7 +18,6 @@
             position: relative;
         }
 
-        /* Styling for the after content of the heading */
         .cool-text::after {
             content: 'Maintenance. Asset. Tracking. Equipment. Registry.';
             font-family: 'Arial', sans-serif;
@@ -36,147 +34,63 @@
             display: block;
             margin: 0 auto;
         }
+
+        /* Status styling */
+        .status {
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .status.working {
+            color: green;
+        }
+
+        .status.error {
+            color: red;
+        }
     </style>
 {% endblock %}
 
 <!-- Content block -->
 {% block content %}
     <!-- Heading -->
-    <h1 class="cool-text" data-text="MATER">
-        MATER
-    </h1>
+    <h1 class="cool-text" data-text="MATER">MATER</h1>
+
     <!-- MATER Image -->
     <div><img src="/static/images/MATER.png" alt="MATER Image" class="center"></div>
-    <!-- Subheading -->
-    <h2>Services due in the next 30 days</h2>
 
-    <!-- Input for filtering -->
-    <input type="text" id="nameFilter" oninput="filterNames()" placeholder="Search for asset.." title="Type in an Asset Name">
+    <!-- Status of the app -->
+    <div id="status" class="status">Checking status...</div>
 
-    <!-- Table to display services -->
-    <table id="service-table" class="standard-table">
-        <tr>
-            <th class="sortable-header" data-column="0">Asset Name</th>
-            <th class="sortable-header" data-column="1">Service Type</th>
-            <th class="sortable-header" data-column="2">Service Date</th>
-            <th class="sortable-header" data-column="3">Service Cost</th>
-            <th class="sortable-header" data-column="4">Service Complete</th>
-            <th class="sortable-header" data-column="5">Service Notes</th>
-        </tr>
-        <!-- Loop through upcoming_services to display service details -->
-        {% for service in upcoming_services %}
-            <tr>
-                <td><a href="/assets/asset_edit/{{ service.asset.id }}">{{ service.asset.name }}</a></td>
-                <td><a href="/services/service_edit/{{ service.id }}">{{ service.service_type }}</a></td>
-                <td>{{ service.service_date }}</td>
-                <td>{{ service.service_cost }}</td>
-                <td>{{ service.service_complete }}</td>
-                <td>{{ service.service_notes }}</td>
-            </tr>
-        {% endfor %}
-    </table>
-
-    <!-- JavaScript function for filtering the table -->
     <script>
-        function filterNames() {
-            var input, filter, table, tr, td, i, txtValue;
-            var counter = 0;
-            var maxItems = 50;
-
-            input = document.getElementById("nameFilter");
-            filter = input.value.toUpperCase();
-            table = document.getElementById("service-table");
-            tr = table.getElementsByTagName("tr");
-
-            for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[0];
-                if (td) {
-                    txtValue = td.textContent || td.innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        if (counter < maxItems) {
-                            tr[i].style.display = "";
-                            counter++;
-                        } else {
-                            tr[i].style.display = "none";
-                        }
+        // Function to fetch the app status
+        function checkAppStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('status');
+                    if (data.status === 'App is running') {
+                        statusDiv.textContent = 'App is running';
+                        statusDiv.classList.remove('error');
+                        statusDiv.classList.add('working');
                     } else {
-                        tr[i].style.display = "none";
+                        statusDiv.textContent = 'App is not running';
+                        statusDiv.classList.remove('working');
+                        statusDiv.classList.add('error');
                     }
-                }
-            }
-        }
-
-        var sortingOrder = {}; // Keep track of sorting order for each column
-
-        function sortTable(columnIndex) {
-            var table, rows, switching, i, x, y, shouldSwitch;
-            table = document.getElementById("service-table");
-            switching = true;
-
-            // Initialize sorting order for the column if not present
-            if (!sortingOrder[columnIndex]) {
-                sortingOrder[columnIndex] = "asc";
-            } else {
-                // Toggle sorting order between "asc" and "desc"
-                sortingOrder[columnIndex] = (sortingOrder[columnIndex] === "asc") ? "desc" : "asc";
-            }
-
-            while (switching) {
-                switching = false;
-                rows = table.rows;
-
-                for (i = 1; i < (rows.length - 1); i++) {
-                    shouldSwitch = false;
-                    x = rows[i].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
-                    y = rows[i + 1].getElementsByTagName("td")[columnIndex].innerText.toLowerCase();
-
-                    if ((sortingOrder[columnIndex] === "asc" && x > y) || (sortingOrder[columnIndex] === "desc" && x < y)) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                }
-
-                if (shouldSwitch) {
-                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                    switching = true;
-                }
-            }
-
-            // Update arrow classes after sorting
-            updateArrowClasses(columnIndex);
-        }
-
-        // Function to toggle sorting order and update arrow classes
-        function toggleSortingOrder(columnIndex) {
-            var header = document.querySelectorAll(".sortable-header")[columnIndex];
-
-            if (!header.classList.contains("asc") && !header.classList.contains("desc")) {
-                header.classList.add("asc");
-            } else {
-                header.classList.toggle("asc");
-                header.classList.toggle("desc");
-            }
-        }
-
-        // Function to update arrow classes after sorting
-        function updateArrowClasses(columnIndex) {
-            var header = document.querySelectorAll(".sortable-header")[columnIndex];
-
-            document.querySelectorAll('.sortable-header').forEach(function (otherHeader, otherIndex) {
-                if (otherIndex !== columnIndex) {
-                    otherHeader.classList.remove("asc", "desc");
-                }
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            // Attach click event listeners to sortable headers
-            document.querySelectorAll('.sortable-header').forEach(function (header, index) {
-                header.addEventListener('click', function () {
-                    sortTable(index);
-                    toggleSortingOrder(index);
+                })
+                .catch(error => {
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.textContent = 'Error: Unable to fetch app status';
+                    statusDiv.classList.remove('working');
+                    statusDiv.classList.add('error');
                 });
-            });
-        });
+        }
+
+        // Call the status check function every 5 seconds
+        setInterval(checkAppStatus, 5000);
+        checkAppStatus(); // Check on page load
     </script>
 {% endblock %}
