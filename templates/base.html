@@ -14,41 +14,6 @@
 
 <!-- Custom navigation bar -->
 <div id="custom-navbar" class="custom-navbar">
-    {% if loggedIn is true %}
-     <!-- Home link -->
-     <a href="/home">
-        <img src="{{ url_for('static', filename='images/MATER.png') }}" alt="Home Icon" style="width: 20px; height: 20px;">
-        Home
-    </a>    
-     <!-- Calendar link -->
-     <a href="/calendar/calendar">Calendar</a>
-     <!-- Dropdown for Assets -->
-     <div class="custom-dropdown">
-         <button class="dropbtn">Assets</button>
-         <div class="custom-dropdown-content">
-             <!-- Link to add a new asset -->
-             <a href="/assets/asset_add">Add Asset</a>
-             <!--<a href="#" data-toggle="modal" data-target="#addAssetModal">Add Asset</a> -->
-             <!-- Link to view all assets -->
-             <a href="/assets/asset_all">All Assets</a>
-         </div>
-     </div>
-     <!-- Dropdown for Services -->
-     <div class="custom-dropdown">
-         <button class="dropbtn">Services</button>
-         <div class="custom-dropdown-content">
-             <!-- Link to add a new service -->
-             <a href="/services/service_add">Add Services</a>
-             <!-- Link to view all services -->
-             <a href="/services/service_all">All Services</a>
-         </div>
-     </div>
-     <!-- Link to the Settings page -->
-     <a href="/settings">Settings</a>
-     <a href="/auth/logout">Logout</a>
-    {% else %}
-    <a href="/">Login</a>
-    {% endif %}
 </div>
 
 <!-- Content section of the page -->
@@ -57,9 +22,6 @@
     {% block content %}{% endblock %}
 </div>
 
-<!-- Add Modals -->
-{% include 'asset_add_modal.html' %}
-{% include 'service_add_modal.html' %}
 
 <!-- Include Bootstrap and jQuery scripts -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
