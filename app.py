@@ -1,34 +1,28 @@
-# Import necessary modules and components from Flask and other libraries
 from flask import render_template, request, send_file, abort, Response, current_app, jsonify
-
-# Import datetime and timedelta for date and service calculations
+from sqlalchemy import MetaData, Table, engine
+from sqlalchemy.orm import Session, sessionmaker
+import logging
 from datetime import datetime
-
-# Import operating system-related functionality
+import csv
 import os
-
-# Import zipfile for creating and extracting zip archives
+from io import StringIO
 import zipfile
+from blueprints.utilities import UPLOAD_BASE_FOLDER, check_admin, get_attachment_upload_folder, get_image_upload_folder
 
 # Create the app
 from common.configuration import create_app
-
 app, db = create_app()
 
-# Import utility functions from the utilities module
-from blueprints.utilities import (
-    retrieve_username_jwt,
-    get_image_upload_folder,
-    get_attachment_upload_folder,
-)
+Session = sessionmaker(bind=engine)
 
-# Import configutration from the configuration module
-from blueprints.utilities import UPLOAD_BASE_FOLDER
-
-# Import the Service and Asset models, as well as the ServiceAttachment model
-from models.serviceattachment import ServiceAttachment
-from models.service import Service
-from models.asset import Asset
+def get_session():
+    """Returns a new database session."""
+    try:
+        session = Session()  # Ensure Session is correctly initialized
+        return session
+    except Exception as e:
+        logging.error(f"Error obtaining session: {e}")
+        return None  # Return None if session creation fails
 
 # Route to serve images
 @app.route("/<image_name>", methods=["GET"])
@@ -58,116 +52,133 @@ def uploaded_file(filename, asset_id=None):
         # Handle the case where asset_id is None
         abort(404)
 
-
-@app.route("/settings", methods=["GET", "POST"])
-def settings():
-    try:
-        # Get a list of table names from the database
-        table_names = current_app.config["current_db"].metadata.tables.keys()
-        print("Table Names:", table_names)  # Print table names for debugging
-        check12 = current_app.config["current_db"]
-        print (check12)
-        return render_template("settings.html", table_names=table_names, loggedIn=True)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return abort(500)
-
-@app.route("/export_csv", methods=["POST"])
-def export_csv():
-    try:
-        print("Export CSV route called.")
-        table_name = request.form["table"]
-        print("Selected table:", table_name)
-
-        # Dictionary mapping table names to model classes
-        table_model_mapping = {
-            "asset": Asset,
-            "serviceattachment": ServiceAttachment,
-            "service": Service
-            # Add more tables as needed
-        }
-
-        model_class = table_model_mapping.get(
-            table_name
-        )  # Get the corresponding model class based on the selected table name
-        print("Model class:", model_class)
-
-        if (
-            not model_class
-        ):  # Check if the model class is found; if not, return a 404 error
-            print("Model class not found.")
-            return abort(404)
-
-        data = (
-            model_class.query.all()
-        )  # Retrieve all data records from the selected model class
-        print("Data:", data)
-
-        # Prepare CSV data by extracting column names and data values
-        column_names = [column.key for column in model_class.__table__.columns]
-        csv_data = [column_names]
-
-        for row in data:
-            csv_data.append(
-                [str(getattr(row, column)) for column in column_names]
-            )  # Append data values for each row in the CSV data
-
-        # Convert CSV data to string format
-        csv_string = '\n'.join([','.join(row) for row in csv_data])
-
-        # Create a CSV response using the CSV string
-        response = Response(csv_string, content_type="text/csv")
-        response.headers[
-            "Content-Disposition"
-        ] = f"attachment; filename={table_name}.csv"
-        print("CSV data:", csv_data)
-        return response  # Return the CSV response
-
-    except Exception as e:
-        print(
-            f"An error occurred: {e}"
-        )  # Handle exceptions appropriately (e.g., log the error, return a 500 error)
-        return abort(500)
-
-
-# Generator function for streaming CSV data
-def csv_generator(data):
-    for row in data:
-        yield ",".join(
-            map(str, row)
-        ) + "\n"  # Yield each row of the CSV data as a string
-
-
 @app.route("/generate_zip", methods=["POST"])
 def generate_zip():
-    folder_path = UPLOAD_BASE_FOLDER  # Define the base folder path where files to be zipped are located
-    zip_filename = (
-        "All_Files.zip"  # Set the desired name for the zip file to be generated
-    )
-    zip_filepath = os.path.join(
-        app.root_path, zip_filename
-    )  # Use the Flask app root_path to get the correct directory for the zip file
+    data = request.get_json()  # Get the JSON data sent with the request
 
-    with zipfile.ZipFile(
-        zip_filepath, "w"
-    ) as zip_file:  # Use a context manager to create and write to a zip file
-        for foldername, subfolders, filenames in os.walk(
-            folder_path
-        ):  # Iterate through the folder structure, including subfolders and filenames
+    # Admin check
+    admin_check = check_admin(data)  # Call the check_admin function to verify admin privileges
+    if admin_check is not None:
+        return admin_check  # If the admin check fails, return the appropriate response
+
+    folder_path = UPLOAD_BASE_FOLDER  # Base folder path where files are located
+
+    # Get the current date in the format ddMMMyyyy
+    current_date = datetime.now().strftime("%d%b%Y")
+    zip_filename = f"All_Files_{current_date}.zip"  # Name for the generated zip file with the date
+    zip_filepath = os.path.join(app.root_path, zip_filename)  # Full path to save the zip file
+
+    # Check if there are any subfolders or files in the base folder
+    if not any(os.scandir(folder_path)):
+        return jsonify({"message": "No files found."}), 404  # Return if no subfolders are found
+
+    # Create the zip file
+    with zipfile.ZipFile(zip_filepath, "w") as zip_file:
+        for foldername, subfolders, filenames in os.walk(folder_path):
             for filename in filenames:
-                file_path = os.path.join(
-                    foldername, filename
-                )  # Construct the full path of the file to be included in the zip
-                arcname = os.path.relpath(
-                    file_path, folder_path
-                )  # Determine the archive name for the file relative to the base folder
-                zip_file.write(
-                    file_path, arcname
-                )  # Write the file to the zip archive with the specified archive name
+                file_path = os.path.join(foldername, filename)  # Full file path
+                arcname = os.path.relpath(file_path, folder_path)  # Relative archive name for the zip
+                zip_file.write(file_path, arcname)  # Add file to the zip archive
 
-    return send_file(
-        zip_filepath, as_attachment=True
-    )  # Send the generated zip file as an attachment in the HTTP response
+    return send_file(zip_filepath, as_attachment=True)  # Send the zip file as an attachment
+
+@app.route("/get_tables", methods=["POST"])
+def get_tables():
+    """Endpoint to get the list of all tables in the database."""
+    data = request.get_json()
+
+    # Admin check
+    admin_check = check_admin(data)
+    if admin_check is not None:
+        return admin_check
+
+    # Use the current_db from config
+    db_session = current_app.config["current_db"].session
+
+    try:
+        metadata = MetaData()
+        # Reflect the database schema using the current engine
+        metadata.reflect(bind=db_session.get_bind())
+
+        # Get the names of all tables
+        table_names = metadata.tables.keys()
+        return jsonify({"tables": list(table_names)})
+    except Exception as e:
+        logging.error(f"Error retrieving tables: {e}")  # Log the error
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/export_tables", methods=["POST"])
+def export_tables():
+    data = request.json
+    admin_check = check_admin(data)
+    if admin_check:
+        return admin_check
+
+    selected_tables = data.get('tables', [])
+    if not selected_tables:
+        return jsonify({"error": "No tables selected"}), 400
+
+    metadata = MetaData()
+
+    try:
+        # Use the current database engine
+        engine = current_app.config["current_db"].engine
+        logging.info(f"Using database engine: {engine}")
+        
+        # Reflect the database schema
+        metadata.reflect(bind=engine)
+
+        csv_files = []
+
+        for table_name in selected_tables:
+            if table_name not in metadata.tables:
+                logging.warning(f"Table {table_name} not found in metadata.")
+                continue
+            
+            # Use the session from the current database instance
+            session = current_app.config["current_db"].db.session
+            logging.info(f"Session state: {session}")
+
+            try:
+                table = Table(table_name, metadata, autoload_with=engine)
+                csv_data = export_table_data(table)  # Ensure this function is defined properly
+                csv_files.append((f"{table_name}.csv", csv_data))
+            except Exception as e:
+                logging.error(f"Failed to load table {table_name}: {str(e)}")
+            finally:
+                session.remove()  # Properly remove the session
+
+        if not csv_files:
+            return jsonify({"error": "No valid tables found"}), 400
+
+        # Create and send the ZIP file
+        zip_filename = f"exported_data_{datetime.now().strftime('%d%b%Y')}.zip"
+        zip_filepath = os.path.join(UPLOAD_BASE_FOLDER, zip_filename)
+
+        with zipfile.ZipFile(zip_filepath, "w") as zip_file:
+            for file_name, csv_data in csv_files:
+                zip_file.writestr(file_name, csv_data.getvalue())
+
+        return send_file(zip_filepath, as_attachment=True)
+
+    except Exception as e:
+        logging.error(f"Error exporting tables: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+def export_table_data(table):
+    """Fetch table data and convert it to CSV format."""
+    query = db.session.query(table).all()
+    output = StringIO()
+    writer = csv.writer(output)
+
+    # Write the header
+    writer.writerow([col.name for col in table.columns])
+
+    # Write the table data
+    for row in query:
+        writer.writerow([getattr(row, col.name) for col in table.columns])
+
+    return output
 
 # Status check route
 @app.route('/status', methods=['GET'])

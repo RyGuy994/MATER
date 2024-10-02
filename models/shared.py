@@ -13,7 +13,7 @@ class Database:
         self.password = os.getenv("PASSWORD")
         self.host = os.getenv("HOST")
         self.database_name = os.getenv("DATABASENAME")
-        self.engine = ""
+        self.engine = None
 
     def init_db(self):
         # Switch statement on DB_TYPE, default is SQLiteDB
