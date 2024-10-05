@@ -4,6 +4,7 @@ import shutil
 import zipfile
 import csv
 import io
+import tempfile
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app, send_file, after_this_request
 from werkzeug.utils import secure_filename
@@ -264,9 +265,9 @@ def delete_asset(asset_id):
     finally:
         session.close()  # Ensure session is closed
 
-@assets_blueprint.route("/asset_export", methods=["POST"])
-def export_assets():
-    # Export all assets to a ZIP file
+@assets_blueprint.route("/generate_zip/<int:asset_id>", methods=["POST"])
+def export_assets(asset_id):
+    # Export selected assets and all folders to zip file.
     data = request.get_json()
 
     # Validate JWT token
@@ -279,21 +280,20 @@ def export_assets():
 
     session = current_app.config["current_db"].session
     try:
-        assets = session.query(Asset).filter_by(user_id=user_id).all()
-        if not assets:
+        asset = session.query(Asset).filter_by(id=asset_id).first()
+        if not asset:
             return jsonify({"error": "No assets found for the user"}), 404
 
         zip_filename = f"assets_{user_id}.zip"
         zip_path = os.path.join(current_app.instance_path, zip_filename)
 
         with zipfile.ZipFile(zip_path, 'w') as zip_file:
-            for asset in assets:
-                asset_folder = get_asset_upload_folder(asset.id)
-                if os.path.isdir(asset_folder):
-                    for root, _, files in os.walk(asset_folder):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            zip_file.write(file_path, os.path.relpath(file_path, asset_folder))
+            asset_folder = get_asset_upload_folder(asset.id)
+            if os.path.isdir(asset_folder):
+                for root, _, files in os.walk(asset_folder):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        zip_file.write(file_path, os.path.relpath(file_path, asset_folder))
 
         @after_this_request
         def cleanup(response):
@@ -303,7 +303,7 @@ def export_assets():
                 current_app.logger.error(f"Error cleaning up zip file: {e}")
             return response
 
-        return send_file(zip_path, as_attachment=True)
+        return send_file(zip_path, as_attachment=True, mimetype='application/zip')
     except Exception as e:
         current_app.logger.error(f"Error exporting assets: {e}")
         return jsonify({"error": "Error exporting assets."}), 500
