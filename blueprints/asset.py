@@ -235,29 +235,24 @@ def delete_asset(asset_id):
 
         # Fetch asset to delete
         asset = session.query(Asset).filter_by(id=asset_id).first()
+        if not asset:
+            return jsonify({"error": "Asset not found"}), 404
+        
         asset_folder = get_asset_upload_folder(asset_id)
 
         # Check if asset belongs to the user
         if asset.user_id != user_id:
             return jsonify({"error": "Unauthorized to delete this asset"}), 403
 
-        # Delete associated service attachments
-        service_attachments = session.query(ServiceAttachment).filter_by(asset_id=asset_id).all()
-        for attachment in service_attachments:
-            session.delete(attachment)
-            # Remove the file if it exists
-            if attachment.file_path and os.path.isfile(attachment.file_path):
-                os.remove(attachment.file_path)
+        # Delete the asset and its services (the cascade should handle attachments)
+        session.delete(asset)
+        session.commit()
 
         # Remove the asset folder if it exists
         if os.path.isdir(asset_folder):
             shutil.rmtree(asset_folder)
 
-        # Delete the asset
-        session.delete(asset)
-        session.commit()
-
-        return jsonify({"message": "Asset deleted successfully"}), 200
+        return jsonify({"message": "Asset and its associated services deleted successfully"}), 200
     except Exception as e:
         current_app.logger.error(f"Error deleting asset: {e}")
         session.rollback()  # Rollback on error
@@ -282,7 +277,7 @@ def export_assets(asset_id):
     try:
         asset = session.query(Asset).filter_by(id=asset_id).first()
         if not asset:
-            return jsonify({"error": "No assets found for the user"}), 404
+            return jsonify({"error": "Asset not found."}), 404
 
         zip_filename = f"assets_{user_id}.zip"
         zip_path = os.path.join(current_app.instance_path, zip_filename)
@@ -294,6 +289,8 @@ def export_assets(asset_id):
                     for file in files:
                         file_path = os.path.join(root, file)
                         zip_file.write(file_path, os.path.relpath(file_path, asset_folder))
+            else:
+                return jsonify({"error": "No files for this asset."}), 404
 
         @after_this_request
         def cleanup(response):
