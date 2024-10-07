@@ -1,7 +1,8 @@
+# /blueprints/asset.py
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, foreign
 from models.base import Base
-
+from models.note import Note
 
 class Asset(Base):
     __tablename__ = "asset"
@@ -21,3 +22,10 @@ class Asset(Base):
     
     # Use back_populates for the relationship with Service
     services = relationship('Service', back_populates='asset', cascade="all, delete-orphan")
+
+    # Properly set the relationship with Note, using a string reference to "Note"
+    notes = relationship(
+        "Note",
+        primaryjoin="and_(Note.type == 'asset', foreign(Note.type_id) == Asset.id)",
+        viewonly=True
+    )
