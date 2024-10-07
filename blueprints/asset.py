@@ -336,11 +336,27 @@ def upload_assets():
 
     for row in reader:
         # Prepare the request_dict for asset creation
+        acquired_date_str = row.get("acquired_date")
+
+        # Try parsing the acquired_date with multiple formats
+        date_formats = ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y']
+        acquired_date = None
+        for fmt in date_formats:
+            try:
+                acquired_date = datetime.strptime(acquired_date_str, fmt).date()
+                break  # Exit loop once a valid format is found
+            except ValueError:
+                continue
+
+        if not acquired_date:
+            failed_uploads.append(f"{row.get('name')}: Invalid date format")
+            continue
+
         request_dict = {
             "name": row.get("name"),
             "description": row.get("description"),
             "asset_sn": row.get("asset_sn"),
-            "acquired_date": row.get("acquired_date"),
+            "acquired_date": acquired_date.strftime('%Y-%m-%d'),  # Ensure the date is in the desired format
         }
 
         # Since there are no images in bulk uploads, pass an empty dict for request_image

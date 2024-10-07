@@ -75,6 +75,7 @@ def create_app():
     from blueprints.auth import auth_blueprint
     from blueprints.service_attachments import service_attachment_blueprint
     from blueprints.settings import settings_blueprint
+    from blueprints.note import note_blueprint
 
     app.register_blueprint(assets_blueprint, url_prefix="/assets/")
     app.register_blueprint(services_blueprint, url_prefix="/services/")
@@ -82,6 +83,7 @@ def create_app():
     app.register_blueprint(auth_blueprint, url_prefix="/auth/")
     app.register_blueprint(service_attachment_blueprint, url_prefix="/service_attachment/")
     app.register_blueprint(settings_blueprint, url_prefix="/settings/")
+    app.register_blueprint(note_blueprint, url_prefix="/notes/")
 
     return app, database
 
