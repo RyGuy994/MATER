@@ -7,6 +7,8 @@ def init_db(db_type, db_url):
     from models.service import Service
     from models.asset import Asset
     from models.appsettings import AppSettings
+    from models.note import Note
+    from models.cost import Cost
 
     engine = initalize_engine(db_type, db_url)
     Base.metadata.create_all(bind=engine)
