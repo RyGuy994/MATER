@@ -7,6 +7,7 @@ class ServiceAttachment(Base):
     __tablename__ = "serviceattachment"
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(Text, nullable = False)
     service_id = Column(Integer, ForeignKey("service.id", ondelete="CASCADE"), nullable=False)
     
     # Use back_populates for the relationship with Service

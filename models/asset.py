@@ -29,3 +29,8 @@ class Asset(Base):
         primaryjoin="and_(Note.type == 'asset', foreign(Note.type_id) == Asset.id)",
         viewonly=True
     )
+    cost = relationship(
+        "Cost",
+        primaryjoin="and_(Cost.type == 'asset', foreign(Cost.type_id) == Asset.id)",
+        viewonly=True
+    )

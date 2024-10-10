@@ -1,31 +1,50 @@
 # service.py
 
-from flask import Blueprint, request, render_template, redirect, jsonify, current_app
+from flask import Blueprint, request, render_template, jsonify, current_app
 from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
 from models.asset import Asset
 from models.service import Service
 from models.serviceattachment import ServiceAttachment
-from .utilities import delete_attachment_from_storage, get_attachment_upload_folder, retrieve_username_jwt
+from .utilities import get_attachment_upload_folder, retrieve_username_jwt
 services_blueprint = Blueprint("service", __name__, template_folder="../templates")
+
+from datetime import datetime
 
 def save_attachments(attachments, asset_id, service_id, user_id):
     # Function to save attachments and return a list of attachment paths
     attachment_paths = []
     for attachment in attachments:
-        if attachment:
-            folder = get_attachment_upload_folder(asset_id, service_id)
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            attachment_path = os.path.join(folder, secure_filename(attachment.filename))
-            attachment.save(attachment_path)
-            attachment_paths.append(attachment_path)
-            new_attachment = ServiceAttachment(
-                service_id=service_id, attachment_path=attachment_path, user_id=user_id
-            )
-            current_app.config["current_db"].session.add(new_attachment)
-            current_app.config["current_db"].session.commit()
+        try:
+            if attachment:
+                folder = get_attachment_upload_folder(asset_id, service_id)
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+                
+                # Use the current date and time to create a unique filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{timestamp}_{secure_filename(attachment.filename)}"
+                attachment_path = os.path.join(folder, filename)
+                print(f"Saving attachment to: {attachment_path}")  # Log the path
+
+                # Save the file
+                attachment.save(attachment_path)
+                attachment_paths.append(attachment_path)
+
+                # Create a new database record
+                new_attachment = ServiceAttachment(
+                    service_id=service_id, attachment_path=attachment_path, user_id=user_id
+                )
+                current_app.config["current_db"].session.add(new_attachment)
+                
+                # Commit the database changes
+                current_app.config["current_db"].session.commit()
+                print(f"Attachment saved and committed: {attachment_path}")
+
+        except Exception as e:
+            print(f"Error saving attachment: {e}")
+
     return attachment_paths
 
 def create_service(request_dict: dict, user_id: str, request_image: dict):
@@ -34,9 +53,7 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
         service_id = None
         service_type = request_dict.get("service_type")
         service_date = request_dict.get("service_date")
-        service_cost = request_dict.get("service_cost")
         service_status = request_dict.get("service_status")
-        service_notes = request_dict.get("service_notes")
         service_add_new = request_dict.get("service_add_again_check") == "on"
 
         if service_date:
@@ -44,16 +61,11 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
         else:
             service_date = None
 
-        if service_cost == "":
-            service_cost = 0
-
         new_service = Service(
             asset_id=asset_id,
             service_type=service_type,
             service_date=service_date,
-            service_cost=service_cost,
             service_status=service_status,
-            service_notes=service_notes,
             user_id=user_id,
         )
 
@@ -67,15 +79,11 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
             service_type = request_dict.get("service_type")
             service_date_new = request_dict.get("service_add_again_days_cal")
             service_date_new = datetime.strptime(service_date_new, "%Y-%m-%d").date()
-            service_cost = request_dict.get("service_cost")
-            service_notes = request_dict.get("service_notes")
             new_service2 = Service(
                 asset_id=asset_id,
                 service_type=service_type,
                 service_date=service_date_new,
-                service_cost=service_cost,
                 service_status="Pending", 
-                service_notes=service_notes,
                 user_id=user_id,
             )
             current_app.config["current_db"].session.add(new_service2)
@@ -104,9 +112,7 @@ def add_service():
             "asset_id": data.get("asset_id"),
             "service_type": data.get("service_type"),
             "service_date": data.get("service_date"),
-            "service_cost": data.get("service_cost"),
             "service_status": data.get("service_status"),
-            "service_notes": data.get("service_notes"),
             "service_add_again_check": data.get("service_add_again_check"),
             "service_add_again_days_cal": data.get("service_add_again_days_cal"),
         }
@@ -124,9 +130,6 @@ def add_service():
     else:
         return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
 
-
-
-
 @services_blueprint.route("/service_edit/<int:service_id>", methods=["GET", "POST"])
 def service_edit(service_id):
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
@@ -142,9 +145,7 @@ def service_edit(service_id):
         asset_id = request.form.get("asset_id")
         service_type = request.form.get("service_type")
         service_date = request.form.get("service_date")
-        service_cost = request.form.get("service_cost")
         service_complete = request.form.get("service_complete") == "on"
-        service_notes = request.form.get("service_notes")
         service_add_new = request.form.get("service_add_again_check") == "on"
         if service_date:
             service_date = datetime.strptime(service_date, "%Y-%m-%d").date()
@@ -154,15 +155,11 @@ def service_edit(service_id):
             service_type = request.form.get("service_type")
             service_date_new = request.form.get("service_add_again_days_cal")
             service_date_new = datetime.strptime(service_date_new, "%Y-%m-%d").date()
-            service_cost = request.form.get("service_cost")
-            service_notes = request.form.get("service_notes")
             new_service2 = Service(
                 asset_id=asset_id,
                 service_type=service_type,
                 service_date=service_date_new,
-                service_cost=service_cost,
                 service_complete=service_complete2,
-                service_notes=service_notes,
                 user_id=user_id,
             )
             current_app.config["current_db"].session.add(new_service2)
@@ -171,9 +168,7 @@ def service_edit(service_id):
         service.asset_id = asset_id
         service.service_type = service_type
         service.service_date = service_date
-        service.service_cost = service_cost
         service.service_complete = service_complete
-        service.service_notes = service_notes
 
         attachments = request.files.getlist("attachments")
         attachment_paths = []
@@ -234,8 +229,6 @@ def all_services():
 
         services = query.all()
 
-        total_service_cost = sum(service.service_cost for service in services)
-
         services_data = []
         for service in services:
             # Look up the asset name from the Asset table using the service.asset_id
@@ -248,13 +241,11 @@ def all_services():
                 'asset_name': asset_name,  # Include the asset name here
                 'service_type': service.service_type,
                 'service_date': service.service_date.isoformat(),
-                'service_cost': service.service_cost,
                 'service_status': service.service_status,
             })
 
         return jsonify({
             'services': services_data,
-            'total_service_cost': total_service_cost
         }), 200
 
     except Exception as e:
@@ -264,25 +255,39 @@ def all_services():
     finally:
         current_app.config["current_db"].session.close()  # Ensure session is closed
 
+@services_blueprint.route("/services_overdue", methods=["GET"])
+def get_overdue_services():
+    user_id = retrieve_username_jwt(request.cookies.get("access_token"))
+    
+    # Get today's date
+    today = datetime.today().date()
+    
+    # Fetch overdue services
+    services = (
+        current_app.config["current_db"]
+        .session.query(Service)
+        .filter(Service.service_date < today, Service.user_id == user_id)
+        .order_by(Service.service_date.asc())
+        .all()
+    )
 
+    return jsonify({"services_overdue": [service.to_dict() for service in services]}), 200
 
+@services_blueprint.route("/service/due_30_days", methods=["GET"])
+def get_due_services():
+    user_id = retrieve_username_jwt(request.cookies.get("access_token"))
+    
+    # Get today's date
+    today = datetime.today().date()
+    future_date = today + timedelta(days=30)
+    
+    # Fetch services due in the next 30 days
+    services = (
+        current_app.config["current_db"]
+        .session.query(Service)
+        .filter(Service.service_date >= today, Service.service_date <= future_date, Service.user_id == user_id)
+        .order_by(Service.service_date.asc())
+        .all()
+    )
 
-
-def get_upcoming_services(user_id, days):
-    try:
-        current_date = datetime.now().date()  # Get the current date
-        # Query upcoming services for the user within the specified number of days
-        upcoming_services = (
-            current_app.config["current_db"]
-            .session.query(Service)
-            .filter(
-                Service.service_complete == False,  # service completed is false
-                Service.service_date <= current_date + timedelta(days=days),
-                Service.user_id == user_id,
-            )
-            .all()
-        )
-        return upcoming_services
-    except Exception as e:
-        # Handle exceptions
-        raise Exception("Error in retrieving upcoming services: " + str(e))
+    return jsonify({"services_due": [service.to_dict() for service in services]}), 200

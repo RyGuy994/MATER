@@ -10,9 +10,7 @@ class Service(Base):
     asset_id = Column(Integer, ForeignKey("asset.id", ondelete="CASCADE"), nullable=False)
     service_type = Column(String(100))
     service_date = Column(Date)
-    service_cost = Column(Float)
     service_status = Column(String(100))
-    service_notes = Column(Text)
     
     user_id = Column(Text, ForeignKey("user.id"), nullable=False)
     
