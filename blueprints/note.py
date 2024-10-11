@@ -68,7 +68,6 @@ def notes():
         finally:
             session.close()  # Ensure session is closed
 
-
 @note_blueprint.route('/notes/<int:id>', methods=['PUT', 'DELETE'])
 def note_detail(id):
     # Validate JWT token for PUT and DELETE methods

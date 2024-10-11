@@ -17,6 +17,18 @@ class Cost(Base):
     created_at = Column(DateTime, default=func.now())  # Automatically sets the creation timestamp
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())  # Updates the timestamp on modification
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'type': self.type,
+            'type_id': self.type_id,
+            'cost_date': self.cost_date.isoformat() if self.cost_date else None,
+            'cost_why': self.cost_why,
+            'cost_data': self.cost_data,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
     # Relationships (viewonly=True)
     asset = relationship(
         "Asset",
