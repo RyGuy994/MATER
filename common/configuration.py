@@ -85,7 +85,7 @@ def create_app():
     app.register_blueprint(service_attachment_blueprint, url_prefix="/service_attachment/")
     app.register_blueprint(settings_blueprint, url_prefix="/settings/")
     app.register_blueprint(note_blueprint, url_prefix="/notes/")
-    app.register_blueprint(cost_blueprint, url_perfix="/costs")
+    app.register_blueprint(cost_blueprint, url_prefix="/costs")
 
     return app, database
 
