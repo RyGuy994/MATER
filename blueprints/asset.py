@@ -1,15 +1,9 @@
 #/blueprints/asset.py
-import os
-import shutil
-import zipfile
-import csv
-import io
-import tempfile
+import os, shutil, zipfile, csv, io, tempfile
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app, send_file, after_this_request
 from werkzeug.utils import secure_filename
 from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, allowed_file, get_asset_upload_folder
-
 
 from models.asset import Asset
 from models.serviceattachment import ServiceAttachment
@@ -18,17 +12,28 @@ from models.serviceattachment import ServiceAttachment
 assets_blueprint = Blueprint("assets", __name__, template_folder="../templates")
 
 def create_image(file, new_asset, asset_id):
-    # Save the image file to the designated folder and update the asset with the image path
     try:
+        # Check if there is an existing image and delete it if present
+        if new_asset.image_path:
+            existing_image_path = new_asset.image_path
+            if os.path.exists(existing_image_path):
+                os.remove(existing_image_path)
+                current_app.logger.info(f"Deleted old image at: {existing_image_path}")
+
+        # Save the new image if it exists and is allowed
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             image_upload_folder = get_image_upload_folder(asset_id)
             os.makedirs(image_upload_folder, exist_ok=True)  # Create folder if it doesn't exist
             file_path = os.path.join(image_upload_folder, filename)
-            file.save(file_path)  # Save the image file
+            file.save(file_path)  # Save the new image file
+
+            # Update the image path in the asset
             new_asset.image_path = file_path
+            current_app.logger.info(f"Saved new image at: {file_path}")
     except Exception as e:
         current_app.logger.error(f"Error uploading image: {e}")
+
     return new_asset
 
 def create_asset(request_dict: dict, user_id: str, request_image: dict):

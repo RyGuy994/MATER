@@ -96,39 +96,53 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
 
 @services_blueprint.route("/service_add", methods=["POST"])
 def add_service():
-    if request.content_type.startswith('multipart/form-data'):
-        data = request.form.to_dict()
-        files = request.files
+    # Validate Content-Type
+    if request.content_type != 'multipart/form-data':
+        return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
 
-        jwt_token = data.get("jwt")
-        if not jwt_token:
-            return jsonify({"error": "JWT token is missing", "status_code": 400})
+    data = request.form.to_dict()
+    files = request.files
 
-        user_id = retrieve_username_jwt(jwt_token)
-        if not user_id:
-            return jsonify({"error": "Invalid JWT token", "status_code": 401})
+    # Validate JWT token
+    jwt_token = data.get("jwt")
+    if not jwt_token:
+        return jsonify({"error": "JWT token is missing"}), 400
+    user_id = retrieve_username_jwt(jwt_token)
+    if not user_id:
+        return jsonify({"error": "Invalid JWT token"}), 401
 
-        request_dict = {
-            "asset_id": data.get("asset_id"),
-            "service_type": data.get("service_type"),
-            "service_date": data.get("service_date"),
-            "service_status": data.get("service_status"),
-            "service_add_again_check": data.get("service_add_again_check"),
-            "service_add_again_days_cal": data.get("service_add_again_days_cal"),
-        }
+    request_dict = {
+        "asset_id": data.get("asset_id"),
+        "service_type": data.get("service_type"),
+        "service_date": data.get("service_date"),
+        "service_status": data.get("service_status"),
+        "service_add_again_check": data.get("service_add_again_check"),
+        "service_add_again_days_cal": data.get("service_add_again_days_cal"),
+    }
 
-        request_attachments = {
-            "attachments": files.getlist("attachments")
-        }
+    request_attachments = {
+        "attachments": files.getlist("attachments")
+    }
 
+    session = current_app.config["current_db"].session
+    try:
         success = create_service(request_dict, user_id, request_attachments)
 
         if success:
-            return jsonify({"message": "Service successfully added!", "status_code": 200})
+            session.commit()  # Commit changes only if service creation is successful
+            return jsonify({"message": "Service successfully added!"}), 201
         else:
-            return jsonify({"error": "Failed to add service.", "status_code": 500})
-    else:
-        return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
+            session.rollback()  # Rollback in case of failure
+            return jsonify({"error": "Failed to add service."}), 500
+
+    except Exception as e:
+        session.rollback()  # Ensure rollback on exception
+        current_app.logger.error(f"Error adding service: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+    finally:
+        session.close()  # Ensure session is closed
+
 
 @services_blueprint.route("/service_edit/<int:service_id>", methods=["GET", "POST"])
 def service_edit(service_id):

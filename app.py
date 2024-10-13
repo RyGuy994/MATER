@@ -1,4 +1,4 @@
-from flask import render_template, request, send_file, abort, Response, current_app, jsonify
+from flask import render_template, request, send_file, abort, Response, current_app, jsonify, after_this_request
 from sqlalchemy import MetaData, Table, engine
 from sqlalchemy.orm import Session, sessionmaker
 import logging
@@ -124,50 +124,79 @@ def export_tables():
         # Use the current database engine
         engine = current_app.config["current_db"].engine
         logging.info(f"Using database engine: {engine}")
-        
+
         # Reflect the database schema
         metadata.reflect(bind=engine)
-
         csv_files = []
+
+        # Create a session manually
+        Session = sessionmaker(bind=engine)
+        session = Session()
 
         for table_name in selected_tables:
             if table_name not in metadata.tables:
                 logging.warning(f"Table {table_name} not found in metadata.")
                 continue
-            
-            # Use the session from the current database instance
-            session = current_app.config["current_db"].db.session
-            logging.info(f"Session state: {session}")
 
             try:
                 table = Table(table_name, metadata, autoload_with=engine)
-                csv_data = export_table_data(table)  # Ensure this function is defined properly
+                csv_data = export_table_data(session, table)
                 csv_files.append((f"{table_name}.csv", csv_data))
+                logging.info(f"Successfully exported data for table {table_name}.")
             except Exception as e:
                 logging.error(f"Failed to load table {table_name}: {str(e)}")
-            finally:
-                session.remove()  # Properly remove the session
+
+        session.close()  # Close the session properly
 
         if not csv_files:
             return jsonify({"error": "No valid tables found"}), 400
 
         # Create and send the ZIP file
         zip_filename = f"exported_data_{datetime.now().strftime('%d%b%Y')}.zip"
-        zip_filepath = os.path.join(UPLOAD_BASE_FOLDER, zip_filename)
+        zip_filepath = os.path.join(current_app.instance_path, zip_filename)
 
-        with zipfile.ZipFile(zip_filepath, "w") as zip_file:
-            for file_name, csv_data in csv_files:
-                zip_file.writestr(file_name, csv_data.getvalue())
+        # Ensure the directory exists before creating the ZIP file
+        zip_folder = os.path.dirname(zip_filepath)
+        os.makedirs(zip_folder, exist_ok=True)
+        logging.info(f"Directory {zip_folder} created or already exists.")
 
-        return send_file(zip_filepath, as_attachment=True)
+        # Create the ZIP file
+        try:
+            with zipfile.ZipFile(zip_filepath, "w") as zip_file:
+                for file_name, csv_data in csv_files:
+                    logging.info(f"Writing {file_name} to ZIP file.")
+                    zip_file.writestr(file_name, csv_data.getvalue())
+            logging.info(f"ZIP file {zip_filename} written successfully.")
+        except Exception as zip_error:
+            logging.error(f"Failed to write ZIP file: {str(zip_error)}")
+            return jsonify({"error": "Failed to create ZIP file"}), 500
+
+        # Verify the ZIP file exists before sending it
+        if os.path.exists(zip_filepath):
+            logging.info(f"ZIP file created at {zip_filepath}")
+
+            @after_this_request
+            def delete_file(response):
+                try:
+                    os.remove(zip_filepath)
+                    logging.info(f"Deleted ZIP file: {zip_filepath}")
+                except Exception as e:
+                    logging.error(f"Error deleting ZIP file: {str(e)}")
+                return response
+            
+            return send_file(zip_filepath, as_attachment=True)
+
+        else:
+            logging.error(f"ZIP file not found at {zip_filepath}")
+            return jsonify({"error": "ZIP file not created"}), 500
 
     except Exception as e:
         logging.error(f"Error exporting tables: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-def export_table_data(table):
+def export_table_data(session, table):
     """Fetch table data and convert it to CSV format."""
-    query = db.session.query(table).all()
+    query = session.query(table).all()
     output = StringIO()
     writer = csv.writer(output)
 
