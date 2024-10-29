@@ -1,4 +1,4 @@
-# service.py
+#/src/blueprints/service.py
 
 from flask import Blueprint, request, render_template, jsonify, current_app
 from datetime import datetime, timedelta
@@ -7,7 +7,8 @@ from werkzeug.utils import secure_filename
 from models.asset import Asset
 from models.service import Service
 from models.serviceattachment import ServiceAttachment
-from .utilities import get_attachment_upload_folder, retrieve_username_jwt
+from utils.jwt.jwt_utils import retrieve_username_jwt
+from utils.storage.storage_utils import get_attachment_upload_folder
 services_blueprint = Blueprint("service", __name__, template_folder="../templates")
 
 from datetime import datetime

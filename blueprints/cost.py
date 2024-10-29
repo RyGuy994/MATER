@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from models.cost import Cost
-from blueprints.utilities import retrieve_username_jwt
+from utils.jwt.jwt_utils import retrieve_username_jwt
 from datetime import datetime
 
 # Create a Blueprint for cost routes

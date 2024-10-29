@@ -1,6 +1,7 @@
+#/src/blueprints/notes.py
 from flask import Blueprint, request, jsonify, current_app
 from models.note import Note
-from blueprints.utilities import retrieve_username_jwt  # Import your JWT utility function
+from utils.jwt.jwt_utils import retrieve_username_jwt
 from datetime import datetime
 
 # Create a Blueprint for note routes

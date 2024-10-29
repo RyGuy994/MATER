@@ -1,42 +1,17 @@
 #/bluerpints/auth.py
 from flask import Blueprint, request, jsonify, make_response, redirect, current_app
-import bcrypt
 from ulid import ULID
-import jwt
+import jwt, re, bcrypt
 from models.user import User
-from .utilities import check_admin, get_global_setting, retrieve_username_jwt
+from models.mfa import MFA
+from utils.jwt.jwt_utils import validate_user, generate_jwt, get_user_by_email, get_user_by_username, retrieve_username_jwt, check_admin
+from utils.notifications.notifications_utils import send_email_notification
+from utils.mfa.mfa_utils import verify_otp, generate_otp_code, create_otp_entry
+from utils.validation.validation_utils import validate_email
+from utils.config.config_utils import log_failed_login
 
 # Create a Blueprint for authentication routes
 auth_blueprint = Blueprint("auth", __name__, template_folder="../templates")
-
-def get_user_by_username(username: str) -> User:
-    """Helper function to retrieve a user by username."""
-    return (
-        current_app.config["current_db"]
-        .session.query(User)
-        .filter_by(username=username)
-        .first()
-    )
-
-def generate_jwt(user_id: str) -> str:
-    """Generate a JWT for the given user ID."""
-    return jwt.encode(
-        {"id": user_id},
-        current_app.config["CURRENT_SECRET_KEY"],
-        algorithm="HS256",
-    )
-
-def validate_user(json_data: dict) -> str:
-    """Validate user credentials and return JWT if valid."""
-    username = json_data.get("username")
-    password = json_data.get("password")
-
-    user = get_user_by_username(username)
-
-    if user and bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
-        return generate_jwt(user.id)
-
-    return None
 
 @auth_blueprint.route("/signup", methods=["POST"])
 def signup():
@@ -50,15 +25,24 @@ def signup():
 
     json_data = request.json
 
-    if not json_data or 'username' not in json_data or 'password' not in json_data:
+    if not json_data or 'username' not in json_data or 'password' not in json_data or 'email' not in json_data:
         return jsonify({"error": "Invalid request data"}), 400
 
     username = json_data["username"]
     password = json_data["password"]
+    email = json_data["email"]
 
-    # Check if user already exists
-    user = get_user_by_username(username)
-    if user:
+    # Initialize the session
+    session = current_app.config["current_db"].session
+
+    # Check if a user with the same email already exists
+    user_by_email = session.query(User).filter_by(email=email).first()
+    if user_by_email:
+        return jsonify({"error": "User with this email already exists"}), 400
+
+    # Check if a user with the same username already exists
+    user_by_username = session.query(User).filter_by(username=username).first()
+    if user_by_username:
         return jsonify({"error": "User with this username already exists"}), 400
 
     # Hash the password
@@ -67,12 +51,11 @@ def signup():
     # Generate a new user ID
     user_id = str(ULID())
 
-    # Use current_db.session for queries instead of User.query
-    session = current_app.config["current_db"].session
-    is_admin = session.query(User).count() == 0  # Set the first user as admin
+    # Set the first user as admin if no users exist yet
+    is_admin = session.query(User).count() == 0
 
     # Create new user object
-    new_user = User(id=user_id, username=username, password=hashed_password, is_admin=is_admin)
+    new_user = User(id=user_id, username=username, password=hashed_password, email=email, is_admin=is_admin)
 
     # Add new user to the database
     session.add(new_user)
@@ -80,7 +63,6 @@ def signup():
 
     # Generate JWT for the new user
     return jsonify({"jwt": generate_jwt(user_id)}), 200
-
 
 
 @auth_blueprint.route("/login", methods=["POST"])
@@ -102,14 +84,54 @@ def login():
     """
     json_data = request.json
 
-    if not json_data or 'username' not in json_data or 'password' not in json_data:
+    if not json_data or 'username' not in json_data or 'password' not in json_data or not json_data['username'] or not json_data['password']:
         return jsonify({"error": "Invalid request data"}), 400
 
-    jwt_token = validate_user(json_data)
-    if jwt_token:
-        return jsonify({"jwt": jwt_token}), 200
+    username_or_email = json_data["username"]
+    password = json_data["password"]
 
-    return jsonify({"error": "Invalid username or password"}), 401
+    # Get the user's IP address
+    ip_address = request.remote_addr
+
+    session = current_app.config["current_db"].session
+
+    # Attempt to find the user by username or email
+    user = session.query(User).filter(
+        (User.username == username_or_email) | (User.email == username_or_email)
+    ).first()
+
+    if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+        # Log the failed login attempt
+        log_failed_login(username_or_email, ip_address)  # Log failed attempt
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    # Check if the user has MFA methods
+    mfa_methods = session.query(MFA).filter_by(user_id=user.id, is_primary=True).first()
+    
+    if mfa_methods:
+        email = mfa_methods.mfa_value
+        if not email:
+            return jsonify({"error": "MFA method not set up correctly. Please contact support."}), 500
+
+        # Generate OTP
+        otp_code = generate_otp_code()
+        create_otp_entry(user.id, otp_code)  # Store OTP in the database
+
+        subject = "Your MATER OTP Code"
+        message_body = f"Your OTP code is: {otp_code}. It is valid for the next 5 minutes."
+        
+        # Use user.email to send the OTP
+        if send_email_notification(email, subject, message_body):
+            return jsonify({
+                "message": "MFA verification required. An OTP has been sent to your registered method.",
+                "mfaRequired": True  # Explicitly include the MFA requirement flag
+            }), 202
+        else:
+            return jsonify({"error": "Failed to send OTP via email"}), 500
+
+    # If no MFA is required, generate and return JWT
+    token = generate_jwt(user.id)
+    return jsonify({"jwt": token}), 200
 
 @auth_blueprint.route("/logout", methods=["POST"])
 def logout():
@@ -260,11 +282,22 @@ def create_user():
 
     username = data.get('username')
     password = data.get('password')
+    email = data.get('email')
     is_admin = data.get('is_admin', False)
 
     # Validate the input
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
+    session = current_app.config["current_db"].session
+    # Check if a user with the same email already exists
+    user_by_email = session.query(User).filter_by(email=email).first()
+    if user_by_email:
+        return jsonify({"error": "User with this email already exists"}), 400
+
+    # Check if a user with the same username already exists
+    user_by_username = session.query(User).filter_by(username=username).first()
+    if user_by_username:
+        return jsonify({"error": "User with this username already exists"}), 400
 
     # Hash the password for security
     hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode()
@@ -273,7 +306,7 @@ def create_user():
     user_id = str(ULID())
 
     # Create the user
-    new_user = User(id=user_id, username=username, password=hashed_password, is_admin=is_admin)
+    new_user = User(id=user_id, username=username, password=hashed_password, email = email, is_admin=is_admin)
     
     # Add the user to the database
     try:

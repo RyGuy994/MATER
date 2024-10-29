@@ -9,6 +9,8 @@ def init_db(db_type, db_url):
     from models.appsettings import AppSettings
     from models.note import Note
     from models.cost import Cost
+    from models.mfa import MFA
+    from models.otp import OTP
 
     engine = initalize_engine(db_type, db_url)
     Base.metadata.create_all(bind=engine)

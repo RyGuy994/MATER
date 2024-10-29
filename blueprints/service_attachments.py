@@ -1,12 +1,11 @@
+#/src/blueprints/service_attachments.py
 from flask import request, Blueprint, current_app, flash, redirect, url_for
-from blueprints.utilities import delete_attachment_from_storage
+from utils.storage.storage_utils import delete_attachment_from_storage
 from models.serviceattachment import ServiceAttachment
-
 
 service_attachment_blueprint = Blueprint(
     "service_attachment", __name__, template_folder="../templates"
 )
-
 
 # Route to delete selected attachments
 @service_attachment_blueprint.route("/delete_selected_attachments", methods=["POST"])

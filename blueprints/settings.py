@@ -1,7 +1,7 @@
 # blueprints/settings.py
 from flask import Blueprint, request, jsonify, current_app
 from models.appsettings import AppSettings
-from .utilities import check_admin, retrieve_username_jwt
+from utils.jwt.jwt_utils import check_admin, retrieve_username_jwt
 from sqlalchemy import or_, and_
 
 settings_blueprint = Blueprint('settings', __name__)
