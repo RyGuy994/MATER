@@ -7,7 +7,8 @@ import csv
 import os
 from io import StringIO
 import zipfile
-from blueprints.utilities import UPLOAD_BASE_FOLDER, check_admin, get_attachment_upload_folder, get_image_upload_folder
+from utils.storage.storage_utils import UPLOAD_BASE_FOLDER, get_attachment_upload_folder, get_image_upload_folder
+from utils.jwt.jwt_utils import check_admin
 
 # Create the app
 from common.configuration import create_app

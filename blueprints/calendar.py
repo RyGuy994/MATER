@@ -1,7 +1,6 @@
 from flask import Blueprint, request, render_template, jsonify, Response, current_app
 from icalendar import Calendar
-
-from blueprints.utilities import retrieve_username_jwt
+from utils.jwt.jwt_utils import retrieve_username_jwt
 from models.service import Service
 
 calendar_blueprint = Blueprint("calendar", __name__, template_folder="../templates")

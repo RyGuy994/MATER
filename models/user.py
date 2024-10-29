@@ -1,17 +1,21 @@
 # models/user.py
 from sqlalchemy import Column, Text, Boolean
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from models.base import Base
 
-class User(Base):  # User table
-    __tablename__ = "user"  # Add this line to specify the table name
-    id = Column(Text, primary_key=True)  # id of user
-    username = Column(Text, nullable=False)  # username
-    password = Column(Text, nullable=False)  # password
-    is_admin = Column(Boolean, default=False) # if they are an admin
 
-    # Relationship with Service
+class User(Base):
+    __tablename__ = "user"
+    id = Column(Text, primary_key=True)
+    username = Column(Text, nullable=False)
+    password = Column(Text, nullable=False)
+    email = Column(Text, unique=True, nullable=False)
+    is_admin = Column(Boolean, default=False)
+
+    # Relationship with Service and Asset
     services = relationship("Service", back_populates="service_owner")
-
-    # Relationship with Asset
     assets = relationship("Asset", back_populates="asset_owner")
+
+    # Relationship with MFA using a string reference
+    mfa = relationship("MFA", back_populates="user", cascade="all, delete-orphan", single_parent=True)
+    otps = relationship('OTP', back_populates='user', cascade="all, delete-orphan", single_parent=True) 

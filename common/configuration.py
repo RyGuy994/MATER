@@ -77,6 +77,7 @@ def create_app():
     from blueprints.settings import settings_blueprint
     from blueprints.note import note_blueprint
     from blueprints.cost import cost_blueprint
+    from blueprints.mfa import mfa_blueprint
 
     app.register_blueprint(assets_blueprint, url_prefix="/assets/")
     app.register_blueprint(services_blueprint, url_prefix="/services/")
@@ -86,6 +87,7 @@ def create_app():
     app.register_blueprint(settings_blueprint, url_prefix="/settings/")
     app.register_blueprint(note_blueprint, url_prefix="/notes/")
     app.register_blueprint(cost_blueprint, url_prefix="/costs")
+    app.register_blueprint(mfa_blueprint, url_prefix="/mfa")
 
     return app, database
 

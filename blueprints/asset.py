@@ -3,8 +3,8 @@ import os, shutil, zipfile, csv, io, tempfile
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app, send_file, after_this_request
 from werkzeug.utils import secure_filename
-from blueprints.utilities import retrieve_username_jwt, get_image_upload_folder, allowed_file, get_asset_upload_folder
-
+from utils.jwt.jwt_utils import retrieve_username_jwt
+from utils.storage.storage_utils import get_image_upload_folder, allowed_file, get_asset_upload_folder
 from models.asset import Asset
 from models.serviceattachment import ServiceAttachment
 
