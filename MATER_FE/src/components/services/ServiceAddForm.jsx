@@ -148,10 +148,10 @@ const ServiceAddForm = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const jwtToken = localStorage.getItem('jwt');
     const formData = new FormData();
-
+  
     for (const key in serviceData) {
       if (key !== 'attachments') {
         formData.append(key, serviceData[key]);
@@ -161,20 +161,20 @@ const ServiceAddForm = ({ onClose }) => {
     serviceData.attachments.forEach(file => {
       formData.append('attachments', file);
     });
-
+  
     formData.append('jwt', jwtToken);
-
+  
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL;
       const AddServiceUrl = `${baseUrl}/services/service_add`;
-
+  
       const response = await fetch(AddServiceUrl, {
         method: 'POST',
         body: formData,
       });
-
+  
       const responseData = await response.json();
-
+  
       if (response.ok) {
         toast.success(responseData.message || 'Service added successfully');
         setShowConfirmation(true);
@@ -185,7 +185,7 @@ const ServiceAddForm = ({ onClose }) => {
       console.error('Failed to add service:', error.message);
       setErrorMessage('Failed to add service');
     }
-  };
+  };  
 
   const handleConfirm = () => {
     setShowConfirmation(false);

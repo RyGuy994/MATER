@@ -9,6 +9,7 @@ from models.service import Service
 from models.serviceattachment import ServiceAttachment
 from utils.jwt.jwt_utils import retrieve_username_jwt
 from utils.storage.storage_utils import get_attachment_upload_folder
+
 services_blueprint = Blueprint("service", __name__, template_folder="../templates")
 
 from datetime import datetime
@@ -98,7 +99,7 @@ def create_service(request_dict: dict, user_id: str, request_image: dict):
 @services_blueprint.route("/service_add", methods=["POST"])
 def add_service():
     # Validate Content-Type
-    if request.content_type != 'multipart/form-data':
+    if not request.content_type.startswith('multipart/form-data'):
         return jsonify({"error": "Content-Type must be multipart/form-data"}), 400
 
     data = request.form.to_dict()
@@ -288,7 +289,7 @@ def get_overdue_services():
 
     return jsonify({"services_overdue": [service.to_dict() for service in services]}), 200
 
-@services_blueprint.route("/service/due_30_days", methods=["GET"])
+@services_blueprint.route("/services_due_30_days", methods=["GET"])
 def get_due_services():
     user_id = retrieve_username_jwt(request.cookies.get("access_token"))
     
