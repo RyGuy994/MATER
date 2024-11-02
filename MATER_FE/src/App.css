@@ -1,0 +1,47 @@
+/* src/App.css */
+
+/* Styles for the root element of the React application */
+.App {
+  text-align: center; /* Center align text content */
+}
+
+/* Styles for the application logo */
+.App-logo {
+  height: 40vmin; /* Set height relative to the viewport height */
+  pointer-events: none; /* Disable pointer events on the logo */
+}
+
+/* Animation styles for the application logo */
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear; /* Apply spinning animation */
+  }
+}
+
+/* Styles for the application header */
+.App-header {
+  background-color: #282c34; /* Set background color */
+  min-height: 100vh; /* Set minimum height of the header to cover the entire viewport height */
+  display: flex; /* Use flexbox layout */
+  flex-direction: column; /* Arrange items vertically */
+  align-items: center; /* Center align items horizontally */
+  justify-content: center; /* Center align items vertically */
+  font-size: calc(10px + 2vmin); /* Responsive font size based on viewport */
+  color: white; /* Set text color to white */
+  z-index: 1000;
+}
+
+/* Styles for links within the application */
+.App-link {
+  color: #61dafb; /* Set link color */
+}
+
+/* Keyframes for spinning animation of the application logo */
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg); /* Rotate from 0 degrees */
+  }
+  to {
+    transform: rotate(360deg); /* Rotate to 360 degrees */
+  }
+}

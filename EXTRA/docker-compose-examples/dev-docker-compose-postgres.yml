@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ./MATER_BE
+      dockerfile: dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - ./MATER_BE:/app
+      - ./MATER_BE/logs:/var/logs
+    restart: unless-stopped
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      SECRET_KEY: secret
+      APP_SETTINGS: common.base.DevelopmentConfig
+      TESTING: false
+      SMTP_SERVER: 
+      SMTP_PORT: 587
+      SMTP_USER: 
+      SMTP_PASSWORD: 
+      SMTP_FROM_EMAIL: 
+      LOGIN_LOG_FILE_PATH: /var/logs/mater_app_login.log
+      DATABASETYPE: POSTGRESQL
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: mater-postgres
+      DB_NAME: postgres
+    depends_on:
+      - postgresqldb
+  postgresqldb:
+    image: postgres
+    container_name: mater-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgresql_volume:/var/lib/postgresql/data
+volumes:
+  postgresql_volume:
+
+  frontend:
+    build:
+      context: ./MATER_FE
+      dockerfile: dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - VITE_BASE_URL=http://localhost:5000
+    restart: unless-stopped

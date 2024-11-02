@@ -1,0 +1,346 @@
+/* src/components/common/common.css */
+
+:root {
+  --primary-color: #4CAF50; /* Default green color */
+}
+
+/* Styling for standard button */
+.standard-btn {
+    padding: 10px 20px; /* Padding for button */
+    margin: 10px; /* Margin for button */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    background-color: var(--primary-color) !important; /* Green background color */
+    color: white; /* White text color */
+    text-align: center; /* Center align text */
+    text-decoration: none; /* No text decoration */
+    display: inline-block; /* Display as inline block */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Cursor pointer on hover */
+}
+
+/* Hover effect for standard button */
+.standard-btn:hover {
+  background-color: var(--primary-color-hover) !important; /* Uses the slightly darker shade of primary color */
+}
+
+.standard-action-zone{
+    border: 1px solid var(--primary-color);
+    border-radius: 5px; /* Rounded corners */
+    padding: 5px; /* Space inside the box */
+    margin: 5px 0; /* Space outside the box */
+    background-color: #ddd; /* Light background color for better contrast */
+  
+}
+
+/* Styling for standard delete button */
+.standard-del-btn {
+    padding: 10px 20px; /* Padding for button */
+    margin: 10px; /* Margin for button */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    background-color: #ff0000c0; /* Red background color */
+    color: white; /* White text color */
+    text-align: center; /* Center align text */
+    text-decoration: none; /* No text decoration */
+    display: inline-block; /* Display as inline block */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Cursor pointer on hover */
+}
+
+/* Hover effect for standard delete button */
+.standard-del-btn:hover {
+    background-color: #ff0000e3; /* Darker red color on hover */
+}
+
+.standard-reset-btn {
+  padding: 10px 20px; /* Padding for button */
+  margin: 10px; /* Margin for button */
+  border: none; /* No border */
+  border-radius: 5px; /* Rounded corners */
+  background-color: #4CAF50; /* Green background color */
+  color: white; /* White text color */
+  text-align: center; /* Center align text */
+  text-decoration: none; /* No text decoration */
+  display: inline-block; /* Display as inline block */
+  font-size: 16px; /* Font size */
+  cursor: pointer; /* Cursor pointer on hover */
+}
+
+.standard-reset-btn:hover {
+  background-color: #388E3C;
+}
+
+/* Styles for Toggle Switch */
+.switch {
+    position: relative; /* Position relative */
+    display: inline-block; /* Display as inline block */
+    width: 60px; /* Width of switch */
+    height: 34px; /* Height of switch */
+}
+
+/* Hidden input for Toggle Switch */
+.switch input {
+    opacity: 0; /* Make input invisible */
+    width: 0; /* Set width to 0 */
+    height: 0; /* Set height to 0 */
+}
+
+/* Slider styles for Toggle Switch */
+.slider {
+    position: absolute; /* Position absolute */
+    cursor: pointer; /* Cursor pointer */
+    top: 0; /* Align to top */
+    left: 0; /* Align to left */
+    right: 0; /* Align to right */
+    bottom: 0; /* Align to bottom */
+    background-color: #ccc; /* Default background color */
+    transition: .4s; /* Smooth transition */
+    border-radius: 34px; /* Rounded corners */
+}
+
+/* Slider handle for Toggle Switch */
+.slider:before {
+    position: absolute; /* Position absolute */
+    content: ""; /* Empty content */
+    height: 26px; /* Height of handle */
+    width: 26px; /* Width of handle */
+    left: 4px; /* Offset from left */
+    bottom: 4px; /* Offset from bottom */
+    background-color: white; /* White background color */
+    transition: .4s; /* Smooth transition */
+    border-radius: 50%; /* Circle shape */
+}
+
+/* Checked state styles for Toggle Switch */
+input:checked + .slider {
+    background-color: var(--primary-color); /* Green color when checked */
+}
+
+/* Focus styles for Toggle Switch */
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3; /* Blue shadow on focus */
+}
+
+/* Position of handle when Toggle Switch is checked */
+input:checked + .slider:before {
+    transform: translateX(26px); /* Move handle to right */
+}
+
+/* Styles for content container */
+#content {
+    padding: 20px; /* Padding for content */
+}
+
+/* Ensure table has enough space and proper layout */
+.standard-table {
+    width: 100%;
+    min-width: 600px; /* Ensure table doesn't collapse */
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+  }
+
+  /* Ensure the parent container has overflow settings */
+.standard-table-wrapper {
+    max-height: 90vh; /* Allow room for scrolling */
+    overflow-y: auto; /* Enable scrolling */
+}
+
+/* Styles for table header and data cells */
+.standard-table th,
+.standard-table td {
+    padding: 12px; /* Padding for cells */
+    border: 1px solid #ddd; /* Border color */
+    text-align: left; /* Left align text */
+}
+
+/* Adjust the sticky table header */
+.standard-table th {
+    position: sticky; /* Make the header sticky */
+    top: 0; /* Stick to the top of the container */
+    z-index: 10; /* Ensure it stays above the table content */
+    background-color: var(--primary-color); /* Primary background color */
+    color: white; /* White text color */
+    font-weight: bold; /* Bold font weight */
+    text-align: center; /* Center align text */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional shadow for better visual separation */
+}
+
+/* Styles for table data */
+.standard-table td {
+    background-color: #f9f9f9; /* Light gray background color */
+}
+
+/* Alternate row styles for table */
+.standard-table tr:nth-child(even) td {
+    background-color: #f2f2f2; /* Lighter gray background color */
+}
+
+/* Hover effect for table rows */
+.standard-table tr:hover td {
+    background-color: #ddd; /* Darker gray background color on hover */
+}
+
+/* Border radius for table corners */
+.standard-table th:first-child {
+    border-top-left-radius: 10px; /* Rounded top left corner */
+}
+
+.standard-table th:last-child {
+    border-top-right-radius: 10px; /* Rounded top right corner */
+}
+
+.standard-table tr:last-child td:first-child {
+    border-bottom-left-radius: 10px; /* Rounded bottom left corner */
+}
+
+.standard-table tr:last-child td:last-child {
+    border-bottom-right-radius: 10px; /* Rounded bottom right corner */
+}
+
+.notes-history {
+    max-height: 300px; /* Set a maximum height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px; /* Optional: Add padding for better spacing */
+    border: 1px solid #ddd; /* Optional: Add border for visual separation */
+    border-radius: 5px; /* Optional: Rounded corners */
+    }
+    .notes-history ul {
+        padding: 0; /* Remove padding from the UL itself */
+        list-style-type: none; /* Remove bullets from the list */
+    }
+    
+    .notes-history ul li {
+        padding: 12px; /* Padding inside each list item */
+        border: 1px solid var(--primary-color); /* Border around each item */
+        margin-bottom: 10px; /* Add some space between items */
+        border-radius: 5px; /* Optional: rounded corners */
+        background-color: #f9f9f9; /* Optional: background color for each item */
+    }  
+
+.drop-area {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+  
+  .drop-area.highlight {
+    border-color: var(--primary-color);
+  }
+  
+  .image-preview {
+    max-width: 200px !important;
+    max-height: 200px !important;
+    margin-bottom: 10px;
+    border: 3px solid var(--primary-color) !important;
+  }
+  
+  
+
+  .image-preview-container {
+    position: relative;
+    display: inline-block;
+  }
+   
+  .remove-image-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .remove-image-btn:hover {
+    background-color: darkred;
+  }
+
+  .attachment-preview {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin: 10px;
+  }
+  
+  .attachment-preview-container {
+    display: inline-block;
+    position: relative;
+  }
+  
+  .remove-attachment-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    color: #007BFF; /* Blue color for better visibility */
+  }
+  
+  .tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    bottom: 0;
+    background: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    visibility: hidden;
+    font-size: 0.85rem;
+    min-width: 150px; /* Minimum width of the tooltip box */
+    max-width: 300px; /* Maximum width of the tooltip box */
+    white-space: normal; /* Allows text to wrap */
+    word-wrap: break-word; /* Wraps long words */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Adds a shadow for better visibility */
+    z-index: 1000; /* Ensures the tooltip appears above other content */
+  }
+  
+  .tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    margin-left: 10px;
+  }
+
+  .counter {
+    position: absolute;       /* Keep it at the top left of the container */
+    top: 10px;                /* Adjust positioning from the top */
+    left: 10px;               /* Adjust positioning from the left */
+    background-color: var(--primary-color); /* Green background color */
+    color: white;             /* White text color */
+    padding: 10px 20px;       /* Padding for the counter */
+    border-radius: 5px;       /* Rounded corners */
+    font-size: 18px;          /* Font size for the counter text */
+    font-weight: bold;        /* Bold font style */
+    z-index: 100;             /* Make sure it stays above other elements */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+  }

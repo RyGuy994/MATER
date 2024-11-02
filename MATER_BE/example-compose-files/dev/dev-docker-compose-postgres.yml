@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: dev.dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      SECRET_KEY: secret
+      APP_SETTINGS: common.base.DevelopmentConfig
+      TESTING: false
+      DATABASETYPE: POSTGRESQL
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: mater-postgres
+      DB_NAME: postgres
+    depends_on:
+      - postgresqldb
+  postgresqldb:
+    image: postgres
+    container_name: mater-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgresql_volume:/var/lib/postgresql/data
+volumes:
+  postgresql_volume:

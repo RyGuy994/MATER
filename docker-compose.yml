@@ -1,15 +1,15 @@
 version: '3'
 
 services:
-  web:
+  backend:
     build:
-      context: ./
-      dockerfile: dev.dockerfile
+      context: ./MATER_BE
+      dockerfile: dockerfile
     ports:
       - 5000:5000
     volumes:
-      - .:/app
-      - ./logs:/var/logs/
+      - ./MATER_BE:/app
+      - ./MATER_BE/logs:/var/logs
     restart: unless-stopped
     environment:
       FLASK_APP: app.py
@@ -25,3 +25,13 @@ services:
       SMTP_PASSWORD: 
       SMTP_FROM_EMAIL: 
       LOGIN_LOG_FILE_PATH: /var/logs/mater_app_login.log
+
+  frontend:
+    build:
+      context: ./MATER_FE
+      dockerfile: dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - VITE_BASE_URL=http://localhost:5000
+    restart: unless-stopped

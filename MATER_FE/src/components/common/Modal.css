@@ -1,0 +1,32 @@
+/* src//components/common/Modal.css
+/* Modal overlay to cover the entire viewport */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+/* Modal content styling */
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  z-index: 1001; /* Ensure it's above the overlay */
+  max-width: 400px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Modal actions styling */
+.modal-actions {
+  margin-top: 20px;
+}
