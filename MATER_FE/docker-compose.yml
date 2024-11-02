@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      context: ./
+      dockerfile: dev.dockerfile
+    ports:
+      - 3000:3000
+    restart: unless-stopped

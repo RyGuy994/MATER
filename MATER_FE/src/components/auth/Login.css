@@ -1,0 +1,262 @@
+/* Styling for the login container */
+
+:root {
+  --primary-color: #4CAF50; /* Default green color */
+}
+
+/* Full-screen background styling */
+body {
+  margin: 0; /* Remove default margin */
+  height: 100vh; /* Full viewport height */
+  overflow: hidden; /* Prevent scrolling */
+  position: relative; /* For absolute positioning of background elements */
+  background: linear-gradient(135deg, #ffffff 0%, #c9d3e2 100%); /* Soft gradient */
+}
+
+/* Words subtly placed in the background */
+.background-word {
+  position: absolute;
+  font-size: 100px;
+  color: rgba(0, 0, 0);
+  font-weight: bold;
+  white-space: nowrap;
+  pointer-events: none; /* Prevent interaction */
+}
+
+/* Positioning for each word */
+.word-maintenance {
+  top: 10%;
+  left: 2%;
+}
+
+.word-asset {
+  top: 25%;
+  left: 2%;
+}
+
+.word-tracking {
+  top: 40%;
+  left: 2%;
+}
+
+.word-equipment {
+  top: 55%;
+  left: 2%;
+}
+
+.word-registry {
+  top: 70%;
+  left: 2%;
+}
+
+.login {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #e8f5e9, #e0f2f1); /* Soft gradient */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  max-width: 400px; /* Limiting width */
+  margin: 50px auto; /* Centering with margin */
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative; /* For overlay */
+  backdrop-filter: blur(5px); /* Subtle blur for depth */
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Soft border */
+}
+
+/* Ensure content is above the overlay */
+.login > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Subtle animated background overlay */
+.login::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.2); /* Light overlay */
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 5px 5px; /* Soft grid pattern */
+  z-index: 1;
+  opacity: 0.7;
+  animation: fadeIn 3s ease-in-out forwards; /* Subtle fade-in */
+}
+
+/* Animation for fade-in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+
+/* Ensure content is above the overlay */
+.login > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Styling for the cool text */
+.cool-text {
+  font-family: 'Arial Black', Gadget, sans-serif;
+  font-size: 60px;
+  font-weight: bold;
+  color: var(--primary-color);; /* Green color */
+  text-shadow: 1px 1px 2px #000000; /* Softer shadow */
+  letter-spacing: 0.05em; /* Less space */
+  position: relative;
+}
+
+/* Styling for the subtitle */
+.cool-text-subtitle {
+  margin-top: -20px; /* Adjust to reduce gap */
+}
+
+/* Centering the logo */
+.center {
+  display: block;
+  margin: 10px auto; /* Less margin for tighter look */
+}
+
+/* Styling for input fields */
+.login-input {
+  padding: 10px;
+  border: 2px solid var(--primary-color); /* Green border */
+  border-radius: 5px; /* Rounded corners */
+  outline: none;
+  transition: border 0.3s ease, background-color 0.3s ease; /* Smooth transition */
+}
+
+/* Focus effect for inputs */
+.login-input:focus {
+  border-color: var(--primary-color-hover); /* Darker green on focus */
+  background-color: #e8f5e9; /* Subtle background change */
+}
+
+/* Styling for buttons */
+.standard-btn {
+  background-color: var(--primary-color); /* Green background */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effect for buttons */
+.standard-btn:hover {
+  background-color: var(--primary-color-hover); /* Darker green on hover */
+}
+
+/* Animation for dropping in the MATER text */
+@keyframes dropIn {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Apply the drop-in animation to each letter */
+.letter {
+  display: inline-block;
+  opacity: 0;
+  animation: dropIn 1s ease forwards;
+}
+
+/* Delay for each letter */
+.letter:nth-child(1) { animation-delay: 1s; }
+.letter:nth-child(2) { animation-delay: 2s; }
+.letter:nth-child(3) { animation-delay: 3s; }
+.letter:nth-child(4) { animation-delay: 4s; }
+.letter:nth-child(5) { animation-delay: 5s; }
+
+/* Pop-up animation for words */
+@keyframes popUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Apply the pop-up animation to each word */
+.word {
+  display: inline-block;
+  opacity: 0;
+  color: #000;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+
+.word:nth-child(1) { animation: popUp 1s ease forwards; animation-delay: 1s; }
+.word:nth-child(2) { animation: popUp 1s ease forwards; animation-delay: 2s; }
+.word:nth-child(3) { animation: popUp 1s ease forwards; animation-delay: 3s; }
+.word:nth-child(4) { animation: popUp 1s ease forwards; animation-delay: 4s; }
+.word:nth-child(5) { animation: popUp 1s ease forwards; animation-delay: 5s; }
+
+/* Container for the toggle switch */
+.remember-me-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Space between slider and text */
+  margin-top: 10px;
+}
+
+/* The switch container */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 30px; /* Smaller width for the slider */
+  height: 16px; /* Smaller height for the slider */
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 16px;
+  transition: .4s;
+}
+
+/* The circle inside the slider */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px; /* Adjusted for smaller size */
+  width: 12px; /* Adjusted for smaller size */
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+/* Checkbox checked styles */
+input:checked + .slider {
+  background-color: var(--primary-color);; /* Green background when checked */
+}
+
+/* Circle when checkbox is checked */
+input:checked + .slider:before {
+  transform: translateX(14px); /* Adjusted for the smaller slider width */
+}
