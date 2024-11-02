@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: dev.dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+      - ./logs:/var/logs/
+    restart: unless-stopped
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      SECRET_KEY: secret
+      DATABASETYPE: SQLITE
+      APP_SETTINGS: common.base.DevelopmentConfig
+      TESTING: false
+      SMTP_SERVER: 
+      SMTP_PORT: 587
+      SMTP_USER: 
+      SMTP_PASSWORD: 
+      SMTP_FROM_EMAIL: 
+      LOGIN_LOG_FILE_PATH: /var/logs/mater_app_login.log

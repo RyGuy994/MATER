@@ -1,0 +1,83 @@
+/* Widget Config Modal */
+.widget-config-modal {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+  z-index: 100;
+}
+
+/* Modal Header */
+.widget-config-modal h4 {
+  margin-bottom: 15px; /* Increased margin for better spacing */
+  font-weight: 600; /* Slightly bolder font */
+}
+
+/* Modal List Styles */
+.widget-config-modal ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.widget-config-modal li {
+  cursor: pointer;
+  padding: 10px 15px; /* Added padding for better click area */
+  border-radius: 5px; /* Rounded corners for list items */
+  transition: background 0.3s; /* Smooth background transition */
+}
+
+/* List Item Hover Effect */
+.widget-config-modal li:hover {
+  background: #f7f7f7; /* Light grey background on hover */
+}
+
+/* Modal Button */
+.widget-config-modal button {
+  margin-top: 15px; /* Increased margin for better spacing */
+  padding: 10px 15px; /* Added padding for a more button-like feel */
+  border-radius: 5px; /* Rounded corners */
+  border: none; /* No border */
+  background: #4CAF50; /* Consistent green background */
+  color: white; /* White text */
+  cursor: pointer; /* Pointer cursor */
+  transition: background 0.3s; /* Smooth background transition */
+}
+
+/* Widget Container */
+.widget {
+  position: relative;
+  background: #ffffff;
+  border-radius: 8px; /* Rounded corners */
+  padding: 15px; /* Increased padding */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+  overflow: hidden;
+  transition: transform 0.3s; /* Smooth transform transition */
+}
+
+/* Widget Content */
+.widget-content {
+  pointer-events: none; /* Prevents content from interfering with button clicks */
+}
+
+/* Remove Button */
+.remove-btn {
+  background: #e74c3c;
+  color: #ffffff;
+  border: none;
+  padding: 7px 10px; /* Increased padding for better click area */
+  cursor: pointer;
+  border-radius: 5px; /* Rounded corners */
+  position: absolute; /* Positioned at the top right */
+  right: 10px; /* Right offset */
+  top: 10px; /* Top offset */
+  transition: background 0.3s; /* Smooth background transition */
+}
+
+/* Remove Button Hover Effect */
+.remove-btn:hover {
+  background: #c0392b; /* Darker red on hover */
+}

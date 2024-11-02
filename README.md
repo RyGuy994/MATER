@@ -8,7 +8,7 @@
 
 ## Introduction
 
-Welcome to MATER, short for Maintenance, Asset, Tracking, Equipment, Registry. This project is a personal endeavor by a coding newbie, designed to provide a self-hosted solution for tracking various assets such as hardware, computers, software, cars, or any item that requires maintenance or service.
+Welcome to MATER, short for Maintenance, Asset, Tracking, Equipment, Registry. This project is a personal endeavor by a coding newbie, designed to provide a self-hosted solution for tracking various assets such as hardware, computers, software, cars, equipment or any item that requires maintenance or service.
 
 ## Disclaimer
   🚧 USE AT YOUR OWN RISK. CURRENTLY IN ALPHA. MAKE SURE YOU KEEP A BACKUP OF ALL DATA ELSE WHERE
@@ -20,13 +20,13 @@ The current primary goals for the MATER project include:
 
 - **Mobile App:** Develop a mobile application for seamless asset tracking on the go.
   
-- **Seperate Frontend** Develop a frontend to seprate the backend for better use and development of API and Mobile Applications
+- ~**Seperate Frontend** Develop a frontend to seprate the backend for better use and development of API and Mobile Applications~
 
 - ~**Break-away Database:** Implement a modular and scalable database architecture to enhance data management and give the user the option to use an exteneral database.~
 
-- ~**Calendar Integration:** Integrate calendar features for scheduling and managing maintenance activities and syncing to various calendar systems.~
+- **Calendar Integration:** Integrate calendar features for scheduling and managing maintenance activities and syncing to various calendar systems.
 
-- **API: Intergration with apps that house asset information (i.e Home assistant)**
+- ~**API: Intergration with apps that house asset information (i.e Home assistant)**~
 
 ## Showcase
 <details>
@@ -57,7 +57,7 @@ To get started with MATER, follow these steps:
    ```bash
    pip install -r requirements.txt
 
-Visit http://localhost:5000 in your browser to explore MATER.
+Visit http://localhost:3000 in your browser to explore MATER.
 
 ## Contributions
 

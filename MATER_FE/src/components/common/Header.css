@@ -1,0 +1,91 @@
+/* src/components/common/Header.css */
+
+.icon-link {
+  text-decoration: none; /* Remove underline from the link */
+}
+
+.icon-container {
+  display: inline-flex; /* Use inline-flex to align items horizontally */
+  align-items: center; /* Center items vertically */
+}
+
+.icon {
+  width: 16px; /* Adjust the width of the icon as needed */
+  height: 16px; /* Adjust the height of the icon as needed */
+  margin-right: 8px; /* Add some space between the icon and the text */
+}
+
+/* Style the text */
+.icon-container span {
+  color: white; /* Text color */
+  font-size: 16px; /* Adjust font size as needed */
+}
+
+nav {
+  background-color: #333; /* Background color of the navbar */
+  overflow: visible; /* Ensure that content doesn't overflow */
+  display: inline-block;
+  border-radius: 10px; /* Round the edges of the navbar */
+}
+
+nav ul {
+  list-style-type: none; /* Remove bullets from the list */
+  margin: 0; /* Remove default margin */
+  padding: 0; /* Remove default padding */
+}
+
+nav ul li {
+  position: relative; /* Ensure proper positioning of dropdown */
+  display: inline-block; /* Change to inline-block to prevent button from disappearing */
+}
+
+nav ul li a,
+nav ul li span,
+nav ul li button {
+  display: block; /* Display the links as blocks */
+  color: white; /* Text color of the links */
+  text-align: center; /* Center-align the text */
+  padding: 14px 16px; /* Padding for the links */
+  text-decoration: none; /* Remove underline from links */
+}
+
+nav ul li a:hover,
+nav ul li span:hover,
+nav ul li button:hover {
+  background-color: #111; /* Darken background color on hover */
+  border-radius: 10px; /* Add border radius to make buttons rounded */
+}
+
+/* Dropdown styles */
+.dropdown-content {
+  display: none; /* Hide dropdown content by default */
+  position: absolute; /* Position dropdown content */
+  background-color: #333; /* Background color of dropdown content */
+  min-width: 160px; /* Set minimum width of dropdown content */
+  z-index: 1000; /* Increase z-index to ensure dropdown appears above other content */
+  top: 100%; /* Position dropdown below its parent */
+  left: 0; /* Align dropdown with the left edge of its container */
+}
+
+.dropdown:hover .dropdown-content {
+  display: block; /* Show dropdown content on hover */
+}
+
+/* Adjust the rest of the dropdown content styles as needed */
+.dropdown-content a,
+.dropdown-content span,
+.dropdown-content button {
+  color: white; /* Text color of dropdown links */
+  padding: 12px 16px; /* Padding for dropdown links */
+  text-decoration: none; /* Remove underline from dropdown links */
+  display: block; /* Display dropdown links as blocks */
+  text-align: left; /* Align text to the left */
+  border-radius: 0 0 10px 10px; /* Round only the bottom corners of the dropdown */
+}
+
+.dropdown-content a:hover,
+.dropdown-content span:hover,
+.dropdown-content button:hover {
+  background-color: #111; /* Darken background color of dropdown links on hover */
+  border-radius: 0 0 10px 10px; /* Round only the bottom corners of the dropdown */
+}

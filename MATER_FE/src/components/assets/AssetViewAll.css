@@ -1,0 +1,36 @@
+/* src/components/assets/AssetViewAll.css */
+
+/* Adjust assets-container */
+.assets-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  overflow-y: auto;
+  position: relative; /* Required for sticky elements */
+  padding-bottom: 0; /* Avoid bottom padding interfering */
+}
+
+
+/* Ensure that the content container takes up the full height of the viewport */
+#content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px); /* Adjust height based on header/footer sizes */
+  width: 100%; /* Ensure full width */
+  overflow: hidden; /* Prevent overflow in the main content area */
+}
+
+.asset-counter {
+  position: absolute;       /* Keep it at the top left of the container */
+  top: 10px;                /* Adjust positioning from the top */
+  left: 10px;               /* Adjust positioning from the left */
+  background-color: #4CAF50; /* Green background color */
+  color: white;             /* White text color */
+  padding: 10px 20px;       /* Padding for the counter */
+  border-radius: 5px;       /* Rounded corners */
+  font-size: 18px;          /* Font size for the counter text */
+  font-weight: bold;        /* Bold font style */
+  z-index: 100;             /* Make sure it stays above other elements */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+}

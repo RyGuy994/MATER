@@ -1,0 +1,101 @@
+/* src/components/services/ServiceForm.css */
+
+/* Style the form container */
+.form-container {
+  max-width: 400px; /* Set maximum width for the form */
+  margin: 0 auto; /* Center the form horizontally */
+  padding: 20px; /* Add some padding around the form */
+  border: 1px solid #ccc; /* Add a border around the form */
+  border-radius: 8px; /* Add some border radius for rounded corners */
+  background-color: #f9f9f9; /* Set background color for the form */
+  max-height: 80vh;
+  overflow-y: auto;
+}
+  
+  /* Style the form inputs */
+  .form-input {
+    width: 100%; /* Set width to 100% of the container */
+    margin-bottom: 10px; /* Add some spacing between inputs */
+    padding: 10px; /* Add padding for better visual appearance */
+    border: 1px solid var(--primary-color); /* Add a border around inputs */
+    border-radius: 4px; /* Add some border radius for rounded corners */
+  }
+  
+  /* Custom dropdown styles */
+  .custom-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .custom-dropdown-content { 
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 100%; /* Ensure dropdown matches the width of the input */
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    padding: 0; /* Remove padding to avoid gap */
+    border-radius: 4px;
+    flex-direction: column;
+  }
+  
+  .custom-dropdown:hover .custom-dropdown-content {
+    display: flex;
+  }
+  
+  .custom-dropdown .column {
+    display: flex;
+    flex-direction: column;
+    margin-right: 20px;
+  }
+  
+  .custom-dropdown .column a {
+    color: black;
+    padding: 8px 16px; /* Adjust padding for better spacing */
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+    list-style: none; /* Remove bullet points */
+  }
+  
+  .custom-dropdown .column a:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .asset-dropdown {
+    position: relative;
+  }
+  
+  .asset-dropdown-list {
+    position: absolute;
+    z-index: 10;
+    background-color: white;
+    border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%; /* Ensure dropdown matches the width of the input */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 0; /* Remove padding to avoid gap */
+    margin: 0; /* Remove margin to avoid gap */
+  }
+  
+  .asset-dropdown-list-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    list-style-type: none; /* Remove bullet points */
+  }
+  
+  .asset-dropdown-list-item:hover {
+    background-color: #f1f1f1;
+  }
+  
+  /* Additional styles for attachment previews */
+  .attachments-preview img {
+    max-width: 100px;
+    max-height: 100px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  

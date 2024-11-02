@@ -1,0 +1,44 @@
+/* src/components/common/ConfirmationModal.css */
+
+/* Overlay covering the entire viewport */
+.modal-overlay {
+  position: fixed; /* Fixed positioning */
+  top: 0; /* Align to top */
+  left: 0; /* Align to left */
+  right: 0; /* Align to right */
+  bottom: 0; /* Align to bottom */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  display: flex; /* Flex container */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  z-index: 1000; /* Ensure a high z-index to overlay */
+}
+
+/* Modal container */
+.modal {
+  background-color: white !important; /* White background for modal */
+  padding: 20px; /* Padding inside modal */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Box shadow for depth */
+  text-align: center; /* Center align text */
+  z-index: 1001; /* Ensure higher z-index than overlay */
+  max-width: 400px; /* Maximum width for modal */
+  width: 100%; /* Ensure modal width doesn't exceed viewport */
+}
+
+/* Styling for paragraph inside modal */
+.modal p {
+  margin-bottom: 20px; /* Bottom margin for paragraphs */
+}
+
+/* Styling for buttons inside modal */
+.modal button {
+  margin: 0 10px; /* Margin around buttons */
+}
+
+/* Set height to 100% for html and body */
+html, body {
+  height: 100%; /* Full height of viewport */
+  margin: 0; /* Remove default margin */
+  overflow: hidden; /* Hide overflow */
+}
