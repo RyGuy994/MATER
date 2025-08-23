@@ -7,8 +7,10 @@ import csv
 import os
 from io import StringIO
 import zipfile
+import mimetypes
 from utils.storage.storage_utils import UPLOAD_BASE_FOLDER, get_attachment_upload_folder, get_image_upload_folder
 from utils.jwt.jwt_utils import check_admin
+from werkzeug.utils import secure_filename
 
 # Create the app
 from common.configuration import create_app
@@ -25,33 +27,50 @@ def get_session():
         logging.error(f"Error obtaining session: {e}")
         return None  # Return None if session creation fails
 
-# Route to serve images
-@app.route("/<image_name>", methods=["GET"])
-def serve_image(image_name, asset_id=None):
-    if asset_id is not None:  # Check if asset_id is provided
-        image_path = os.path.abspath(
-            os.path.join(get_image_upload_folder(asset_id), image_name)
-        )  # Construct the absolute path to the image file based on the asset_id and image_name
-        if os.path.exists(image_path):  # Check if the image file exists
-            return send_file(
-                image_path, mimetype="image/jpg"
-            )  # If the file exists, serve it with the appropriate MIME type for images
-    else:
-        # Handle the case where asset_id is None
-        abort(404)
+# Route to serve images - FIXED: More specific route pattern
+@app.route("/images/<int:asset_id>/<image_name>", methods=["GET"])
+def serve_image(image_name, asset_id):
+    # Sanitize filename
+    secure_name = secure_filename(image_name)
+    if not secure_name:  # Additional check for empty filename after sanitization
+        abort(400)
+        
+    image_path = os.path.abspath(os.path.join(get_image_upload_folder(asset_id), secure_name))
+    
+    # Ensure path is within expected directory (prevent directory traversal)
+    upload_folder = os.path.abspath(get_image_upload_folder(asset_id))
+    if not image_path.startswith(upload_folder):
+        abort(403)
+    
+    if os.path.exists(image_path):
+        # Use proper MIME type detection instead of hardcoded
+        mime_type, _ = mimetypes.guess_type(image_path)
+        if mime_type is None:
+            mime_type = 'application/octet-stream'
+        return send_file(image_path, mimetype=mime_type)
+    abort(404)
 
-# Route to serve uploaded files (attachments)
-@app.route("/<filename>", methods=["GET"])  # get attachment name
-def uploaded_file(filename, asset_id=None):
-    if asset_id is not None:  # Check if asset_id is provided
-        filepath = os.path.abspath(
-            os.path.join(get_attachment_upload_folder(asset_id), filename)
-        )  # Construct the absolute path to the uploaded file based on the asset_id and filename
-        if os.path.exists(filename):  # Check if the file exists
-            return send_file(filename)  # If the file exists, serve it
-    else:
-        # Handle the case where asset_id is None
-        abort(404)
+# Route to serve uploaded files (attachments) - FIXED: More specific route and bug fixes
+@app.route("/files/<int:asset_id>/<filename>", methods=["GET"])
+def uploaded_file(filename, asset_id):
+    # Sanitize filename
+    secure_name = secure_filename(filename)
+    if not secure_name:  # Additional check for empty filename after sanitization
+        abort(400)
+        
+    filepath = os.path.abspath(
+        os.path.join(get_attachment_upload_folder(asset_id), secure_name)
+    )
+    
+    # Ensure path is within expected directory (prevent directory traversal)
+    upload_folder = os.path.abspath(get_attachment_upload_folder(asset_id))
+    if not filepath.startswith(upload_folder):
+        abort(403)
+    
+    # FIXED: Check filepath instead of filename, and send filepath
+    if os.path.exists(filepath):
+        return send_file(filepath)
+    abort(404)
 
 @app.route("/generate_zip", methods=["POST"])
 def generate_zip():
@@ -80,6 +99,16 @@ def generate_zip():
                 file_path = os.path.join(foldername, filename)  # Full file path
                 arcname = os.path.relpath(file_path, folder_path)  # Relative archive name for the zip
                 zip_file.write(file_path, arcname)  # Add file to the zip archive
+
+    # Add cleanup after request
+    @after_this_request
+    def delete_zip_file(response):
+        try:
+            os.remove(zip_filepath)
+            logging.info(f"Deleted ZIP file: {zip_filepath}")
+        except Exception as e:
+            logging.error(f"Error deleting ZIP file: {str(e)}")
+        return response
 
     return send_file(zip_filepath, as_attachment=True)  # Send the zip file as an attachment
 
@@ -209,6 +238,19 @@ def export_table_data(session, table):
         writer.writerow([getattr(row, col.name) for col in table.columns])
 
     return output
+
+# Global error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'Resource not found'}), 404
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return jsonify({'error': 'Access forbidden'}), 403
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
 
 # Status check route
 @app.route('/status', methods=['GET'])
