@@ -35,7 +35,7 @@ const Home = () => {
   const fetchDueServices = async () => {
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL;
-      const response = await fetch(`${baseUrl}/services/service/due_30_days`, {
+      const response = await fetch(`${baseUrl}/services/services_due_30_days`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -51,8 +51,6 @@ const Home = () => {
     }
   };
   
-  
-
   useEffect(() => {
     fetchOverdueServices();
     fetchDueServices();

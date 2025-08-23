@@ -1,40 +1,36 @@
 /* src/components/assets/AssetEditPage.jsx */
 
-import React, { useState, useEffect, useRef } from 'react'; // Importing React and necessary hooks
-import '../common/common.css'; // Importing common styles
-import { ToastContainer, toast } from 'react-toastify'; // Importing toast notifications
-import 'react-toastify/dist/ReactToastify.css'; // Importing toast styles
-import DeleteModal from '../common/DeleteModal.jsx'; // Importing DeleteModal component for asset deletion confirmation
-import { useNavigate, useParams } from 'react-router-dom'; // Importing hooks for navigation and URL parameters
+import React, { useState, useEffect, useRef } from 'react';
+import '../common/common.css';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import DeleteModal from '../common/DeleteModal.jsx';
+import { useNavigate, useParams } from 'react-router-dom';
 import GenericModal from '../common/Modal.jsx';
+import ImageDragDrop from './common/ImageDragDrop'; 
 
 const AssetEditPage = ({ onSubmit, onClose }) => {
-  const { asset_id } = useParams(); // Get asset_id from the URL parameters
-  const navigate = useNavigate(); // Initialize navigation function
-  const [assetData, setAssetData] = useState({ // State for managing asset data
-    name: '', // Asset name
-    asset_sn: '', // Asset serial number
-    description: '', // Asset description
-    acquired_date: '', // Date the asset was acquired
-    asset_status: '', // Current status of the asset
-    image: null, // State to hold the asset image file
+  const { asset_id } = useParams();
+  const navigate = useNavigate();
+  const [assetData, setAssetData] = useState({
+    name: '',
+    asset_sn: '',
+    description: '',
+    acquired_date: '',
+    asset_status: '',
+    image: null,
   });
-  const [statusOptions, setStatusOptions] = useState([]); // State for asset status options
-  const [imagePreview, setImagePreview] = useState(null); // State for image preview
-  const [errorMessage, setErrorMessage] = useState(null); // State for error messages
-  const [isDragActive, setIsDragActive] = useState(false); // State to manage drag-and-drop status
-  const [isSubmitting, setIsSubmitting] = useState(false); // State to indicate if the form is being submitted
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // State to control visibility of the delete confirmation modal
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editAsset, setEditAsset] = useState(null);  // For asset being edited
-  const [modalType, setModalType] = useState(null);  // To differentiate modal type
-  const [needsFetch, setNeedsFetch] = useState(false); // If you need to refetch after modal
+  const [modalType, setModalType] = useState(null);
+  const [needsFetch, setNeedsFetch] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState(null);
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
-  const [assetToDelete, setAssetToDelete] = useState(null); // State to hold the asset ID to be deleted
-  const fileInputRef = useRef(null); // Reference for the file input element
-  const baseUrl = import.meta.env.VITE_BASE_URL; // Base URL for API requests, fetched from environment variables
-
-  // Fetch asset data when the component loads
   useEffect(() => {
     const fetchAssetData = async () => {
       try {
@@ -56,7 +52,7 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
           if (asset.image_path) {
             setImagePreview(`${baseUrl}/static/assets/${asset_id}/image/${asset.image_path.split('/').pop()}`);
           } else {
-            setImagePreview(`${baseUrl}/static/images/default.png`); // Default image if no image path
+            setImagePreview(`${baseUrl}/static/images/default.png`);
           }
         } else {
           const errMessage = await response.json();
@@ -104,20 +100,17 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
     fetchStatusOptions();
   }, []);
 
-  // Handle input changes and file selection
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     if (type === 'file') {
       const file = e.target.files[0] || null;
 
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/png'];
       if (file && !validTypes.includes(file.type)) {
         toast.error('Invalid file type. Only JPEG and PNG are allowed.');
         return;
       }
 
-      // Validate file size (5MB limit)
       const maxSize = 5 * 1024 * 1024;
       if (file && file.size > maxSize) {
         toast.error('File is too large. Maximum allowed size is 5MB.');
@@ -230,6 +223,11 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
     setModalType('costs-asset'); // Set the type of modal if you want to handle it
 };
 
+const openServiceModal = () => {
+  setModalOpen(true); // Set to open modal
+  setModalType('service-asset'); // Set the type of modal if you want to handle it
+};
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -246,142 +244,56 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
     if (assetData.image) {
       formData.append('image', assetData.image);
     }
-  
-    console.log('Form Data:', Array.from(formData.entries()));
-  
+
     try {
-      const baseUrl = import.meta.env.VITE_BASE_URL;
-      const EditAssetUrl = `${baseUrl}/assets/asset_edit/${asset_id}`; // Use asset_id from useParams
+      const EditAssetUrl = `${baseUrl}/assets/asset_edit/${asset_id}`;
       const response = await fetch(EditAssetUrl, {
         method: 'POST',
         body: formData,
       });
-  
+
       const responseData = await response.json();
       if (!response.ok) {
         throw new Error(responseData.error || 'Failed to update asset');
       }
-  
+
       toast.success(responseData.message || 'Asset updated successfully');
-      
     } catch (error) {
-      console.error('Failed to update asset:', error.message);
-      setErrorMessage('Failed to update asset');
       toast.error('Failed to update asset: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
-  };  
-
-  // Handle drag events for file drop area
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragActive(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragActive(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setAssetData({ ...assetData, image: file });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Trigger file input dialog on drop area click
-  const handleDropAreaClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  // Handle confirmation of asset addition
-  const handleRemoveImage = (e) => {
-    e.stopPropagation(); // Prevent click from triggering file input
-    setAssetData({ ...assetData, image: null });
-    setImagePreview(null);
   };
 
   return (
     <div className="form-container">
-        <DeleteModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)} // Close modal on cancel
-        onConfirm={confirmDelete} // Confirm delete on modal confirm button
-      />
+      <DeleteModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={confirmDelete} />
       {modalOpen && (
         <GenericModal
           type={modalType}
-          mode="add"  
-          item={asset_id} // Pass the asset_id
-          onClose={closeModal} // Close modal function
-        />
-      )}
-      {modalOpen && (
-        <GenericModal
-          type={modalType}
-          mode="add"  
-          item={asset_id} // Pass the asset_id
-          onClose={closeModal} // Close modal function
+          mode="add"
+          item={asset_id}
+          onClose={closeModal}
         />
       )}
       <h3>Asset Page - Edit/View</h3>
       <div className="standard-action-zone">
       <h4>Asset Action Zone</h4>
+      <button className="standard-btn" onClick={openServiceModal}>Services</button>
       <button className="standard-btn" onClick={() => handleDownload(asset_id)}>Download</button>
       <button className="standard-btn" onClick={openNotesModal}>Notes</button>
       <button className="standard-btn" onClick={openCostsModal}>Costs</button>
       <button className="standard-del-btn" onClick={() => handleDelete(asset_id)}>Delete</button>
       </div>
+      
       <form onSubmit={handleSubmit}>
-      <label htmlFor="image">Asset Image:</label>
-        <div
-          className={`drop-area ${isDragActive ? 'highlight' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleDropAreaClick} // Trigger file input dialog on click
-        >
-          <input
-            type="file"
-            id="image"
-            name="image"
-            className="form-input"
-            ref={fileInputRef} // Hidden file input reference
-            onChange={handleChange}
-            accept="image/*"
-            style={{ display: 'none' }} // Hide the file input
-            aria-label="Upload an image for the asset"
-          />
-          {imagePreview ? (
-            <div className="image-preview-container">
-              <img
-                src={imagePreview}
-                alt="Image Preview"
-                className="image-preview"
-                style={{ maxWidth: '200px', maxHeight: '200px', border: '3px solid green', marginBottom: '10px' }}
-              />
-              <button
-                type="button"
-                className="remove-image-btn"
-                onClick={handleRemoveImage}
-              >
-                X
-              </button>
-            </div>
-          ) : (
-            <p>Drag & drop an image or click to upload</p>
-          )}
-        </div><br />
+        <label htmlFor="image">Asset Image:</label>
+        <ImageDragDrop
+          imagePreview={imagePreview}
+          setImagePreview={setImagePreview}
+          setImage={(file) => setAssetData({ ...assetData, image: file })}
+        />
+        <br />
         <label htmlFor="name" className="required-field">Asset Name:</label>
         <input
           type="text"
@@ -392,7 +304,8 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
           value={assetData.name}
           onChange={handleChange}
           required
-        /><br />
+        />
+        <br />
         <label htmlFor="asset_sn" className="required-field">Asset Serial Number:</label>
         <input
           type="text"
@@ -403,7 +316,8 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
           value={assetData.asset_sn}
           onChange={handleChange}
           required
-        /><br />
+        />
+        <br />
         <label htmlFor="description">Asset Description:</label>
         <input
           type="text"
@@ -413,7 +327,8 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
           placeholder="Asset Description"
           value={assetData.description}
           onChange={handleChange}
-        /><br />
+        />
+        <br />
         <label htmlFor="acquired_date" className="required-field">Acquired Date:</label>
         <input
           type="date"
@@ -423,7 +338,8 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
           value={assetData.acquired_date}
           onChange={handleChange}
           required
-        /><br />
+        />
+        <br />
         <label htmlFor="asset_status" className="required-field">Asset Status:</label>
         <select
           id="asset_status"
@@ -438,13 +354,13 @@ const AssetEditPage = ({ onSubmit, onClose }) => {
               {status}
             </option>
           ))}
-        </select><br />
+        </select>
+        <br />
         <button type="submit" className="standard-btn" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : 'Save'}
         </button>
         <button type="button" className="standard-del-btn" onClick={() => navigate(-1)}>Back</button>
       </form>
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
       <ToastContainer />
     </div>
   );
