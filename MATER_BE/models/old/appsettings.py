@@ -1,6 +1,6 @@
 # models/appsettings.py
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-from models.base import Base
+from MATER_BE.models.init_db import Base
 
 class AppSettings(Base):
     __tablename__ = 'appsetting'

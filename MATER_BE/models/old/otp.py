@@ -1,7 +1,7 @@
 # models/otp.py
 from sqlalchemy import Column, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import Base
+from MATER_BE.models.init_db import Base
 from datetime import datetime
 
 class OTP(Base):

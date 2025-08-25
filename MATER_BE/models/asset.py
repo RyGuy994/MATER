@@ -1,168 +1,130 @@
-# /models/asset.py
-from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, DateTime, Numeric, Boolean
+# models/asset.py
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Numeric, Boolean, ForeignKey, Index
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
-from models.base import Base
+from sqlalchemy.orm import Query
+from MATER_BE.models.init_db import Base
 from models.dynamic_enums import AssetStatus
-import logging
-
+from datetime import date
 
 class Asset(Base):
     __tablename__ = "asset"
-    
-    # Primary key
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    
-    # Basic asset information
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    asset_sn = Column(String(100), nullable=True, unique=True, index=True)  # Serial numbers should be unique
-    
-    # Asset categorization
-    category = Column(String(100), nullable=True, index=True)  # e.g., "Computer", "Vehicle", "Equipment"
+    asset_sn = Column(String(100), nullable=True, unique=True, index=True)
+    category = Column(String(100), nullable=True, index=True)
     manufacturer = Column(String(100), nullable=True)
     model = Column(String(100), nullable=True)
-    
-    # Dates and lifecycle
     acquired_date = Column(Date, nullable=True)
     warranty_expiry = Column(Date, nullable=True)
     last_service_date = Column(Date, nullable=True)
     next_service_date = Column(Date, nullable=True)
-    
-    # Financial information
-    purchase_cost = Column(Numeric(10, 2), nullable=True)  # Original purchase cost
-    current_value = Column(Numeric(10, 2), nullable=True)  # Current estimated value
-    
-    # Physical attributes
-    location = Column(String(255), nullable=True)  # Where the asset is located
-    condition = Column(String(50), nullable=True)  # Physical condition
-    
-    # Digital assets
-    image_path = Column(String(500), nullable=True)  # Increased length for longer paths
-    
-    # Status and ownership
-    user_id = Column(String(36), ForeignKey("user.id"), nullable=False, index=True)  # Match User.id type
-    asset_status = Column(String(50), nullable=False, default='Ready')
-    is_active = Column(Boolean, default=True, nullable=False)  # Soft delete capability
-    
-    # Timestamps for auditing
+    purchase_cost = Column(Numeric(10, 2), nullable=True)
+    current_value = Column(Numeric(10, 2), nullable=True)
+    location = Column(String(255), nullable=True)
+    condition = Column(String(50), nullable=True)
+    image_path = Column(String(500), nullable=True)
+    user_id = Column(String(36), ForeignKey("user.id"), nullable=False, index=True)
+    asset_status = Column(String(50), nullable=False, default=AssetStatus.READY.value)
+    is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    
+
     # Relationships
     asset_owner = relationship("User", back_populates="assets")
-    
     services = relationship(
-        'Service', 
-        back_populates='asset', 
+        "Service",
+        back_populates="asset",
         cascade="all, delete-orphan",
-        lazy="dynamic",  # For better performance with many services
-        order_by="Service.service_date.desc()"  # Most recent services first
+        lazy="dynamic",
+        order_by="Service.service_date.desc()"
     )
-
-    # Notes relationship with proper foreign key constraint
     notes = relationship(
         "Note",
         primaryjoin="and_(Note.type == 'asset', foreign(Note.type_id) == Asset.id)",
         viewonly=True,
         lazy="dynamic"
     )
-    
-    # Cost relationship with proper foreign key constraint
     costs = relationship(
         "Cost",
         primaryjoin="and_(Cost.type == 'asset', foreign(Cost.type_id) == Asset.id)",
         viewonly=True,
         lazy="dynamic"
     )
+    attachments = relationship(
+        "Attachment",
+        back_populates="asset",
+        cascade="all, delete-orphan"
+    )
 
-    def __init__(self, name, user_id, **kwargs):
-        """Initialize asset with required fields."""
-        self.name = name
-        self.user_id = user_id
-        
-        # Set optional fields
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+    __table_args__ = (
+        Index("ix_asset_user_status", "user_id", "asset_status"),
+    )
 
+    # -------------------- Validators --------------------
+    @validates('asset_status')
+    def validate_asset_status(self, key, value):
+        if hasattr(value, 'value'):
+            value = value.value
+        if AssetStatus.validate_value(value, 'asset_status'):
+            return value
+        valid_values = AssetStatus.get_all_values('asset_status')
+        raise ValueError(f"Invalid asset_status '{value}', valid values: {', '.join(valid_values)}")
+
+    # -------------------- Properties --------------------
     @property
     def full_description(self):
-        """Get full asset description including model and manufacturer."""
-        parts = []
-        if self.manufacturer:
-            parts.append(self.manufacturer)
-        if self.model:
-            parts.append(self.model)
-        if self.name:
-            parts.append(self.name)
+        parts = [p for p in [self.manufacturer, self.model, self.name] if p]
         return " ".join(parts) if parts else "Unknown Asset"
 
     @property
     def is_under_warranty(self):
-        """Check if asset is still under warranty."""
-        if not self.warranty_expiry:
-            return None  # Unknown warranty status
-        from datetime import date
-        return date.today() <= self.warranty_expiry
+        return self.warranty_expiry >= date.today() if self.warranty_expiry else None
 
     @property
     def days_until_service(self):
-        """Get days until next service (negative if overdue)."""
-        if not self.next_service_date:
-            return None
-        from datetime import date
-        return (self.next_service_date - date.today()).days
+        return (self.next_service_date - date.today()).days if self.next_service_date else None
 
     @property
     def is_service_due(self):
-        """Check if service is due or overdue."""
         days = self.days_until_service
         return days is not None and days <= 0
 
     @property
     def total_service_cost(self):
-        """Calculate total cost of all services for this asset."""
-        return sum(cost.amount for cost in self.costs if cost.amount) or 0
+        return sum(cost.cost_data for cost in self.costs if cost.cost_data) or 0
 
     @property
     def service_count(self):
-        """Get total number of services performed."""
         return self.services.count()
 
     @property
     def last_service(self):
-        """Get the most recent service record."""
-        return self.services.first()  # Already ordered by date desc
+        return self.services.first()  # already ordered desc
 
-    def update_service_dates(self):
-        """Update last service date based on most recent service."""
-        last_service = self.last_service
-        if last_service:
-            self.last_service_date = last_service.service_date
+    @property
+    def default_image(self):
+        """Return the attachment marked as default image."""
+        for att in self.attachments:
+            if getattr(att, "is_default_image", False) and getattr(att, "is_image", False):
+                return att
+        return None
 
-    @validates('asset_status')
-    def validate_asset_status(self, key, value):
-        """Validate asset status against dynamic enum system."""
-        try:
-            # Convert enum to string if needed
-            if hasattr(value, 'value'):
-                value = value.value
-                
-            if AssetStatus.validate_value(value, 'asset_status'):
-                return value
-            else:
-                valid_values = AssetStatus.get_all_values('asset_status')
-                raise ValueError(
-                    f"Invalid asset status: '{value}'. "
-                    f"Valid values are: {', '.join(valid_values)}"
-                )
-        except Exception as e:
-            logging.warning(f"Asset status validation failed: {e}")
-            return value  # Allow value but log warning
+    def set_default_image(self, attachment_id):
+        """Set a specific attachment as the default image."""
+        for att in self.attachments:
+            att.is_default_image = (att.id == attachment_id)
 
+    @classmethod
+    def active_query(cls, session) -> Query:
+        """Return a query that only includes active assets."""
+        return session.query(cls).filter(cls.is_active.is_(True))
+
+    # -------------------- Methods --------------------
     def soft_delete(self):
-        """Mark asset as inactive instead of deleting."""
+        """Mark asset as inactive and disposed."""
         self.is_active = False
         self.asset_status = AssetStatus.DISPOSED.value
 
@@ -172,12 +134,7 @@ class Asset(Base):
         if self.asset_status == AssetStatus.DISPOSED.value:
             self.asset_status = AssetStatus.READY.value
 
-    def get_available_statuses(self):
-        """Get all available asset statuses for this asset."""
-        return AssetStatus.get_all_values('asset_status')
-
     def to_dict(self, include_relationships=False):
-        """Convert asset to dictionary representation."""
         data = {
             'id': self.id,
             'name': self.name,
@@ -205,21 +162,16 @@ class Asset(Base):
             'days_until_service': self.days_until_service,
             'is_service_due': self.is_service_due,
             'total_service_cost': self.total_service_cost,
-            'service_count': self.service_count,
-            'available_statuses': self.get_available_statuses()
+            'service_count': self.service_count
         }
-        
         if include_relationships:
             data['owner'] = self.asset_owner.to_dict() if self.asset_owner else None
-            data['services'] = [service.to_dict() for service in self.services.limit(10)]  # Latest 10 services
-            data['notes'] = [note.to_dict() for note in self.notes.limit(5)]  # Latest 5 notes
-        
+            data['services'] = [s.to_dict() for s in self.services.limit(10)]
+            data['notes'] = [n.to_dict() for n in self.notes.limit(5)]
         return data
 
     def __repr__(self):
-        """String representation of the asset."""
-        return f'<Asset {self.id}: {self.name}>'
+        return f"<Asset {self.id}: {self.name}>"
 
     def __str__(self):
-        """Human-readable string representation."""
-        return f'{self.full_description} (SN: {self.asset_sn or "N/A"})'
+        return f"{self.full_description} (SN: {self.asset_sn or 'N/A'})"

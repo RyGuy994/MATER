@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from utils.jwt.jwt_utils import retrieve_username_jwt
 from utils.storage.storage_utils import get_image_upload_folder, allowed_file, get_asset_upload_folder
 from models.asset import Asset
-from models.serviceattachment import ServiceAttachment
+from MATER_BE.models.attachment import ServiceAttachment
 
 # Create a Blueprint for asset-related routes
 assets_blueprint = Blueprint("assets", __name__, template_folder="../templates")

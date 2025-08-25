@@ -1,7 +1,7 @@
 # models/mfa.py
 from sqlalchemy import Column, Text, Boolean, ForeignKey, Integer
 from sqlalchemy.orm import relationship
-from models.base import Base
+from MATER_BE.models.init_db import Base
 
 class MFA(Base):
     __tablename__ = "user_mfa"

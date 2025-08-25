@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Text
 from sqlalchemy.orm import relationship, foreign
 from sqlalchemy.sql import func
-from models.base import Base
+from MATER_BE.models.init_db import Base
 
 class Cost(Base):
     __tablename__ = "cost"

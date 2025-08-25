@@ -1,6 +1,6 @@
 # models/initflag.py
 from sqlalchemy import Column, Integer, String
-from models.base import Base
+from MATER_BE.models.init_db import Base
 
 class InitFlag(Base):
     __tablename__ = 'initflag'

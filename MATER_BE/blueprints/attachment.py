@@ -1,7 +1,7 @@
 #/src/blueprints/service_attachments.py
 from flask import request, Blueprint, current_app, flash, redirect, url_for
 from utils.storage.storage_utils import delete_attachment_from_storage
-from models.serviceattachment import ServiceAttachment
+from MATER_BE.models.attachment import ServiceAttachment
 
 service_attachment_blueprint = Blueprint(
     "service_attachment", __name__, template_folder="../templates"

@@ -6,7 +6,7 @@ import os
 from werkzeug.utils import secure_filename
 from models.asset import Asset
 from models.service import Service
-from models.serviceattachment import ServiceAttachment
+from MATER_BE.models.attachment import ServiceAttachment
 from utils.jwt.jwt_utils import retrieve_username_jwt
 from utils.storage.storage_utils import get_attachment_upload_folder
 

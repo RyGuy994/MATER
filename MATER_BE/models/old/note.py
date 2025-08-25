@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, Text, Date, DateTime
 from sqlalchemy.orm import relationship, foreign
 from sqlalchemy.sql import func
-from models.base import Base
+from MATER_BE.models.init_db import Base
 
 class Note(Base):
     __tablename__ = "note"

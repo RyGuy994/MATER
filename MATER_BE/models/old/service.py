@@ -1,7 +1,7 @@
 from icalendar import Event
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Boolean, Float
 from sqlalchemy.orm import relationship, backref
-from models.base import Base
+from MATER_BE.models.init_db import Base
 
 class Service(Base):
     __tablename__ = "service"

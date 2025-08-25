@@ -1,7 +1,7 @@
 # /models/asset.py
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey
 from sqlalchemy.orm import relationship, backref, foreign
-from models.base import Base
+from MATER_BE.models.init_db import Base
 from models.note import Note
 
 class Asset(Base):

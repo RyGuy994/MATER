@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Text, Boolean, DateTime, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from models.base import Base
+from MATER_BE.models.init_db import Base
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
