@@ -1,31 +1,118 @@
 # common/configuration.py
 import os
 import logging
+from functools import cached_property
 from flask import Flask, current_app
 from flask_cors import CORS
 from flasgger import Swagger
 from sqlalchemy.orm import sessionmaker, scoped_session
+from pydantic_settings import BaseSettings
 
 from models.init_db import initialize_engine, Base
 from models.appsettings import AppSettings
 from .swagger import template
 
 
+# -------------------- Pydantic Settings --------------------
+class Settings(BaseSettings):
+    """
+    Application configuration managed via environment variables (.env supported).
+    Provides type safety and default values for runtime configuration.
+    """
+    SECRET_KEY: str = "changeme"
+    APP_SETTINGS: str = "common.base.ProductionConfig"
+    DATABASETYPE: str = "postgresql"
+
+    DB_USERNAME: str = "mater_user"
+    DB_PASSWORD: str = "mater_pass"
+    DB_HOST: str = "localhost"
+    DB_NAME: str = "mater"
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+# Singleton instance for global access
+settings = Settings()
+
+
+# -------------------- DB URI Builder --------------------
+def build_db_uri(db_type: str, username: str, password: str, host: str, name: str) -> str:
+    db_type = db_type.lower()
+    match db_type:
+        case "mysql":
+            return f"mysql+pymysql://{username}:{password}@{host}/{name}"
+        case "postgresql":
+            return f"postgresql+psycopg2://{username}:{password}@{host}/{name}"
+        case "sqlite":
+            db_folder = os.path.abspath(os.path.join(os.getcwd(), "instance"))
+            os.makedirs(db_folder, exist_ok=True)
+            return f"sqlite:///{os.path.join(db_folder, f'{name}.db')}"
+        case _:
+            raise ValueError(f"Unsupported DATABASETYPE: {db_type}")
+
+
+# -------------------- Config Classes --------------------
+class BaseConfig:
+    DEBUG = False
+    TESTING = False
+    SECRET_KEY = settings.SECRET_KEY
+
+
+class DevelopmentConfig(BaseConfig):
+    DEBUG = True
+    TESTING = False
+
+    DB_USERNAME = settings.DB_USERNAME
+    DB_PASSWORD = settings.DB_PASSWORD
+    DB_HOST = settings.DB_HOST
+    DB_NAME = settings.DB_NAME
+    DB_TYPE = settings.DATABASETYPE
+
+    @cached_property
+    def SQLALCHEMY_DATABASE_URI(self):
+        return build_db_uri(self.DB_TYPE, self.DB_USERNAME, self.DB_PASSWORD, self.DB_HOST, self.DB_NAME)
+
+
+class TestingConfig(BaseConfig):
+    TESTING = True
+    DEBUG = True
+    SECRET_KEY = "test_secret_key"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+
+
+class ProductionConfig(BaseConfig):
+    DEBUG = False
+    TESTING = False
+
+    DB_TYPE = settings.DATABASETYPE
+    DB_USERNAME = settings.DB_USERNAME
+    DB_PASSWORD = settings.DB_PASSWORD
+    DB_HOST = settings.DB_HOST
+    DB_NAME = settings.DB_NAME
+
+    @cached_property
+    def SQLALCHEMY_DATABASE_URI(self):
+        uri = build_db_uri(self.DB_TYPE, self.DB_USERNAME, self.DB_PASSWORD, self.DB_HOST, self.DB_NAME)
+        if self.DB_TYPE.lower() != "sqlite" and (self.DB_PASSWORD is None or self.DB_PASSWORD == ""):
+            raise ValueError("Production database password must be set")
+        return uri
+
+
+# -------------------- Default Settings Initialization --------------------
 def initialize_default_settings():
-    """Initialize default app settings if not already present."""
     Session = current_app.config["DB_SESSION"]
     session = Session()
     try:
-        # Check if defaults were already initialized
         existing_flag = session.query(AppSettings).filter_by(
             whatfor="init_flag",
             value="default_settings",
             globalsetting=True
         ).first()
         if existing_flag:
-            return  # Already initialized
+            return
 
-        # Default settings to insert
         default_settings = [
             {"whatfor": "allowselfregister", "value": "Yes", "globalsetting": True},
             {"whatfor": "global_service_status", "value": "Yes", "globalsetting": True},
@@ -43,7 +130,6 @@ def initialize_default_settings():
             {"whatfor": "service_type", "value": "Placeholder", "globalsetting": True},
         ]
 
-        # Insert defaults if not present
         for setting in default_settings:
             exists = session.query(AppSettings).filter_by(
                 whatfor=setting["whatfor"],
@@ -53,13 +139,7 @@ def initialize_default_settings():
             if not exists:
                 session.add(AppSettings(**setting))
 
-        # Set init flag
-        session.add(AppSettings(
-            whatfor="init_flag",
-            value="default_settings",
-            globalsetting=True
-        ))
-
+        session.add(AppSettings(whatfor="init_flag", value="default_settings", globalsetting=True))
         session.commit()
         logging.info("Default app settings initialized successfully.")
     except Exception as e:
@@ -69,49 +149,39 @@ def initialize_default_settings():
         session.close()
 
 
+# -------------------- Flask App Factory --------------------
 def create_app():
-    """Create and configure the Flask application."""
     app = Flask(__name__, template_folder="templates", static_folder="../static")
 
-    # Enable CORS
+    # CORS
     CORS(app, supports_credentials=True, expose_headers=["Authorization"])
 
-    # Load configuration
-    app_settings = os.getenv("APP_SETTINGS", "common.base.ProductionConfig")
+    # Load config from Pydantic settings
+    app_settings = settings.APP_SETTINGS
     app.config.from_object(app_settings)
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "changeme")
+    app.config["SECRET_KEY"] = settings.SECRET_KEY
 
-    # -------------------- Database --------------------
-    database_type = os.getenv("DATABASETYPE", "SQLITE").upper()
-    db_url = None
-
-    if database_type in ["MYSQL", "POSTGRESQL"]:
-        username = os.getenv("DB_USERNAME")
-        password = os.getenv("DB_PASSWORD")
-        host = os.getenv("DB_HOST")
-        database_name = os.getenv("DB_NAME")
-        if database_type == "MYSQL":
-            db_url = f"mysql+pymysql://{username}:{password}@{host}/{database_name}"
-        elif database_type == "POSTGRESQL":
-            db_url = f"postgresql+psycopg2://{username}:{password}@{host}/{database_name}"
+    # Database setup
+    database_type = settings.DATABASETYPE.upper()
+    if database_type == "SQLITE":
+        db_url = build_db_uri("sqlite", "", "", "", "mater")
+    else:
+        db_url = build_db_uri(database_type, settings.DB_USERNAME, settings.DB_PASSWORD, settings.DB_HOST, settings.DB_NAME)
 
     engine = initialize_engine(database_type, db_url)
+    Base.metadata.create_all(bind=engine)
     app.config["DB_ENGINE"] = engine
 
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-
-    # Scoped session for thread safety
     Session = scoped_session(sessionmaker(bind=engine))
     app.config["DB_SESSION"] = Session
 
-    # -------------------- Swagger --------------------
+    # Swagger
     Swagger(app, template=template)
 
-    # -------------------- Initialize Default Settings --------------------
+    # Initialize default AppSettings
     initialize_default_settings()
 
-    # -------------------- Register Blueprints --------------------
+    # Register blueprints
     from blueprints.asset import assets_blueprint
     from blueprints.service import services_blueprint
     from blueprints.calendar import calendar_blueprint
@@ -129,7 +199,7 @@ def create_app():
     app.register_blueprint(attachment_blueprint, url_prefix="/attachment/")
     app.register_blueprint(settings_blueprint, url_prefix="/settings/")
     app.register_blueprint(note_blueprint, url_prefix="/notes/")
-    app.register_blueprint(cost_blueprint, url_prefix="/costs")
-    app.register_blueprint(mfa_blueprint, url_prefix="/mfa")
+    app.register_blueprint(cost_blueprint, url_prefix="/costs/")
+    app.register_blueprint(mfa_blueprint, url_prefix="/mfa/")
 
     return app, engine

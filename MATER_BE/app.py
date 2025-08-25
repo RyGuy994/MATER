@@ -1,15 +1,16 @@
 # app.py
 from flask import (
     Flask, render_template, request, send_file, abort, jsonify,
-    current_app, after_this_request
+    current_app, after_this_request, Response
 )
 from sqlalchemy import MetaData, Table
 import logging
 from datetime import datetime
 import csv
 import os
-from io import StringIO
+from io import StringIO, BytesIO
 import zipfile
+import zipstream 
 import mimetypes
 from werkzeug.utils import secure_filename
 
@@ -30,6 +31,18 @@ def get_session():
     except Exception as e:
         logging.error(f"Failed to create session: {e}")
         return None
+
+# -------------------- Admin Decorator --------------------
+def admin_required(func):
+    """Wrapper to check admin via JSON payload."""
+    def wrapper(*args, **kwargs):
+        data = request.get_json() or {}
+        admin_check = check_admin(data)
+        if admin_check is not None:
+            return admin_check
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 # -------------------- Image Routes --------------------
 @app.route("/images/<int:asset_id>/<image_name>", methods=["GET"])
@@ -59,124 +72,92 @@ def uploaded_file(filename, asset_id):
         return send_file(filepath)
     abort(404)
 
-# -------------------- ZIP Export --------------------
-@app.route("/generate_zip", methods=["POST"])
-def generate_zip():
-    data = request.get_json()
-    admin_check = check_admin(data)
-    if admin_check is not None:
-        return admin_check
+# -------------------- Streaming ZIP Utility --------------------
+def stream_zip_generator(file_paths: list):
+    """Stream multiple files as a ZIP without writing to disk."""
+    import zipstream  # lightweight streaming zip library
 
+    zs = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    for file_path, arcname in file_paths:
+        if os.path.exists(file_path):
+            zs.write(file_path, arcname)
+    return zs
+
+# -------------------- Generate ZIP of Uploads --------------------
+@app.route("/generate_zip", methods=["POST"])
+@admin_required
+def generate_zip():
     folder_path = UPLOAD_BASE_FOLDER
-    if not any(os.scandir(folder_path)):
+    files_to_zip = []
+
+    for foldername, _, filenames in os.walk(folder_path):
+        for filename in filenames:
+            file_path = os.path.join(foldername, filename)
+            arcname = os.path.relpath(file_path, folder_path)
+            files_to_zip.append((file_path, arcname))
+
+    if not files_to_zip:
         return jsonify({"message": "No files found."}), 404
 
-    current_date = datetime.now().strftime("%d%b%Y")
-    zip_filename = f"All_Files_{current_date}.zip"
-    zip_filepath = os.path.join(app.root_path, zip_filename)
+    zip_filename = f"All_Files_{datetime.now().strftime('%d%b%Y')}.zip"
+    zs = stream_zip_generator(files_to_zip)
+    return Response(zs, mimetype="application/zip",
+                    headers={"Content-Disposition": f"attachment; filename={zip_filename}"})
 
-    with zipfile.ZipFile(zip_filepath, "w") as zip_file:
-        for foldername, _, filenames in os.walk(folder_path):
-            for filename in filenames:
-                file_path = os.path.join(foldername, filename)
-                arcname = os.path.relpath(file_path, folder_path)
-                zip_file.write(file_path, arcname)
+# -------------------- Streaming DB Table Export --------------------
+def stream_csv_table(table, session):
+    import zipstream
+    from sqlalchemy import select
 
-    @after_this_request
-    def delete_zip(response):
-        try:
-            os.remove(zip_filepath)
-            logging.info(f"Deleted ZIP: {zip_filepath}")
-        except Exception as e:
-            logging.error(f"Failed to delete ZIP: {e}")
-        return response
+    zs = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    query = session.execute(select(table))
+    columns = table.columns.keys()
 
-    return send_file(zip_filepath, as_attachment=True)
+    def csv_generator(rows):
+        yield ",".join(columns) + "\n"
+        for row in rows:
+            yield ",".join(str(getattr(row, col)) for col in columns) + "\n"
 
-# -------------------- Database Table Utilities --------------------
-@app.route("/get_tables", methods=["POST"])
-def get_tables():
-    data = request.get_json()
-    admin_check = check_admin(data)
-    if admin_check is not None:
-        return admin_check
-
-    session = get_session()
-    if not session:
-        return jsonify({"error": "Database session error"}), 500
-
-    try:
-        metadata = MetaData()
-        metadata.reflect(bind=engine)
-        table_names = list(metadata.tables.keys())
-        return jsonify({"tables": table_names})
-    except Exception as e:
-        logging.error(f"Error retrieving tables: {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
-        session.close()
+    csv_io = csv_generator(query)
+    zs.writestr(f"{table.name}.csv", csv_io)
+    return zs
 
 @app.route("/export_tables", methods=["POST"])
+@admin_required
 def export_tables():
-    data = request.json
-    admin_check = check_admin(data)
-    if admin_check:
-        return admin_check
-
+    data = request.get_json()
     selected_tables = data.get("tables", [])
     if not selected_tables:
         return jsonify({"error": "No tables selected"}), 400
 
     metadata = MetaData()
     metadata.reflect(bind=engine)
-
     session = get_session()
     if not session:
         return jsonify({"error": "Database session error"}), 500
 
-    csv_files = []
+    zs = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     try:
         for table_name in selected_tables:
             if table_name not in metadata.tables:
                 logging.warning(f"Table {table_name} not found")
                 continue
             table = Table(table_name, metadata, autoload_with=engine)
-            csv_data = export_table_data(session, table)
-            csv_files.append((f"{table_name}.csv", csv_data))
+            query = session.execute(select(table))
+            columns = table.columns.keys()
+
+            def csv_generator(rows):
+                yield ",".join(columns) + "\n"
+                for row in rows:
+                    yield ",".join(str(getattr(row, col)) for col in columns) + "\n"
+
+            zs.writestr(f"{table_name}.csv", csv_generator(query))
     finally:
         session.close()
 
-    if not csv_files:
-        return jsonify({"error": "No valid tables found"}), 400
-
     zip_filename = f"exported_data_{datetime.now().strftime('%d%b%Y')}.zip"
-    zip_filepath = os.path.join(current_app.instance_path, zip_filename)
-    os.makedirs(os.path.dirname(zip_filepath), exist_ok=True)
-
-    with zipfile.ZipFile(zip_filepath, "w") as zip_file:
-        for file_name, csv_data in csv_files:
-            zip_file.writestr(file_name, csv_data.getvalue())
-
-    @after_this_request
-    def cleanup_zip(response):
-        try:
-            os.remove(zip_filepath)
-            logging.info(f"Deleted exported ZIP: {zip_filepath}")
-        except Exception as e:
-            logging.error(f"Failed to delete ZIP: {e}")
-        return response
-
-    return send_file(zip_filepath, as_attachment=True)
-
-def export_table_data(session, table):
-    """Convert table data to CSV."""
-    query = session.query(table).all()
-    output = StringIO()
-    writer = csv.writer(output)
-    writer.writerow([col.name for col in table.columns])
-    for row in query:
-        writer.writerow([getattr(row, col.name) for col in table.columns])
-    return output
+    return Response(zs, mimetype="application/zip",
+                    headers={"Content-Disposition": f"attachment; filename={zip_filename}"})
 
 # -------------------- Error Handlers --------------------
 @app.errorhandler(404)

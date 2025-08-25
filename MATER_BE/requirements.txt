@@ -17,3 +17,4 @@ black>=24.3
 pyotp>=2.9
 twilio>=8.16
 passlib[bcrypt]>=1.8,<2.0
+zipstream-new>=1.1.0,<2.0
