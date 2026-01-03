@@ -1,37 +1,51 @@
-version: '3'
+version: "3.9"
 
 services:
-  backend:
+  mater_be:
     build:
       context: ./MATER_BE
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     ports:
-      - 5000:5000
-    volumes:
-      - ./MATER_BE:/app
-      - ./MATER_BE/logs:/var/logs
-    restart: unless-stopped
+      - "5000:5000"
     environment:
-      FLASK_APP: app.py
-      FLASK_ENV: development
-      FLASK_DEBUG: 1
-      SECRET_KEY: secret
-      DATABASETYPE: SQLITE
-      APP_SETTINGS: common.base.DevelopmentConfig
-      TESTING: false
-      SMTP_SERVER: 
-      SMTP_PORT: 587
-      SMTP_USER: 
-      SMTP_PASSWORD: 
-      SMTP_FROM_EMAIL: 
-      LOGIN_LOG_FILE_PATH: /var/logs/mater_app_login.log
+      - FLASK_APP=wsgi:app
+      - FLASK_ENV=development
+      - SECRET_KEY=supersecretkey
+      - ENTRA_TENANT_ID=
+      - ENTRA_CLIENT_ID=
+      - ENTRA_CLIENT_SECRET=
+      - ENTRA_REDIRECT_URI=http://localhost:5173/entra-callback
+      - REDIS_URL=redis://redis:6379/0
+      # - DATABASE_URL=postgresql://postgres:postgres@db:5432/mater
+    volumes:
+      - ./MATER_BE/backend/instance:/app/backend/instance
+    depends_on:
+      - redis
+    networks:
+      - mater_network
 
-  frontend:
+  mater_fe:
     build:
       context: ./MATER_FE
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     ports:
-      - 3000:3000
-    environment:
-      - VITE_BASE_URL=http://localhost:5000
-    restart: unless-stopped
+      - "5173:5173"
+    volumes:
+      - ./MATER_FE:/app
+    depends_on:
+      - mater_be
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - mater_network  
+
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - mater_network
+
+networks:
+  mater_network:
+    driver: bridge

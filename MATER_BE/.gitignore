@@ -1,6 +1,5 @@
-*__pycache__
-static/assets/1/service_attachments/5/MATER.png
-common/All_Files.zip
-instance
-instance/database.db
-logs/mater_app_login.log
+.env
+__pycache__/
+*.pyc
+/MATER_BE/instance/
+node_modules/
