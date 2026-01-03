@@ -1,0 +1,91 @@
+/* filepath: MATER/MATER_FE/src/layouts/AppLayout.css */
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  background: linear-gradient(135deg, var(--login-grad-start) 0%, var(--login-grad-end) 100%);
+}
+
+.app-sidebar {
+  padding: 18px;
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-card);
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  margin-bottom: 14px;
+}
+
+.app-brand-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: var(--logo-drop-shadow);
+}
+
+.app-brand-title {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--color-text);
+}
+
+.app-brand-subtitle {
+  font-size: 12px;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.app-nav-link {
+  display: block;
+  padding: 12px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--color-text);
+  border: 1px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.app-nav-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-border);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+}
+
+.app-nav-link.is-active {
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.app-main {
+  padding: 26px;
+  color: var(--color-text);
+}
+
+/* Responsive: collapse sidebar */
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-radius: 0;
+  }
+}

@@ -1,23 +1,18 @@
-# MATER/mater_be/backend/blueprints/auth/entra.py
+# filepath: MATER/mater_be/backend/blueprints/auth/entra.py
 from flask import Blueprint, request, jsonify, make_response, current_app
 import requests, os, time, jwt
-from backend.redis_client import redis_client  # centralized Redis client
-from backend.models.user import db, User
 
+from backend.redis_client import redis_client
+from backend.models.db import db
+from backend.models.user import User
 
 entra_bp = Blueprint("entra", __name__)
 
-
-JWT_SECRET = os.getenv("JWT_SECRET", "supersecretkey")
 JWT_EXP_SECONDS = 3600  # 1 hour
-
-
-# Determine if we're in development (localhost) or production (HTTPS)
 IS_DEV = os.getenv("FLASK_ENV", "development") == "development"
 
 
 def get_env_vars(*keys):
-    """Helper to fetch env vars and return missing keys."""
     values = {k: os.getenv(k) for k in keys}
     missing = [k for k, v in values.items() if not v]
     return values, missing
@@ -34,12 +29,11 @@ def entra_callback():
     try:
         if redis_client.get(f"redeemed:{code}"):
             return jsonify({"error": "Code already redeemed"}), 400
-        redis_client.setex(f"redeemed:{code}", 300, "1")  # 5-minute TTL
+        redis_client.setex(f"redeemed:{code}", 300, "1")
     except Exception as e:
         current_app.logger.error(f"Redis error: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
-    # Fetch and validate Entra env vars
     env_vars, missing = get_env_vars(
         "ENTRA_TENANT_ID", "ENTRA_CLIENT_ID", "ENTRA_CLIENT_SECRET", "ENTRA_REDIRECT_URI"
     )
@@ -53,12 +47,11 @@ def entra_callback():
         "code": code,
         "redirect_uri": env_vars["ENTRA_REDIRECT_URI"],
         "grant_type": "authorization_code",
-        "client_secret": env_vars["ENTRA_CLIENT_SECRET"]
+        "client_secret": env_vars["ENTRA_CLIENT_SECRET"],
     }
 
-    # Exchange code for access token
     try:
-        resp = requests.post(token_url, data=payload)
+        resp = requests.post(token_url, data=payload, timeout=15)
         resp.raise_for_status()
         token_data = resp.json()
     except Exception as e:
@@ -66,61 +59,56 @@ def entra_callback():
         return jsonify({"error": "Token exchange failed", "details": str(e)}), 500
 
     access_token = token_data.get("access_token")
-    if not access_token:
-        current_app.logger.error(f"Token exchange response missing access_token: {token_data}")
-        return jsonify({"error": "Token exchange failed", "details": token_data}), 400
-
-    # Get user info from Microsoft token (id_token)
     id_token = token_data.get("id_token")
-    if id_token:
-        try:
-            # Decode the ID token to get user info (no verification needed for this)
-            unverified_claims = jwt.decode(id_token, options={"verify_signature": False})
-            email = unverified_claims.get("email") or unverified_claims.get("preferred_username", "")
-            username = unverified_claims.get("name") or email.split("@")[0]
-        except:
-            username = "unknown"
-            email = "unknown@example.com"
-    else:
-        username = "unknown"
-        email = "unknown@example.com"
+    if not id_token:
+        return jsonify({"error": "Missing id_token"}), 400
 
-    # Create or get user from database
+    # Decode id_token for user info (unverified here; ok for extracting claims,
+    # but do not treat it as fully trusted without verification in production).
+    try:
+        unverified_claims = jwt.decode(id_token, options={"verify_signature": False})
+        email = unverified_claims.get("email") or unverified_claims.get("preferred_username", "")
+        username = unverified_claims.get("name") or (email.split("@")[0] if email else "unknown")
+    except Exception:
+        email = ""
+        username = "unknown"
+
+    if not email:
+        return jsonify({"error": "Unable to determine email from Entra token"}), 400
+
+    # Create or get user
     user = User.query.filter_by(email=email).first()
     if not user:
         user = User(username=username, email=email)
         db.session.add(user)
         db.session.commit()
 
-    # ✅ FIXED: Create JWT session token with PRIMITIVE VALUES ONLY
+    # IMPORTANT: sign with the same secret used by /auth/me
+    secret = current_app.config["SECRET_KEY"]
+
     jwt_payload = {
-        "sub": user.id,                      
-        "username": user.username,           
-        "email": user.email,                 
-        "access_token": access_token,        
+        "user_id": user.id,
         "iat": int(time.time()),
-        "exp": int(time.time()) + JWT_EXP_SECONDS
+        "exp": int(time.time()) + JWT_EXP_SECONDS,
     }
 
-    jwt_token = jwt.encode(jwt_payload, JWT_SECRET, algorithm="HS256")
+    jwt_token = jwt.encode(jwt_payload, secret, algorithm="HS256")
 
-    # Return cookie + token
     response = make_response(jsonify({
         "success": True,
         "token": jwt_token,
-        "user": {
-            "username": user.username,
-            "email": user.email
-        }
+        "user": {"id": user.id, "username": user.username, "email": user.email},
+        # Placeholder: store access_token server-side if you need Microsoft API calls later
     }))
-    
+
     response.set_cookie(
         "mater_token",
         jwt_token,
         httponly=True,
         secure=not IS_DEV,
-        samesite="Strict",
-        max_age=JWT_EXP_SECONDS
+        samesite="Lax" if IS_DEV else "Strict",
+        max_age=JWT_EXP_SECONDS,
+        path="/",
     )
     return response
 
@@ -134,6 +122,7 @@ def auth_logout():
         max_age=0,
         httponly=True,
         secure=not IS_DEV,
-        samesite="Strict"
+        samesite="Lax" if IS_DEV else "Strict",
+        path="/",
     )
     return response

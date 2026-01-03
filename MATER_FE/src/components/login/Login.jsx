@@ -1,9 +1,9 @@
-// MATER/MATER_FE/src/components/login/Login.jsx
+// filepath: MATER/MATER_FE/src/components/login/Login.jsx
 import { useState } from "react";
-import { GoogleLogin } from "@react-oauth/google";
+import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { apiPost } from "../../utils/api";
-import './Login.css';
+import "./Login.css";
 
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
@@ -64,17 +64,42 @@ export default function Login({ onLoginSuccess }) {
   };
 
   // ----------------------
-  // Google SSO
+  // Google SSO (custom button)
   // ----------------------
-  const handleGoogleSuccess = async (credentialResponse) => {
-    if (!credentialResponse?.credential) return setError("Google login failed");
+  const googleLogin = useGoogleLogin({
+    flow: "implicit",
+    scope: "openid profile email",
+    onSuccess: async (tokenResponse) => {
+      try {
+        // tokenResponse has access_token with implicit flow. [web:419]
+        const accessToken = tokenResponse?.access_token;
+        if (!accessToken) {
+          setError("Google login failed");
+          return;
+        }
 
-    const base64Url = credentialResponse.credential.split(".")[1];
-    const payload = JSON.parse(atob(base64Url));
-    const { sub: provider_id, email, name } = payload;
+        // Get the user's profile from Google using the access token.
+        // This returns sub (Google user id), email, name, etc.
+        const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!resp.ok) throw new Error("Failed to fetch Google profile");
+        const profile = await resp.json();
 
-    await handleSSOLogin("google", { provider_id, email, username: name || "" });
-  };
+        const provider_id = profile.sub;
+        const email = profile.email;
+        const username = profile.name || "";
+
+        if (!provider_id || !email) throw new Error("Google profile missing required fields");
+
+        await handleSSOLogin("google", { provider_id, email, username });
+      } catch (e) {
+        setError(e.message || "Google login failed");
+        setLoading(false);
+      }
+    },
+    onError: () => setError("Google login failed"),
+  });
 
   // ----------------------
   // Apple SSO redirect
@@ -90,7 +115,7 @@ export default function Login({ onLoginSuccess }) {
   };
 
   // ----------------------
-  // Entra (Microsoft) SSO - BEAUTIFUL BUTTON ✨
+  // Entra (Microsoft) SSO redirect
   // ----------------------
   const handleEntraLogin = () => {
     const clientId = import.meta.env.VITE_ENTRA_CLIENT_ID;
@@ -106,78 +131,73 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-  <div className="login-page">
-    
-    <div className="login-card">
-      <img src="/MATER.png" alt="MATER" className="mater-logo" />
-      <h2>Login to MATER</h2>
-      {error && <p className="error-message">{error}</p>}
+    <div className="login-page">
+      <div className="login-card">
+        <img src="/MATER.png" alt="MATER" className="mater-logo" />
+        <h2>Login to MATER</h2>
+        {error && <p className="error-message">{error}</p>}
 
-      {/* Local login */}
-      <form onSubmit={handleSubmit} className="login-form">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="login-input"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="login-input"
-        />
-        <button type="submit" disabled={loading} className="login-button">
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-
-      <button onClick={() => navigate("/register")} className="create-account-button">
-        Create Account
-      </button>
-
-      <div className="divider">
-        <span>OR</span>
-      </div>
-
-      {/* SSO Buttons */}
-      <div className="sso-container">
-        <div className="google-wrapper">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError("Google login failed")}
-            theme="filled_blue"
-            size="large"
-            shape="rectangular"
-            text="signin_with"
-            width="100%"
-            logo_alignment="left"
-            useOneTap={false}
+        {/* Local login */}
+        <form onSubmit={handleSubmit} className="login-form">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="login-input"
           />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="login-input"
+          />
+          <button type="submit" disabled={loading} className="login-button">
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        <button onClick={() => navigate("/register")} className="create-account-button">
+          Create Account
+        </button>
+
+        <div className="divider">
+          <span>OR</span>
         </div>
 
-        <button onClick={handleAppleLogin} disabled={loading} className="sso-button apple-button">
-          <img 
-            src="https://docs-assets.developer.apple.com/published/76a7de0f49ff86242e7a08f53ec57bb5/siwa-white-logo-only%402x.png" 
-            alt="" 
-            className="apple-icon"
-          />
-          <span className="button-text">Sign in with Apple</span>
-        </button>
+        {/* SSO Buttons (now matching your linking button styles) */}
+        <div className="sso-container">
+          <button
+            type="button"
+            onClick={() => googleLogin()}
+            disabled={loading}
+            className="create-account-button sso-btn sso-google"
+          >
+            <span className="button-text">Sign in with Google</span>
+          </button>
 
-        <button onClick={handleEntraLogin} disabled={loading} className="sso-button microsoft-button">
-          <svg className="microsoft-icon" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M7.462 0H0v7.19h7.462zM16 0H8.538v7.19H16zM7.462 8.211H0V16h7.462zm8.538 0H8.538V16H16z"/>
-          </svg>
-          <span className="button-text">Sign in with Microsoft</span>
-        </button>
+          <button
+            type="button"
+            onClick={handleAppleLogin}
+            disabled={loading}
+            className="create-account-button sso-btn sso-apple"
+          >
+            <span className="button-text">Sign in with Apple</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleEntraLogin}
+            disabled={loading}
+            className="create-account-button sso-btn sso-microsoft"
+          >
+            <span className="button-text">Sign in with Microsoft</span>
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
-
+  );
 }

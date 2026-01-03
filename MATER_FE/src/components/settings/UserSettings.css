@@ -1,0 +1,230 @@
+/* filepath: MATER/MATER_FE/src/components/settings/UserSettings.css */
+
+.settings-wrap {
+  width: 100%;
+}
+
+.settings-card {
+  max-width: 900px;
+  margin: 0;
+  text-align: left;
+}
+
+.settings-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-h3 {
+  margin: 0 0 12px;
+  color: var(--color-text);
+}
+
+.settings-muted {
+  color: var(--color-muted);
+  margin: 8px 0 0;
+}
+
+.settings-success {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(0, 255, 140, 0.08);
+  color: var(--color-text);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.settings-label {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Themed select (matches the rest of the page) */
+.settings-select-wrap {
+  position: relative;
+  margin-top: 8px;
+}
+
+.settings-select {
+  width: 100%;
+  padding: 14px 44px 14px 12px; /* room for arrow */
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+
+  /* Slight glass tint so it matches the card look */
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+
+  font: inherit;
+  cursor: pointer;
+
+  /* Remove OS default styling */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.settings-select:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.settings-select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Custom arrow */
+.settings-select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-55%) rotate(45deg);
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  pointer-events: none;
+}
+
+.settings-footer {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-logout {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.sso-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate; /* keeps z-index layers contained */
+}
+
+.sso-btn::before {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background-repeat: no-repeat;
+  background-position: right -12px center;
+  background-size: 88px 88px; /* "HUGE" watermark */
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sso-btn > * {
+  position: relative;
+  z-index: 1;
+}
+
+.theme-picker {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.theme-pill {
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  padding: 12px 12px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.theme-pill:hover {
+  transform: translateY(-1px);
+}
+
+.theme-pill:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.theme-pill:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.theme-pill.is-active {
+  border-color: var(--color-focus);
+  background: rgba(90, 120, 255, 0.18);
+}
+
+@media (max-width: 720px) {
+  .theme-picker {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Google: big "G" (official icon) */
+.sso-google::before {
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+<path fill='%234285F4' d='M23.49 12.27c0-.82-.07-1.64-.22-2.44H12v4.62h6.44a5.5 5.5 0 0 1-2.39 3.6v3h3.86c2.26-2.09 3.58-5.17 3.58-8.78z'/>\
+<path fill='%2334A853' d='M12 24c3.24 0 5.97-1.07 7.96-2.9l-3.86-3c-1.07.73-2.44 1.15-4.1 1.15-3.13 0-5.78-2.11-6.73-4.95H1.29v3.09A12 12 0 0 0 12 24z'/>\
+<path fill='%23FBBC05' d='M5.27 14.3A7.2 7.2 0 0 1 4.9 12c0-.8.14-1.57.37-2.3V6.61H1.29A12 12 0 0 0 0 12c0 1.94.47 3.77 1.29 5.39l3.98-3.09z'/>\
+<path fill='%23EA4335' d='M12 4.75c1.76 0 3.34.6 4.58 1.79l3.43-3.43C17.97 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.61l3.98 3.09c.95-2.84 3.6-4.95 6.73-4.95z'/>\
+</svg>");
+}
+
+/* Microsoft: 4-square window */
+.sso-microsoft::before {
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+<rect x='2' y='2' width='9' height='9' fill='%23F25022'/>\
+<rect x='13' y='2' width='9' height='9' fill='%237FBA00'/>\
+<rect x='2' y='13' width='9' height='9' fill='%2300A4EF'/>\
+<rect x='13' y='13' width='9' height='9' fill='%23FFB900'/>\
+</svg>");
+}
+
+/* Apple: simple silhouette */
+.sso-apple::before {
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+<path fill='%23FFFFFF' d='M16.7 13.1c0-2.1 1.7-3.1 1.8-3.2-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.8-.4 6.9 1.1 9.1.7 1.1 1.6 2.3 2.8 2.3 1.1 0 1.6-.7 3-0.7 1.4 0 1.8.7 3 .7 1.2 0 2-.9 2.7-2 .8-1.2 1.1-2.4 1.1-2.4-.1 0-2.2-.9-2.2-3.6z'/>\
+<path fill='%23FFFFFF' d='M14.8 3.6c.6-.8 1-1.8.9-2.9-.9.1-2 .6-2.6 1.4-.6.7-1.1 1.8-.9 2.9 1 .1 2-.5 2.6-1.4z'/>\
+</svg>");
+}
+
+/* Optional: make Apple watermark readable on light themes too */
+html[data-theme="light"] .sso-apple::before,
+html[data-theme="default"] .sso-apple::before,
+html:not([data-theme]) .sso-apple::before {
+  opacity: 0.10;
+}
+
