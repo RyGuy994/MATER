@@ -1,29 +1,37 @@
-// MATER_FE/src/App.jsx
+// filepath: MATER_FE/src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import Dashboard from "./pages/Dashboard";
-import EntraCallback from "./pages/EntraCallback";
 import RegisterPage from "./pages/RegisterPage";
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+import EntraCallback from "./pages/EntraCallback";
+import SettingsPage from "./pages/SettingsPage";
+
+import AppLayout from "./layouts/AppLayout";
+import Dashboard from "./components/dashboard/Dashboard";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Login page */}
+        {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* Dashboard - protected route */}
-        <Route path="/dashboard" element={<Dashboard />} />
-
-        {/* Registration page */}
         <Route path="/register" element={<RegisterPage />} />
-
-        {/* Default route */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-        {/* Entra OAuth callback */}
         <Route path="/entra-callback" element={<EntraCallback />} />
+
+        {/* App routes (with sidebar) */}
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Add these as you build the pages */}
+          {/* <Route path="/assets" element={<Assets />} /> */}
+          {/* <Route path="/services" element={<Services />} /> */}
+          {/* <Route path="/kanban" element={<Kanban />} /> */}
+          {/* <Route path="/calendar" element={<Calendar />} /> */}
+          {/* <Route path="/settings" element={<Settings />} /> */}
+        </Route>
+
+        {/* Default */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );

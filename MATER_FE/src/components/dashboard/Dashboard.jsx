@@ -1,6 +1,7 @@
-// src/pages/Dashboard.jsx
+// filepath: MATER/MATER_FE/src/components/dashboard/Dashboard.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import "../login/Login.css"; // to reuse .login-card styles
 
 export default function Dashboard() {
   const [userData, setUserData] = useState(null);
@@ -17,21 +18,18 @@ export default function Dashboard() {
 
       try {
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.ok) {
           const data = await response.json();
           setUserData(data.user);
         } else {
-          // Invalid token → logout
           localStorage.removeItem("mater_token");
-          setUserData(null);
           navigate("/login", { replace: true });
         }
       } catch (err) {
         console.error("Error fetching user data", err);
-        setUserData(null);
         navigate("/login", { replace: true });
       } finally {
         setLoading(false);
@@ -42,27 +40,20 @@ export default function Dashboard() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("mater_token"); // clear token
-    setUserData(null);
-    navigate("/login", { replace: true }); // redirect to login
+    localStorage.removeItem("mater_token");
+    navigate("/login", { replace: true });
   };
 
-  if (loading) {
-    return (
-      <div style={{ maxWidth: 600, margin: "50px auto", textAlign: "center" }}>
-        <h1>Dashboard</h1>
-        <p>Loading user data...</p>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ maxWidth: 600, margin: "50px auto", textAlign: "center" }}>
-      <h1>Dashboard</h1>
-      {userData ? (
+    <div className="login-card" style={{ maxWidth: 800, margin: 0, textAlign: "left" }}>
+      <h2>Dashboard</h2>
+
+      {loading ? (
+        <p>Loading user data...</p>
+      ) : userData ? (
         <>
           <p>Welcome, {userData.username || userData.email}!</p>
-          <button onClick={handleLogout} style={{ marginTop: "1rem", padding: "8px 16px" }}>
+          <button onClick={handleLogout} className="create-account-button">
             Logout
           </button>
         </>

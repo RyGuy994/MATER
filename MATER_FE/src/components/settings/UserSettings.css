@@ -1,0 +1,201 @@
+/* filepath: MATER/MATER_FE/src/components/settings/UserSettings.css */
+
+.settings-wrap {
+  width: 100%;
+}
+
+.settings-card {
+  max-width: 900px;
+  margin: 0;
+  text-align: left;
+}
+
+.settings-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-h3 {
+  margin: 0 0 12px;
+  color: var(--color-text);
+}
+
+.settings-muted {
+  color: var(--color-muted);
+  margin: 8px 0 0;
+}
+
+.settings-success {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(0, 255, 140, 0.08);
+  color: var(--color-text);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.settings-label {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Themed select (matches the rest of the page) */
+.settings-select-wrap {
+  position: relative;
+  margin-top: 8px;
+}
+
+.settings-select {
+  width: 100%;
+  padding: 14px 44px 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.settings-select:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.settings-select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Custom arrow */
+.settings-select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-55%) rotate(45deg);
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  pointer-events: none;
+}
+
+.settings-footer {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-logout {
+  width: 100%;
+  padding: 16px 28px;
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: var(--shadow-float);
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: #ffffff;
+}
+
+.settings-logout:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 0 40px rgba(102, 126, 234, 0.6),
+    0 20px 50px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.settings-logout:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+
+/* ⭐ Theme picker - ONLY theme-pill changes with custom theme ⭐ */
+.theme-picker {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.theme-pill {
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  padding: 12px 12px;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.theme-pill:hover {
+  transform: translateY(-1px);
+}
+
+.theme-pill:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.theme-pill:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* ⭐ Active theme pill uses custom colors ⭐ */
+.theme-pill.is-active {
+  border-color: var(--color-focus);
+  background: rgba(90, 120, 255, 0.18);
+}
+
+html[data-theme="custom"] .theme-pill.is-active {
+  background: linear-gradient(135deg, 
+    rgba(var(--custom-primary-rgb, 32, 128, 133), 0.15),
+    rgba(var(--custom-secondary-rgb, 94, 82, 64), 0.1)
+  );
+}
+
+@media (max-width: 720px) {
+  .theme-picker {
+    grid-template-columns: 1fr;
+  }
+}

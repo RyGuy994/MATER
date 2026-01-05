@@ -2,50 +2,31 @@
 
 /* ==========================================================================
 THEME TOKENS (Light / Dark / System / Custom)
-
-Set <html data-theme="light|dark|system|custom">
-If omitted, defaults to system behavior via prefers-color-scheme
 ========================================================================== */
 
 /* Base tokens (used as defaults / system-light baseline) */
 :root {
-  color-scheme: light dark; /* helps built-in UI match theme better */ /* [web:1] */
-
-  /* Core surfaces & text */
+  color-scheme: light dark;
   --color-bg: #f6f7fb;
   --color-surface: rgba(255, 255, 255, 0.95);
   --color-text: #0f172a;
   --color-muted: #64748b;
-
-  /* Borders & rings */
   --color-border: #dddddd;
   --color-focus: #667eea;
   --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.2);
-
-  /* Shadows */
   --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.10);
   --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255,255,255,0.30);
-
-  /* Login page gradient */
   --login-grad-start: #667eea;
   --login-grad-end: #764ba2;
-
-  /* Primary button (Login) */
   --btn-primary-start: #667eea;
   --btn-primary-end: #764ba2;
   --btn-primary-text: #ffffff;
   --btn-primary-glow: rgba(102, 126, 234, 0.6);
-
-  /* Secondary button (Create account) */
   --btn-secondary-start: #6c757d;
   --btn-secondary-end: #495057;
   --btn-secondary-text: #ffffff;
-
-  /* Shimmer overlays */
   --shimmer-strong: rgba(255,255,255,0.40);
   --shimmer-soft: rgba(255,255,255,0.30);
-
-  /* Misc */
   --logo-drop-shadow: drop-shadow(0 8px 20px rgba(0,0,0,0.30));
 }
 
@@ -57,17 +38,13 @@ html[data-theme="light"] {
   --color-text: #0f172a;
   --color-muted: #64748b;
   --color-border: #dddddd;
-
   --login-grad-start: #667eea;
   --login-grad-end: #764ba2;
-
   --btn-primary-start: #667eea;
   --btn-primary-end: #764ba2;
   --btn-primary-glow: rgba(102, 126, 234, 0.6);
-
   --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.10);
   --shadow-float: 0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.30);
-
   --logo-drop-shadow: drop-shadow(0 8px 20px rgba(0,0,0,0.30));
 }
 
@@ -79,23 +56,15 @@ html[data-theme="dark"] {
   --color-text: #e5e7eb;
   --color-muted: #9ca3af;
   --color-border: rgba(255,255,255,0.14);
-
-  /* Dark-friendly gradient */
   --login-grad-start: #1d2b64;
   --login-grad-end: #2a0845;
-
-  /* Primary button tuned for dark */
   --btn-primary-start: #5b7cfa;
   --btn-primary-end: #8b5cf6;
   --btn-primary-glow: rgba(139, 92, 246, 0.55);
-
   --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.50);
   --shadow-float: 0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
-
   --logo-drop-shadow: drop-shadow(0 10px 26px rgba(0,0,0,0.70));
   --focus-ring: 0 0 0 3px rgba(91, 124, 250, 0.28);
-
-  /* Shimmer should be subtler in dark */
   --shimmer-strong: rgba(255,255,255,0.22);
   --shimmer-soft: rgba(255,255,255,0.18);
 }
@@ -110,40 +79,50 @@ html[data-theme="dark"] {
     --color-text: #e5e7eb;
     --color-muted: #9ca3af;
     --color-border: rgba(255,255,255,0.14);
-
     --login-grad-start: #1d2b64;
     --login-grad-end: #2a0845;
-
     --btn-primary-start: #5b7cfa;
     --btn-primary-end: #8b5cf6;
     --btn-primary-glow: rgba(139, 92, 246, 0.55);
-
     --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.50);
     --shadow-float: 0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
-
     --logo-drop-shadow: drop-shadow(0 10px 26px rgba(0,0,0,0.70));
     --focus-ring: 0 0 0 3px rgba(91, 124, 250, 0.28);
-
     --shimmer-strong: rgba(255,255,255,0.22);
     --shimmer-soft: rgba(255,255,255,0.18);
   }
-} /* <-- IMPORTANT: closes @media */ /* [web:22] */
+}
 
-/* CUSTOM mode: you can override ONLY the tokens you want */
+/* ⭐ CUSTOM mode - Only affects login button, backgrounds, text, and theme pills ⭐ */
 html[data-theme="custom"] {
-  /* Example custom palette (edit freely) */
   color-scheme: light;
-  --login-grad-start: #00c6ff;
-  --login-grad-end: #0072ff;
-  --btn-primary-start: #00c6ff;
-  --btn-primary-end: #0072ff;
-  --color-focus: #0072ff;
-  --focus-ring: 0 0 0 3px rgba(0,114,255,0.25);
+  --color-bg: var(--custom-background, #fcfcf9);
+  --color-surface: var(--custom-surface, #ffffff);
+  --color-text: var(--custom-text, #134252);
+  --color-muted: var(--custom-textSecondary, #626c71);
+  --color-border: var(--custom-primary, #208085);
+  --color-focus: var(--custom-primary, #208085);
+  --btn-primary-start: var(--custom-primary, #208085);
+  --btn-primary-end: var(--custom-secondary, #5e5240);
+  --btn-primary-text: #ffffff;
+  --btn-primary-glow: rgba(32, 128, 133, 0.4);
+  --focus-ring: 0 0 0 3px rgba(32, 128, 133, 0.25);
+  --login-grad-start: var(--custom-primary, #208085);
+  --login-grad-end: var(--custom-secondary, #5e5240);
+  --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.10);
+  --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255,255,255,0.30);
+  --logo-drop-shadow: drop-shadow(0 8px 20px rgba(0,0,0,0.30));
+  
+  /* Keep secondary button colors unchanged */
+  --btn-secondary-start: #6c757d;
+  --btn-secondary-end: #495057;
+  --btn-secondary-text: #ffffff;
 }
 
 /* ==========================================================================
 LOGIN PAGE LAYOUT
 ========================================================================== */
+
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--login-grad-start) 0%, var(--login-grad-end) 100%);
@@ -153,13 +132,14 @@ LOGIN PAGE LAYOUT
   padding: 20px;
   position: relative;
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--color-text);
 }
 
 /* ==========================================================================
 MATER MASCOT ANIMATION
 ========================================================================== */
+
 .mater-logo {
   position: absolute;
   top: -70px;
@@ -196,6 +176,7 @@ MATER MASCOT ANIMATION
 /* ==========================================================================
 LOGIN CARD & FORM
 ========================================================================== */
+
 .login-card {
   background: var(--color-surface);
   backdrop-filter: blur(20px);
@@ -240,8 +221,9 @@ LOGIN CARD & FORM
 }
 
 /* ==========================================================================
-PRIMARY BUTTONS (Login + Create Account) - SHINY EFFECTS
+PRIMARY BUTTONS (Login + Create Account)
 ========================================================================== */
+
 .login-button, .create-account-button {
   width: 100%;
   padding: 16px 28px;
@@ -264,15 +246,15 @@ PRIMARY BUTTONS (Login + Create Account) - SHINY EFFECTS
   color: var(--btn-primary-text);
 }
 
+/* ⭐ Keep create-account-button GREY - never changes ⭐ */
 .create-account-button {
   background: linear-gradient(135deg, var(--btn-secondary-start) 0%, var(--btn-secondary-end) 100%);
   color: var(--btn-secondary-text);
 }
 
-/* Shimmer + Glow */
 .login-button::before,
 .create-account-button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -294,15 +276,48 @@ PRIMARY BUTTONS (Login + Create Account) - SHINY EFFECTS
     inset 0 1px 0 rgba(255,255,255,0.25);
 }
 
-.login-button:disabled {
-  animation: pulse 1.5s infinite;
+.login-button:disabled,
+.create-account-button:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
 }
 
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
 /* ==========================================================================
-SSO BUTTONS - SHINY EFFECTS + SMALLER ICONS
+DIVIDER
 ========================================================================== */
+
+.divider {
+  position: relative;
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 1px;
+  background: var(--color-border);
+  opacity: 0.7;
+}
+
+.divider span {
+  position: relative;
+  background: transparent;
+  padding: 0 12px;
+  color: var(--color-muted);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+/* ==========================================================================
+SSO BUTTONS - SHIMMER + BIG BRANDED BACKGROUND ICONS THAT SLIDE OFF
+========================================================================== */
+
 .sso-container {
   display: flex;
   flex-direction: column;
@@ -328,39 +343,27 @@ SSO BUTTONS - SHINY EFFECTS + SMALLER ICONS
   border: none;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, var(--btn-secondary-start) 0%, var(--btn-secondary-end) 100%);
+  color: var(--btn-secondary-text);
 }
 
-.sso-button .button-text {
-  font-size: 16px;
-  padding-left: 4px;
-  flex: 1;
-  text-align: center;
-}
-
-/* SMALLER ICONS - PIXEL PERFECT */
-.apple-icon {
-  width: 16px !important;
-  height: 20px !important;
-  flex-shrink: 0;
-}
-
-.microsoft-icon {
-  width: 16px !important;
-  height: 16px !important;
-  flex-shrink: 0;
-}
-
-/* Google icon override */
-.google-wrapper {
-  position: relative;
-}
-.google-wrapper svg {
-  width: 16px !important;
-  height: 16px !important;
-}
-
-/* SHIMMER + GLOW */
+/* ⭐ BIG BACKGROUND ICON LAYER ⭐ */
 .sso-button::before {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 120px;
+  height: 120px;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+/* ⭐ SHIMMER LAYER (slides across on hover) ⭐ */
+.sso-button::after {
   content: '';
   position: absolute;
   top: 0;
@@ -368,20 +371,41 @@ SSO BUTTONS - SHINY EFFECTS + SMALLER ICONS
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, var(--shimmer-soft), transparent);
-  transition: left 0.5s ease;
-  border-radius: inherit;
+  transition: left 0.6s ease;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.sso-button:hover:not(:disabled)::before {
+.sso-button:hover:not(:disabled)::after {
   left: 100%;
+}
+
+.sso-button .button-text {
+  font-size: 16px;
+  padding-left: 4px;
+  flex: 1;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+/* SMALLER FRONT ICONS */
+.google-icon,
+.apple-icon,
+.microsoft-icon {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.apple-icon {
+  height: 20px;
 }
 
 .sso-button:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.01);
-  box-shadow:
-    0 12px 35px rgba(0,0,0,0.25),
-    0 0 35px rgba(255,255,255,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.18);
 }
 
 .sso-button:disabled {
@@ -390,40 +414,106 @@ SSO BUTTONS - SHINY EFFECTS + SMALLER ICONS
   pointer-events: none;
 }
 
-/* Brand glows */
+/* ========================
+   GOOGLE BUTTON
+   ======================== */
+.google-button {
+  background: linear-gradient(135deg, #95cfff 0%, #232925 100%);
+}
+
+/* Big G background (colored) */
+.google-button::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z' fill='%234285F4'/%3E%3Cpath d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z' fill='%2334A853'/%3E%3Cpath d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z' fill='%23FBBC05'/%3E%3Cpath d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z' fill='%23EA4335'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.google-button:hover:not(:disabled)::before {
+  right: -140px;
+  opacity: 0;
+}
+
+.google-button:hover:not(:disabled) {
+  box-shadow:
+    0 12px 35px rgba(66, 133, 244, 0.35),
+    0 0 35px rgba(66, 133, 244, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* ========================
+   APPLE BUTTON
+   ======================== */
+.apple-button {
+  background: linear-gradient(135deg, #333333 0%, #000000 100%);
+}
+
+/* Big Apple logo background - PROPER APPLE LOGO */
+.apple-button::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.3-3.14-2.53C4.25 17.12 3.5 15.17 3.5 13.2c0-1.62.56-3.14 1.67-4.04.92-.74 2.44-1.58 3.74-1.58.95 0 1.7.6 2.5.6.7 0 1.8-.87 3.39-.72 1.61.08 2.42.66 3.04 1.56-.02.03-2.41 1.68-2.41 5c0 3.02 2.18 4.05 2.2 4.05-.04.06-.34 1.25-1.12 2.51z'/%3E%3Cpath d='M12.45 6.51c-.66-.73-1.79-1.23-2.65-1.23-.13 2.15 1.53 3.76 2.65 4.81.92-.88 1.38-2.37 1.38-3.36-.59-.3-1.23-.64-1.38-1.22z'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.apple-button:hover:not(:disabled)::before {
+  right: -140px;
+  opacity: 0;
+}
+
 .apple-button:hover:not(:disabled) {
   box-shadow:
-    0 12px 35px rgba(0,0,0,0.30),
-    0 0 25px rgba(255,255,255,0.40),
-    inset 0 1px 0 rgba(255,255,255,0.20);
+    0 12px 35px rgba(0, 0, 0, 0.40),
+    0 0 25px rgba(255, 255, 255, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
   background: #111 !important;
+}
+
+/* ========================
+   MICROSOFT BUTTON
+   ======================== */
+.microsoft-button {
+  background: linear-gradient(135deg, #64bcff 0%, #455963 100%);
+}
+
+/* Big Microsoft 4-squares logo background - CORRECT COLORS */
+.microsoft-button::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 23 23'%3E%3Crect width='10' height='10' fill='%23F25022'/%3E%3Crect x='12' width='11' height='10' fill='%237FBA00'/%3E%3Crect y='12' width='10' height='11' fill='%230078D4'/%3E%3Crect x='12' y='12' width='11' height='11' fill='%23FFB900'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.microsoft-button:hover:not(:disabled)::before {
+  right: -140px;
+  opacity: 0;
 }
 
 .microsoft-button:hover:not(:disabled) {
   box-shadow:
-    0 12px 35px rgba(0,120,212,0.40),
-    0 0 30px rgba(0,120,212,0.60),
-    inset 0 1px 0 rgba(255,255,255,0.25);
+    0 12px 35px rgba(0, 120, 212, 0.40),
+    0 0 30px rgba(0, 120, 212, 0.60),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-/* Google glow */
-.google-wrapper .g_id_signin {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
-}
-.google-wrapper:hover .g_id_signin {
-  box-shadow: 0 8px 30px rgba(66,133,244,0.40) !important;
-  transform: translateY(-1px) !important;
-}
 
 /* ==========================================================================
 RESPONSIVE
 ========================================================================== */
+
 @media (max-width: 480px) {
   .login-card { padding: 32px 24px; margin: 20px; }
+  
   .mater-logo {
     width: 65px;
     top: -50px;
     animation-duration: 2s;
   }
+  
   .sso-container { gap: 10px; }
+  
+  .sso-btn {
+    padding: 14px 24px;
+    font-size: 14px;
+  }
 }
