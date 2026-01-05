@@ -1,0 +1,297 @@
+/* filepath: MATER/MATER_FE/src/components/toast/Toast.css */
+
+/* ========================================
+   TOAST CONTAINER - Bottom Right Fixed
+   ======================================== */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
+  animation: slideInRight 0.3s ease-out forwards;
+  position: relative;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  word-wrap: break-word;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(400px);
+  }
+}
+
+/* ========================================
+   SUCCESS TOAST - Green
+   ======================================== */
+.toast-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.02) 100%);
+  border-left-color: #22c55e;
+  color: #166534;
+}
+
+.toast-success .toast-icon-wrapper {
+  color: #22c55e;
+}
+
+.toast-success .toast-close {
+  color: #22c55e;
+}
+
+.toast-success .toast-close:hover {
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+/* ========================================
+   ERROR TOAST - Red
+   ======================================== */
+.toast-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%);
+  border-left-color: #ef4444;
+  color: #7f1d1d;
+}
+
+.toast-error .toast-icon-wrapper {
+  color: #ef4444;
+}
+
+.toast-error .toast-close {
+  color: #ef4444;
+}
+
+.toast-error .toast-close:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+/* ========================================
+   WARNING TOAST - Amber/Orange
+   ======================================== */
+.toast-warning {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(251, 146, 60, 0.02) 100%);
+  border-left-color: #fb923c;
+  color: #7c2d12;
+}
+
+.toast-warning .toast-icon-wrapper {
+  color: #fb923c;
+}
+
+.toast-warning .toast-close {
+  color: #fb923c;
+}
+
+.toast-warning .toast-close:hover {
+  background-color: rgba(251, 146, 60, 0.15);
+}
+
+/* ========================================
+   INFO TOAST - Blue
+   ======================================== */
+.toast-info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%);
+  border-left-color: #3b82f6;
+  color: #1e3a8a;
+}
+
+.toast-info .toast-icon-wrapper {
+  color: #3b82f6;
+}
+
+.toast-info .toast-close {
+  color: #3b82f6;
+}
+
+.toast-info .toast-close:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+/* ========================================
+   TOAST CONTENT
+   ======================================== */
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.toast-icon-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.toast-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  margin: 0;
+  flex: 1;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* ========================================
+   CLOSE BUTTON
+   ======================================== */
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  opacity: 0.8;
+}
+
+.toast-close:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.toast-close:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   RESPONSIVE - Mobile
+   ======================================== */
+@media (max-width: 640px) {
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+
+  .toast {
+    max-width: 100%;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .toast-content {
+    gap: 10px;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateY(100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ========================================
+   DARK MODE
+   ======================================== */
+@media (prefers-color-scheme: dark) {
+  .toast {
+    background: rgba(30, 30, 30, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .toast-success {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.04) 100%);
+    color: #86efac;
+  }
+
+  .toast-error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.04) 100%);
+    color: #fca5a5;
+  }
+
+  .toast-warning {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.12) 0%, rgba(251, 146, 60, 0.04) 100%);
+    color: #fdba74;
+  }
+
+  .toast-info {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.04) 100%);
+    color: #93c5fd;
+  }
+}
+
+[data-color-scheme="dark"] .toast {
+  background: rgba(30, 30, 30, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-color-scheme="dark"] .toast-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.04) 100%);
+  color: #86efac;
+}
+
+[data-color-scheme="dark"] .toast-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.04) 100%);
+  color: #fca5a5;
+}
+
+[data-color-scheme="dark"] .toast-warning {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.12) 0%, rgba(251, 146, 60, 0.04) 100%);
+  color: #fdba74;
+}
+
+[data-color-scheme="dark"] .toast-info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.04) 100%);
+  color: #93c5fd;
+}
