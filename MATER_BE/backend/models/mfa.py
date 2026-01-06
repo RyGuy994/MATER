@@ -1,6 +1,12 @@
 # filepath: backend/models/mfa.py
+from datetime import datetime, timezone
+
 from backend.models.db import db
-from datetime import datetime
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
 
 class UserMFA(db.Model):
     """
@@ -16,13 +22,16 @@ class UserMFA(db.Model):
     is_primary = db.Column(db.Boolean, default=False)
     verified = db.Column(db.Boolean, default=False)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     user = db.relationship(
         "User",
-        backref=db.backref("mfa_methods", cascade="all, delete-orphan")
+        backref=db.backref("mfa_methods", cascade="all, delete-orphan"),
     )
 
     def __repr__(self):
-        return f"<MFA {self.mfa_type} for user_id={self.user_id} primary={self.is_primary} verified={self.verified}>"
+        return (
+            f"<MFA {self.mfa_type} for user_id={self.user_id} "
+            f"primary={self.is_primary} verified={self.verified}>"
+        )

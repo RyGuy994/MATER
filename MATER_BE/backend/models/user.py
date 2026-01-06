@@ -1,7 +1,14 @@
 # filepath: backend/models/user.py
-from backend.models.db import db
+from datetime import datetime, timezone
+
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+
+from backend.models.db import db
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
 
 class User(db.Model):
     __tablename__ = "users"
@@ -11,11 +18,12 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=True)
 
+    is_admin = db.Column(db.Boolean, default=False)
     mfa_required = db.Column(db.Boolean, default=False)
     mfa_enabled = db.Column(db.Boolean, default=False)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)

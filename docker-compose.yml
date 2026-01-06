@@ -1,3 +1,4 @@
+#/MATER/docker-compose.yml
 version: "3.9"
 
 services:
@@ -11,6 +12,15 @@ services:
       - FLASK_APP=wsgi:app
       - FLASK_ENV=development
       - SECRET_KEY=supersecretkey
+
+      # --- Startup smoke tests (optional) ---
+      - RUN_SMOKE_TESTS_ON_STARTUP=1
+      - PYTHONUNBUFFERED=1
+      # If needed, override where the smoke test calls the server:
+      # - SMOKE_TEST_BASE_URL=http://localhost:5000
+      # If you ever change the seeded user credentials:
+      # - SMOKE_TEST_EMAIL=test@test.com
+      # - SMOKE_TEST_PASSWORD=test
       - ENTRA_TENANT_ID=
       - ENTRA_CLIENT_ID=
       - ENTRA_CLIENT_SECRET=
@@ -36,8 +46,7 @@ services:
       - mater_be
     command: sh -c "npm install && npm run dev"
     networks:
-      - mater_network  
-
+      - mater_network
 
   redis:
     image: redis:7

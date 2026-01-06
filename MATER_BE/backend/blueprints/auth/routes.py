@@ -1,7 +1,7 @@
 # filepath: MATER_BE/blueprints/auth/routes.py
 from flask import Blueprint, request, jsonify, current_app, make_response
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 
 from backend.models.user import db, User
@@ -14,13 +14,9 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 # Helper Functions
 # ------------------------------
 def generate_jwt(user: User):
-    """
-    Generate JWT token for user.
-    Keep payload small and stable; fetch fresh user details from DB in /me.
-    """
     payload = {
         "user_id": user.id,
-        "exp": datetime.utcnow() + timedelta(hours=24),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24),
     }
     token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
     if isinstance(token, bytes):
@@ -74,7 +70,7 @@ def current_user_from_jwt():
     if not user_id:
         return None, ("Invalid token", 401)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return None, ("User not found", 401)
 
@@ -184,7 +180,7 @@ def sso_login():
     # 1) If this provider identity is already linked, log that user in
     link = UserSSO.query.filter_by(provider=provider, provider_user_id=provider_id).first()
     if link:
-        user = User.query.get(link.user_id)
+        user = db.session.get(User, link.user_id)
         if not user:
             return jsonify({"error": "Linked user not found"}), 400
 
