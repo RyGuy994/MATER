@@ -75,8 +75,35 @@ def create_template():
     )
 
     db.session.add(template)
+    db.session.flush()  # Generate template.id without committing yet
+
+    # Create fields if provided
+    if "fields" in data and isinstance(data["fields"], list):
+        from backend.models.asset_template import TemplateField
+        
+        for field_data in data["fields"]:
+            # Validate field data
+            if not field_data.get("field_name") or not field_data.get("field_label") or not field_data.get("field_type"):
+                return jsonify({"error": "Each field must have field_name, field_label, and field_type"}), 400
+            
+            field = TemplateField(
+                asset_template_id=template.id,
+                field_name=field_data.get("field_name"),
+                field_label=field_data.get("field_label"),
+                field_type=field_data.get("field_type"),
+                select_type=field_data.get("select_type"),
+                is_required=field_data.get("is_required", False),
+                default_value=field_data.get("default_value"),
+                validation_rules=field_data.get("validation_rules"),
+                display_order=field_data.get("display_order", 0),
+                help_text=field_data.get("help_text"),
+                options=field_data.get("options"),
+            )
+            db.session.add(field)
+
     db.session.commit()
     return jsonify(template.to_dict()), 201
+
 
 
 @bp.route("/asset-templates/<template_id>", methods=["GET"])

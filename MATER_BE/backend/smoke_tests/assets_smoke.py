@@ -8,11 +8,16 @@ def run_assets_smoke_test(base_url: str = "http://localhost:5000") -> None:
     """
     Basic backend self-check + a few admin endpoint checks.
 
-    - Register (or ensure) a non-admin user exists: adminmade@test.com / adminmade
+    - Register (or ensure) a non-admin user exists: [adminmade@test.com](mailto:adminmade@test.com) / adminmade
     - Login as secondary user to get its user_id (needed for admin share-user)
     - Login as admin
     - Create template
     - Create asset
+    - TEST DROPDOWN FIELDS:
+        - Create field with single-select dropdown
+        - Create field with multi-select dropdown
+        - Create asset with dropdown values
+        - Update dropdown options
     - Admin checks:
         - GET /api/admin/asset-templates
         - GET /api/admin/assets
@@ -90,11 +95,106 @@ def run_assets_smoke_test(base_url: str = "http://localhost:5000") -> None:
     r2.raise_for_status()
     template_id = r2.json()["id"]
 
-    # 3) Create asset
+    # ===================================================================
+    # NEW: TEST DROPDOWN FIELDS
+    # ===================================================================
+
+    # 2.5) Create single-select dropdown field
+    single_select_field = {
+        "field_name": "status",
+        "field_label": "Vehicle Status",
+        "field_type": "select",
+        "select_type": "single",
+        "is_required": True,
+        "display_order": 3,
+        "options": [
+            {"label": "Active", "value": "active"},
+            {"label": "Inactive", "value": "inactive"},
+            {"label": "Sold", "value": "sold"},
+        ],
+    }
+
+    r_single = requests.post(
+        f"{base_url}/api/asset-templates/{template_id}/fields",
+        json=single_select_field,
+        headers=headers,
+        timeout=10,
+    )
+    r_single.raise_for_status()
+    single_field_id = r_single.json()["id"]
+    print("CREATE single-select field:", r_single.status_code)
+
+    # 2.6) Create multi-select dropdown field
+    multi_select_field = {
+        "field_name": "colors",
+        "field_label": "Available Colors",
+        "field_type": "select",
+        "select_type": "multi",
+        "is_required": False,
+        "display_order": 4,
+        "options": [
+            {"label": "Red", "value": "red"},
+            {"label": "Blue", "value": "blue"},
+            {"label": "Green", "value": "green"},
+            {"label": "Black", "value": "black"},
+        ],
+    }
+
+    r_multi = requests.post(
+        f"{base_url}/api/asset-templates/{template_id}/fields",
+        json=multi_select_field,
+        headers=headers,
+        timeout=10,
+    )
+    r_multi.raise_for_status()
+    multi_field_id = r_multi.json()["id"]
+    print("CREATE multi-select field:", r_multi.status_code)
+
+    # 2.7) Update dropdown options
+    updated_options = {
+        "options": [
+            {"label": "Active", "value": "active"},
+            {"label": "Inactive", "value": "inactive"},
+            {"label": "Sold", "value": "sold"},
+            {"label": "Archived", "value": "archived"},
+        ]
+    }
+
+    r_update_opts = requests.put(
+        f"{base_url}/api/asset-templates/{template_id}/fields/{single_field_id}/options",
+        json=updated_options,
+        headers=headers,
+        timeout=10,
+    )
+    
+    # ADD THIS DEBUG OUTPUT:
+    if r_update_opts.status_code != 200:
+        print(f"UPDATE options response: {r_update_opts.status_code}")
+        print(f"Response body: {r_update_opts.text}")
+        print(f"Response JSON: {r_update_opts.json()}")
+    
+    r_update_opts.raise_for_status()
+    print("UPDATE dropdown options:", r_update_opts.status_code)
+
+    # 2.8) Get dropdown field options
+    r_get_opts = requests.get(
+        f"{base_url}/api/asset-templates/{template_id}/fields/{single_field_id}/options",
+        headers=headers,
+        timeout=10,
+    )
+    r_get_opts.raise_for_status()
+    print("GET dropdown options:", r_get_opts.status_code)
+
+    # 3) Create asset WITH DROPDOWN VALUES
     asset_payload = {
         "asset_template_id": template_id,
         "name": "Smoke Toyota Camry 2020",
-        "template_values": {"make": "Toyota", "year": 2020},
+        "template_values": {
+            "make": "Toyota",
+            "year": 2020,
+            "status": "active",
+            "colors": ["red", "blue"],
+        },
         "custom_fields": [],
     }
 
@@ -106,10 +206,57 @@ def run_assets_smoke_test(base_url: str = "http://localhost:5000") -> None:
     )
     r3.raise_for_status()
     asset_id = r3.json()["id"]
+    print("CREATE asset with dropdowns:", r3.status_code)
 
-    # -------------------------
-    # Admin endpoint checks
-    # -------------------------
+    # 3.5) Verify asset has dropdown values
+    r_get_asset = requests.get(
+        f"{base_url}/api/assets/{asset_id}",
+        headers=headers,
+        timeout=10,
+    )
+    r_get_asset.raise_for_status()
+    asset_data = r_get_asset.json()
+    assert asset_data["template_values"]["status"] == "active", "Single-select value mismatch"
+    assert asset_data["template_values"]["colors"] == ["red", "blue"], "Multi-select value mismatch"
+    print("VERIFY asset dropdown values:", r_get_asset.status_code)
+
+    # 3.6) List fields in template (should include dropdowns)
+    r_list_fields = requests.get(
+        f"{base_url}/api/asset-templates/{template_id}/fields",
+        headers=headers,
+        timeout=10,
+    )
+    r_list_fields.raise_for_status()
+    fields = r_list_fields.json()
+    assert len(fields) == 4, f"Expected 4 fields, got {len(fields)}"
+    print("LIST template fields:", r_list_fields.status_code)
+
+    # 3.7) Get single field
+    r_get_field = requests.get(
+        f"{base_url}/api/asset-templates/{template_id}/fields/{single_field_id}",
+        headers=headers,
+        timeout=10,
+    )
+    r_get_field.raise_for_status()
+    field_data = r_get_field.json()
+    assert field_data["field_type"] == "select", "Field type should be select"
+    assert field_data["select_type"] == "single", "Select type should be single"
+    assert len(field_data["options"]) == 4, "Should have 4 options after update"
+    print("GET field with dropdowns:", r_get_field.status_code)
+
+    # 3.8) Update field label
+    r_update_field = requests.put(
+        f"{base_url}/api/asset-templates/{template_id}/fields/{single_field_id}",
+        json={"field_label": "Current Vehicle Status"},
+        headers=headers,
+        timeout=10,
+    )
+    r_update_field.raise_for_status()
+    print("UPDATE field definition:", r_update_field.status_code)
+
+    # ===================================================================
+    # EXISTING: Admin endpoint checks
+    # ===================================================================
 
     a1 = requests.get(f"{base_url}/api/admin/asset-templates", headers=headers, timeout=10)
     print("ADMIN list templates:", a1.status_code)
@@ -146,7 +293,7 @@ def run_assets_smoke_test(base_url: str = "http://localhost:5000") -> None:
     print("ADMIN share-user:", a5.status_code)
     a5.raise_for_status()
 
-    print("SMOKE (basic + admin endpoints): PASS")
+    print("\n✅ SMOKE (basic + admin + dropdown fields): PASS")
 
 
 def should_run_startup_smoke_tests() -> bool:

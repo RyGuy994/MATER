@@ -71,7 +71,8 @@ class TemplateField(db.Model):
     Example: For "Car" template, this would be individual fields like:
     - "make" (text field)
     - "year" (number field)
-    - "color" (text field)
+    - "color" (select field with options)
+    - "status" (single-select dropdown)
     """
     __tablename__ = "template_fields"
 
@@ -79,9 +80,12 @@ class TemplateField(db.Model):
     asset_template_id = db.Column(db.String(36), db.ForeignKey("asset_templates.id"), nullable=False)
 
     # Field Definition
-    field_name = db.Column(db.String(255), nullable=False)  # e.g., "make", "year"
-    field_label = db.Column(db.String(255), nullable=False)  # e.g., "Car Make", "Year"
+    field_name = db.Column(db.String(255), nullable=False)  # e.g., "make", "year", "status"
+    field_label = db.Column(db.String(255), nullable=False)  # e.g., "Car Make", "Year", "Status"
     field_type = db.Column(db.String(50), nullable=False)  # text, number, date, currency, boolean, select, etc
+
+    # For select fields: distinguish between single and multi-select
+    select_type = db.Column(db.String(20), nullable=True)  # "single" or "multi" (only used if field_type == "select")
 
     # Field Properties
     is_required = db.Column(db.Boolean, default=False)
@@ -94,7 +98,8 @@ class TemplateField(db.Model):
     is_deletable = db.Column(db.Boolean, default=True)  # Can't delete system fields
 
     # Options for select/checkbox fields
-    options = db.Column(db.JSON, nullable=True)  # e.g., [{"label": "Red", "value": "red"}]
+    # Format: [{"label": "Option Label", "value": "option_value"}, ...]
+    options = db.Column(db.JSON, nullable=True)
 
     # Timestamps (timezone-aware UTC)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -107,6 +112,7 @@ class TemplateField(db.Model):
             "field_name": self.field_name,
             "field_label": self.field_label,
             "field_type": self.field_type,
+            "select_type": self.select_type,
             "is_required": self.is_required,
             "default_value": self.default_value,
             "validation_rules": self.validation_rules,

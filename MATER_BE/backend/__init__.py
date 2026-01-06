@@ -14,6 +14,7 @@ from backend.models.mfa import UserMFA  # noqa: F401
 from backend.models.asset_template import AssetTemplate, TemplateField  # noqa: F401
 from backend.models.asset import Asset, AssetAccess, AssetAuditLog  # noqa: F401
 from backend.models.user_sso import UserSSO  # noqa: F401
+from backend.blueprints.assets import assets_bp_parent
 
 
 def create_app(config_override: dict | None = None):

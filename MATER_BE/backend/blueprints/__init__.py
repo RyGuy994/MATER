@@ -4,9 +4,10 @@ from backend.blueprints.auth.routes import auth_bp
 from backend.blueprints.auth.apple import apple_bp
 from backend.blueprints.auth.entra import entra_bp
 from backend.blueprints.dashboard.routes import dashboard_bp
-from backend.blueprints.assets import assets_bp
+from backend.blueprints.assets import assets_bp_parent 
 from backend.blueprints.admin.settings import bp as admin_settings_bp
 from backend.blueprints.admin.users import bp as admin_users_bp
+
 
 
 def register_blueprints(app):
@@ -17,9 +18,7 @@ def register_blueprints(app):
     app.register_blueprint(apple_bp)
     app.register_blueprint(entra_bp)
     app.register_blueprint(dashboard_bp)
-
-    # Assets/templates/sharing/admin (existing aggregator)
-    app.register_blueprint(assets_bp)
+    app.register_blueprint(assets_bp_parent) 
 
     # Admin global controls + user management
     app.register_blueprint(admin_settings_bp)
