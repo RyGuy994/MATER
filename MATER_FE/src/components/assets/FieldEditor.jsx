@@ -1,119 +1,120 @@
+// filepath: MATER_FE/src/components/assets/FieldEditor.jsx
 import React, { useState } from 'react';
+import { assetApi } from '../../features/assets/api/assetApi';
+import './FieldEditor.css';
 
 export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
-  const [fieldData, setFieldData] = useState(field || {
-    field_name: '',
-    field_label: '',
-    field_type: 'text',
-    select_type: 'single',
-    is_required: false,
-    display_order: 0,
-    help_text: '',
-    default_value: '',
-    options: []
-  });
+  const [fieldData, setFieldData] = useState(
+    field || {
+      field_name: '',
+      field_label: '',
+      field_type: 'text',
+      select_type: 'single',
+      is_required: false,
+      display_order: 0,
+      help_text: '',
+      default_value: '',
+      options: [],
+    }
+  );
 
   const [newOption, setNewOption] = useState({ label: '', value: '' });
+  const [errors, setErrors] = useState({});
 
   const handleFieldChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFieldData(prev => ({
+    setFieldData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
 
   const handleFieldTypeChange = (e) => {
     const fieldType = e.target.value;
-    setFieldData(prev => ({
+    setFieldData((prev) => ({
       ...prev,
       field_type: fieldType,
       ...(fieldType !== 'select' && {
         select_type: null,
-        options: null
-      })
+        options: null,
+      }),
     }));
   };
 
   const addOption = () => {
     if (!newOption.label.trim() || !newOption.value.trim()) {
-      alert('Please enter both label and value');
+      setErrors((prev) => ({ ...prev, options: 'Please enter both label and value' }));
       return;
     }
 
     const currentOptions = fieldData.options || [];
-    
-    if (currentOptions.some(opt => opt.value === newOption.value)) {
-      alert(`Option with value "${newOption.value}" already exists`);
+
+    if (currentOptions.some((opt) => opt.value === newOption.value)) {
+      setErrors((prev) => ({
+        ...prev,
+        options: `Option with value "${newOption.value}" already exists`,
+      }));
       return;
     }
 
-    setFieldData(prev => ({
+    setFieldData((prev) => ({
       ...prev,
-      options: [...(prev.options || []), { ...newOption }]
+      options: [...(prev.options || []), { ...newOption }],
     }));
 
     setNewOption({ label: '', value: '' });
+    setErrors((prev) => ({ ...prev, options: null }));
   };
 
   const removeOption = (index) => {
-    setFieldData(prev => ({
+    setFieldData((prev) => ({
       ...prev,
-      options: prev.options.filter((_, i) => i !== index)
+      options: prev.options.filter((_, i) => i !== index),
     }));
   };
 
-  const updateOption = (index, field, value) => {
-    setFieldData(prev => ({
+  const updateOption = (index, optionField, value) => {
+    setFieldData((prev) => ({
       ...prev,
-      options: prev.options.map((opt, i) => 
-        i === index ? { ...opt, [field]: value } : opt
-      )
+      options: prev.options.map((opt, i) => (i === index ? { ...opt, [optionField]: value } : opt)),
     }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!fieldData.field_name?.trim()) newErrors.field_name = 'Field name is required';
+    if (!fieldData.field_label?.trim()) newErrors.field_label = 'Field label is required';
+    if (!fieldData.field_type) newErrors.field_type = 'Field type is required';
+
+    if (fieldData.field_type === 'select') {
+      if (!fieldData.select_type) newErrors.select_type = 'Please select single or multi-select';
+      if (!fieldData.options || fieldData.options.length === 0) {
+        newErrors.options = 'Select fields must have at least one option';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
-    if (!fieldData.field_name.trim()) {
-      alert('Field name is required');
-      return;
-    }
-    if (!fieldData.field_label.trim()) {
-      alert('Field label is required');
-      return;
-    }
-
-    if (fieldData.field_type === 'select') {
-      if (!fieldData.select_type) {
-        alert('Please select single or multi-select');
-        return;
-      }
-      if (!fieldData.options || fieldData.options.length === 0) {
-        alert('Select fields must have at least one option');
-        return;
-      }
-    }
+    if (!validateForm()) return;
 
     try {
-      const method = field ? 'PUT' : 'POST';
-      const url = field 
-        ? `/api/asset-templates/${templateId}/fields/${field.id}`
-        : `/api/asset-templates/${templateId}/fields`;
+      setErrors((prev) => ({ ...prev, submit: null }));
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fieldData)
-      });
+      const saved = field
+        ? await assetApi.updateField(templateId, field.id, fieldData)
+        : await assetApi.createField(templateId, fieldData);
 
-      if (!response.ok) {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-        return;
-      }
-
-      onSave(await response.json());
+      onSave(saved);
     } catch (err) {
-      alert(`Error saving field: ${err.message}`);
+      setErrors((prev) => ({ ...prev, submit: `Error saving field: ${err.message}` }));
     }
   };
 
@@ -121,16 +122,20 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
     <div className="field-editor">
       <h3>{field ? 'Edit Field' : 'Create New Field'}</h3>
 
+      {errors.submit && <div className="error-message">{errors.submit}</div>}
+
       <div className="form-group">
         <label>Field Name (identifier)</label>
         <input
           type="text"
           name="field_name"
-          value={fieldData.field_name}
+          value={fieldData.field_name || ''}
           onChange={handleFieldChange}
           placeholder="e.g., status, color, priority"
           disabled={!!field}
+          className={errors.field_name ? 'error' : ''}
         />
+        {errors.field_name && <span className="error-text">{errors.field_name}</span>}
       </div>
 
       <div className="form-group">
@@ -138,15 +143,22 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
         <input
           type="text"
           name="field_label"
-          value={fieldData.field_label}
+          value={fieldData.field_label || ''}
           onChange={handleFieldChange}
           placeholder="e.g., Equipment Status, Color, Priority"
+          className={errors.field_label ? 'error' : ''}
         />
+        {errors.field_label && <span className="error-text">{errors.field_label}</span>}
       </div>
 
       <div className="form-group">
         <label>Field Type</label>
-        <select name="field_type" value={fieldData.field_type} onChange={handleFieldTypeChange}>
+        <select
+          name="field_type"
+          value={fieldData.field_type || 'text'}
+          onChange={handleFieldTypeChange}
+          className={errors.field_type ? 'error' : ''}
+        >
           <option value="text">Text</option>
           <option value="number">Number</option>
           <option value="date">Date</option>
@@ -154,17 +166,18 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
           <option value="boolean">Boolean</option>
           <option value="select">Dropdown/Select</option>
         </select>
+        {errors.field_type && <span className="error-text">{errors.field_type}</span>}
       </div>
 
-      <div className="form-group">
+      <div className="form-group checkbox">
         <label>
           <input
             type="checkbox"
             name="is_required"
-            checked={fieldData.is_required}
+            checked={!!fieldData.is_required}
             onChange={handleFieldChange}
           />
-          Required field
+          <span>Required field</span>
         </label>
       </div>
 
@@ -173,7 +186,7 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
         <input
           type="number"
           name="display_order"
-          value={fieldData.display_order}
+          value={fieldData.display_order ?? 0}
           onChange={handleFieldChange}
         />
       </div>
@@ -182,9 +195,10 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
         <label>Help Text</label>
         <textarea
           name="help_text"
-          value={fieldData.help_text}
+          value={fieldData.help_text || ''}
           onChange={handleFieldChange}
           placeholder="Optional help text for users"
+          rows={3}
         />
       </div>
 
@@ -203,7 +217,7 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
                   checked={fieldData.select_type === 'single'}
                   onChange={handleFieldChange}
                 />
-                Single Select
+                <span>Single Select</span>
               </label>
               <label>
                 <input
@@ -213,9 +227,10 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
                   checked={fieldData.select_type === 'multi'}
                   onChange={handleFieldChange}
                 />
-                Multi Select
+                <span>Multi Select</span>
               </label>
             </div>
+            {errors.select_type && <span className="error-text">{errors.select_type}</span>}
           </div>
 
           <div className="add-option-form">
@@ -223,16 +238,20 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
               type="text"
               placeholder="Option Label"
               value={newOption.label}
-              onChange={(e) => setNewOption(prev => ({ ...prev, label: e.target.value }))}
+              onChange={(e) => setNewOption((prev) => ({ ...prev, label: e.target.value }))}
             />
             <input
               type="text"
               placeholder="Option Value"
               value={newOption.value}
-              onChange={(e) => setNewOption(prev => ({ ...prev, value: e.target.value }))}
+              onChange={(e) => setNewOption((prev) => ({ ...prev, value: e.target.value }))}
             />
-            <button onClick={addOption}>Add Option</button>
+            <button type="button" onClick={addOption} className="btn-secondary">
+              Add Option
+            </button>
           </div>
+
+          {errors.options && <span className="error-text">{errors.options}</span>}
 
           {fieldData.options && fieldData.options.length > 0 && (
             <div className="options-list">
@@ -252,9 +271,10 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
                       onChange={(e) => updateOption(idx, 'value', e.target.value)}
                       placeholder="Value"
                     />
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => removeOption(idx)}
-                      className="remove-btn"
+                      className="btn-danger"
                     >
                       Remove
                     </button>
@@ -277,3 +297,5 @@ export const FieldEditor = ({ templateId, field = null, onSave, onCancel }) => {
     </div>
   );
 };
+
+export default FieldEditor;

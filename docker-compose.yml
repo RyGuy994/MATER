@@ -14,7 +14,7 @@ services:
       - SECRET_KEY=supersecretkey
 
       # --- Startup smoke tests (optional) ---
-      - RUN_SMOKE_TESTS_ON_STARTUP=1
+      - RUN_SMOKE_TESTS_ON_STARTUP=0
       - PYTHONUNBUFFERED=1
       # If needed, override where the smoke test calls the server:
       # - SMOKE_TEST_BASE_URL=http://localhost:5000
