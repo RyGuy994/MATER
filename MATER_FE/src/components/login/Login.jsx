@@ -5,6 +5,18 @@ import { useNavigate } from "react-router-dom";
 import { apiPost } from "../../utils/api";
 import "./Login.css";
 
+function base64UrlEncode(bytes) {
+  const binary = String.fromCharCode(...bytes);
+  const base64 = btoa(binary);
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function randomStringUrlSafe(lengthBytes = 32) {
+  const bytes = new Uint8Array(lengthBytes);
+  window.crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes);
+}
+
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -104,10 +116,19 @@ export default function Login({ onLoginSuccess }) {
   const handleAppleLogin = () => {
     const clientId = import.meta.env.VITE_APPLE_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI;
+
+    // (Optional) generate state for Apple as well, same CSRF concept.
+    const state = randomStringUrlSafe(16);
+    sessionStorage.setItem("apple_oauth_state", state);
+
     const url =
-      `https://appleid.apple.com/auth/authorize?response_type=code id_token` +
-      `&client_id=${clientId}&redirect_uri=${redirectUri}` +
-      `&scope=name email&state=randomString&response_mode=form_post`;
+      `https://appleid.apple.com/auth/authorize?response_type=code%20id_token` +
+      `&client_id=${encodeURIComponent(clientId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=${encodeURIComponent("name email")}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&response_mode=form_post`;
+
     window.location.href = url;
   };
 
@@ -119,12 +140,26 @@ export default function Login({ onLoginSuccess }) {
     const tenantId = import.meta.env.VITE_ENTRA_TENANT_ID;
     const redirectUri = import.meta.env.VITE_ENTRA_REDIRECT_URI;
 
-    const url =
-      `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize` +
-      `?client_id=${clientId}` +
-      `&response_type=code&redirect_uri=${redirectUri}` +
-      `&scope=openid email profile&response_mode=query&state=randomString`;
-    window.location.href = url;
+    // Generate and store state so callback can validate and/or forward to backend.
+    // Microsoft returns the same state back to redirect_uri when included. [web:22]
+    const state = randomStringUrlSafe(16);
+    sessionStorage.setItem("entra_oauth_state", state);
+
+    // Nonce is useful if you later request id_token (hybrid flow).
+    const nonce = randomStringUrlSafe(16);
+    sessionStorage.setItem("entra_oauth_nonce", nonce);
+
+    const authorizeUrl =
+      `https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/authorize` +
+      `?client_id=${encodeURIComponent(clientId)}` +
+      `&response_type=code` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_mode=query` +
+      `&scope=${encodeURIComponent("openid email profile")}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&nonce=${encodeURIComponent(nonce)}`;
+
+    window.location.href = authorizeUrl;
   };
 
   return (
@@ -165,7 +200,6 @@ export default function Login({ onLoginSuccess }) {
           <span>OR</span>
         </div>
 
-        {/* SSO Buttons - Updated structure */}
         <div className="sso-container">
           <button
             type="button"

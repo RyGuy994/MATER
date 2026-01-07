@@ -11,19 +11,29 @@ entra_bp = Blueprint("entra", __name__)
 JWT_EXP_SECONDS = 3600  # 1 hour
 IS_DEV = os.getenv("FLASK_ENV", "development") == "development"
 
-
 def get_env_vars(*keys):
     values = {k: os.getenv(k) for k in keys}
     missing = [k for k, v in values.items() if not v]
     return values, missing
 
-
-@entra_bp.route("/auth/entra/callback", methods=["POST"])
+@entra_bp.route("/auth/entra/callback", methods=["GET", "POST"])
 def entra_callback():
-    data = request.get_json() or {}
-    code = data.get("code")
+    # Entra redirects with ?code=... when response_mode=query
+    code = request.args.get("code")
+    state = request.args.get("state")
+
+    if not code:
+        data = request.get_json(silent=True) or {}
+        code = data.get("code")
+        state = state or data.get("state")
+
     if not code:
         return jsonify({"error": "Missing code"}), 400
+
+    # (Recommended) validate state against what you originally issued/stored
+    # For now, fail closed if state is missing.
+    if not state:
+        return jsonify({"error": "Missing state"}), 400
 
     # Redis: prevent code reuse
     try:
@@ -51,20 +61,18 @@ def entra_callback():
     }
 
     try:
+        # Token endpoint expects application/x-www-form-urlencoded. [web:22]
         resp = requests.post(token_url, data=payload, timeout=15)
         resp.raise_for_status()
         token_data = resp.json()
     except Exception as e:
-        current_app.logger.error(f"Token exchange failed: {e}")
+        current_app.logger.error(f"Token exchange failed: {e} | body={getattr(resp, 'text', '')}")
         return jsonify({"error": "Token exchange failed", "details": str(e)}), 500
 
-    access_token = token_data.get("access_token")
     id_token = token_data.get("id_token")
     if not id_token:
         return jsonify({"error": "Missing id_token"}), 400
 
-    # Decode id_token for user info (unverified here; ok for extracting claims,
-    # but do not treat it as fully trusted without verification in production).
     try:
         unverified_claims = jwt.decode(id_token, options={"verify_signature": False})
         email = unverified_claims.get("email") or unverified_claims.get("preferred_username", "")
@@ -76,29 +84,20 @@ def entra_callback():
     if not email:
         return jsonify({"error": "Unable to determine email from Entra token"}), 400
 
-    # Create or get user
     user = User.query.filter_by(email=email).first()
     if not user:
         user = User(username=username, email=email)
         db.session.add(user)
         db.session.commit()
 
-    # IMPORTANT: sign with the same secret used by /auth/me
     secret = current_app.config["SECRET_KEY"]
-
-    jwt_payload = {
-        "user_id": user.id,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + JWT_EXP_SECONDS,
-    }
-
+    jwt_payload = {"user_id": user.id, "iat": int(time.time()), "exp": int(time.time()) + JWT_EXP_SECONDS}
     jwt_token = jwt.encode(jwt_payload, secret, algorithm="HS256")
 
     response = make_response(jsonify({
         "success": True,
         "token": jwt_token,
         "user": {"id": user.id, "username": user.username, "email": user.email},
-        # Placeholder: store access_token server-side if you need Microsoft API calls later
     }))
 
     response.set_cookie(
@@ -111,7 +110,6 @@ def entra_callback():
         path="/",
     )
     return response
-
 
 @entra_bp.route("/auth/logout", methods=["POST"])
 def auth_logout():
