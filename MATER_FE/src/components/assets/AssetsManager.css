@@ -10,11 +10,21 @@
   --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.30);
 }
 
+/* Prevent horizontal scrollbar caused by hover transforms/shadows */
+html,
+body {
+  overflow-x: hidden;
+} /* overflow-x controls horizontal overflow/scrolling. [web:21] */
+
 .assets-manager {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-}
+
+  /* Extra safety: clips any local horizontal overflow without affecting vertical scroll */
+  overflow-x: clip;
+} /* overflow-x behavior is defined by CSS overflow rules. [web:21] */
+
 
 /* View Tabs */
 .view-tabs {
@@ -47,6 +57,7 @@
   border-bottom-color: #2563eb;
 }
 
+
 /* Section Header */
 .section-header {
   display: flex;
@@ -61,6 +72,7 @@
   color: #2563eb;
 }
 
+
 /* ==========================================================================
    PRIMARY BUTTONS (Login-style gradient with shimmer)
    ========================================================================== */
@@ -68,7 +80,11 @@
   background: linear-gradient(135deg, var(--btn-primary-start) 0%, var(--btn-primary-end) 100%);
   color: var(--btn-primary-text);
   border: none;
-  padding: 0.75rem 1.5rem;
+
+  /* A bit more breathing room so text doesn't feel tight */
+  padding: 0.9rem 1.75rem;
+  line-height: 1.15;
+
   border-radius: 16px;
   font-size: 1rem;
   font-weight: 700;
@@ -76,9 +92,12 @@
   position: relative;
   overflow: hidden;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.75px;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   box-shadow: var(--shadow-float);
+
+  /* Helps avoid transform “jank” and can reduce repaint artifacts */
+  will-change: transform;
 }
 
 .btn-primary::before {
@@ -96,8 +115,9 @@
   left: 100%;
 }
 
+/* Reduce scale slightly to avoid overflow/scrollbar */
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-4px) scale(1.02);
+  transform: translateY(-3px) scale(1.01);
   box-shadow:
     0 0 40px var(--btn-primary-glow),
     0 20px 50px rgba(0, 0, 0, 0.30),
@@ -111,10 +131,12 @@
 
 /* Small primary button variant */
 .btn-primary.btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.15;
   border-radius: 12px;
 }
+
 
 /* ==========================================================================
    SECONDARY BUTTONS (unchanged grey style)
@@ -123,7 +145,8 @@
   background: #6b7280;
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.5rem;
+  line-height: 1.15;
   border-radius: 0.5rem;
   font-size: 1rem;
   font-weight: 500;
@@ -136,9 +159,11 @@
 }
 
 .btn-secondary.btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.15;
 }
+
 
 /* ==========================================================================
    DANGER BUTTONS (Delete - red)
@@ -147,7 +172,8 @@
   background: #dc2626;
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.5rem;
+  line-height: 1.15;
   border-radius: 0.5rem;
   font-size: 1rem;
   font-weight: 500;
@@ -162,9 +188,11 @@
 }
 
 .btn-danger.btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.15;
 }
+
 
 /* Templates Grid */
 .templates-grid {
@@ -204,6 +232,7 @@
   margin: 0 0 1rem 0;
   color: #6b7280;
   font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .template-meta {
@@ -215,6 +244,7 @@
 .template-meta span {
   color: #6b7280;
   font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .template-actions {
@@ -222,6 +252,7 @@
   gap: 0.5rem;
   margin-top: 1rem;
 }
+
 
 /* Fields Section */
 .fields-section {
@@ -238,6 +269,7 @@
   color: #111827;
   border-bottom: 2px solid #e5e7eb;
   padding-bottom: 0.75rem;
+  line-height: 1.25;
 }
 
 .fields-list {
@@ -266,6 +298,7 @@
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
   color: #111827;
+  line-height: 1.25;
 }
 
 .field-type {
@@ -273,6 +306,7 @@
   font-size: 0.875rem;
   color: #6b7280;
   text-transform: capitalize;
+  line-height: 1.35;
 }
 
 .field-help {
@@ -280,6 +314,7 @@
   font-size: 0.875rem;
   color: #9ca3af;
   font-style: italic;
+  line-height: 1.35;
 }
 
 .field-actions {
@@ -300,6 +335,7 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 .badge.required {
@@ -317,7 +353,9 @@
   color: #6b7280;
   padding: 2rem;
   font-style: italic;
+  line-height: 1.4;
 }
+
 
 /* Empty State */
 .empty-state {
@@ -332,7 +370,9 @@
   margin: 0 0 1.5rem 0;
   color: #6b7280;
   font-size: 1.125rem;
+  line-height: 1.5;
 }
+
 
 /* Modal */
 .modal-overlay {
@@ -350,14 +390,38 @@
 }
 
 .modal-content {
-  background: white;
   border-radius: 0.75rem;
+  padding: 10px;
   max-width: 600px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  overflow-x: hidden;
+
+  /* Dark modal surface */
+  background: rgba(17, 24, 39, 0.92);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  background: rgba(31, 41, 55, 0.85);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  line-height: 1.25;
+  padding: 0.7rem 0.9rem;
+}
+
+.modal-content input::placeholder,
+.modal-content textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 
 /* Loading & Error States */
 .loading,
@@ -396,12 +460,15 @@
 .error-box h3 {
   margin: 0 0 0.5rem 0;
   color: #991b1b;
+  line-height: 1.25;
 }
 
 .error-box p {
   margin: 0 0 1.5rem 0;
   color: #dc2626;
+  line-height: 1.4;
 }
+
 
 /* Dark mode support (if you're using data-theme) */
 html[data-theme="dark"] .assets-manager {
@@ -419,9 +486,32 @@ html[data-theme="dark"] .fields-section {
 
 html[data-theme="dark"] .field-item {
   background: rgba(31, 41, 55, 0.6);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.10);
 }
 
+/* Headings */
 html[data-theme="dark"] .template-card h3,
 html[data-theme="dark"] .fields-section h3,
-html[data-theme="dark"] .field-
+html[data-theme="dark"] .field-info h4 {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Secondary text */
+html[data-theme="dark"] .template-card p,
+html[data-theme="dark"] .template-meta span,
+html[data-theme="dark"] .field-type,
+html[data-theme="dark"] .no-fields,
+html[data-theme="dark"] .empty-state p,
+html[data-theme="dark"] .no-selection p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Tertiary/help text */
+html[data-theme="dark"] .field-help {
+  color: rgba(255, 255, 255, 0.60);
+}
+
+/* Optional: make dividers/borders subtle in dark mode */
+html[data-theme="dark"] .fields-section h3 {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}

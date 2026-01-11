@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { assetApi } from '../../features/assets/api/assetApi';
 import { FieldEditor } from './FieldEditor';
 import { AssetForm } from './AssetForm';
+import Modal from '../common/Modal';
 import './AssetsManager.css';
 
 export default function AssetsManager() {
@@ -14,7 +15,13 @@ export default function AssetsManager() {
   const [showFieldEditor, setShowFieldEditor] = useState(false);
   const [editingField, setEditingField] = useState(null);
 
-  // Fetch templates on mount
+  // New Template modal state
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDescription, setNewTemplateDescription] = useState('');
+  const [createTemplateError, setCreateTemplateError] = useState('');
+  const [creatingTemplate, setCreatingTemplate] = useState(false);
+
   useEffect(() => {
     fetchTemplates();
   }, []);
@@ -24,11 +31,9 @@ export default function AssetsManager() {
     setError(null);
     try {
       const data = await assetApi.listTemplates();
-
       const nextTemplates = data || [];
       setTemplates(nextTemplates);
 
-      // Keep selectedTemplate in sync with refreshed list
       setSelectedTemplate((prevSelected) => {
         if (!prevSelected) return null;
         return nextTemplates.find((t) => t.id === prevSelected.id) || null;
@@ -41,21 +46,44 @@ export default function AssetsManager() {
     }
   };
 
-  const handleCreateTemplate = async () => {
-    const name = prompt('Enter template name:');
-    if (!name) return;
+  // Modal open/close helpers
+  const openCreateTemplateModal = () => {
+    setCreateTemplateError('');
+    setNewTemplateName('');
+    setNewTemplateDescription('');
+    setShowCreateTemplateModal(true);
+  };
+
+  const closeCreateTemplateModal = () => {
+    if (creatingTemplate) return;
+    setShowCreateTemplateModal(false);
+  };
+
+  const handleCreateTemplate = async (e) => {
+    e?.preventDefault?.();
+    setCreateTemplateError('');
+
+    const name = newTemplateName.trim();
+    if (!name) {
+      setCreateTemplateError('Template name is required.');
+      return;
+    }
 
     try {
+      setCreatingTemplate(true);
       const newTemplate = await assetApi.createTemplate({
         name,
-        description: '',
+        description: newTemplateDescription.trim(),
       });
+
       setTemplates((prev) => [...prev, newTemplate]);
       setSelectedTemplate(newTemplate);
-      alert('Template created successfully!');
+      setShowCreateTemplateModal(false);
     } catch (err) {
       console.error('Error creating template:', err);
-      alert('Error creating template: ' + err.message);
+      setCreateTemplateError(err.message || 'Error creating template');
+    } finally {
+      setCreatingTemplate(false);
     }
   };
 
@@ -65,10 +93,7 @@ export default function AssetsManager() {
     try {
       await assetApi.deleteTemplate(templateId);
       setTemplates((prev) => prev.filter((t) => t.id !== templateId));
-      if (selectedTemplate?.id === templateId) {
-        setSelectedTemplate(null);
-      }
-      alert('Template deleted successfully!');
+      if (selectedTemplate?.id === templateId) setSelectedTemplate(null);
     } catch (err) {
       console.error('Error deleting template:', err);
       alert('Error deleting template: ' + err.message);
@@ -81,7 +106,6 @@ export default function AssetsManager() {
 
     try {
       await assetApi.deleteField(selectedTemplate.id, fieldId);
-      alert('Field deleted successfully!');
       fetchTemplates();
     } catch (err) {
       console.error('Error deleting field:', err);
@@ -91,13 +115,13 @@ export default function AssetsManager() {
 
   const handleAddField = (template) => {
     setSelectedTemplate(template);
-    setEditingField(null); // create mode
+    setEditingField(null);
     setShowFieldEditor(true);
   };
 
   const handleEditField = (field) => {
     if (!selectedTemplate) return;
-    setEditingField(field); // edit mode
+    setEditingField(field);
     setShowFieldEditor(true);
   };
 
@@ -137,13 +161,12 @@ export default function AssetsManager() {
 
   return (
     <div className="assets-manager">
-      {/* View Tabs */}
       <div className="view-tabs">
         <button
           className={`tab ${activeView === 'templates' ? 'active' : ''}`}
           onClick={() => setActiveView('templates')}
         >
-          Templates
+          Asset Templates
         </button>
         <button
           className={`tab ${activeView === 'assets' ? 'active' : ''}`}
@@ -153,12 +176,10 @@ export default function AssetsManager() {
         </button>
       </div>
 
-      {/* Templates View */}
       {activeView === 'templates' && (
         <div className="templates-section">
           <div className="section-header">
-            <h2>Asset Templates</h2>
-            <button className="btn-primary" onClick={handleCreateTemplate}>
+            <button className="btn-primary" onClick={openCreateTemplateModal}>
               + New Template
             </button>
           </div>
@@ -166,7 +187,7 @@ export default function AssetsManager() {
           {templates.length === 0 ? (
             <div className="empty-state">
               <p>No templates yet. Create one to get started!</p>
-              <button className="btn-primary" onClick={handleCreateTemplate}>
+              <button className="btn-primary" onClick={openCreateTemplateModal}>
                 Create First Template
               </button>
             </div>
@@ -175,9 +196,7 @@ export default function AssetsManager() {
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className={`template-card ${
-                    selectedTemplate?.id === template.id ? 'selected' : ''
-                  }`}
+                  className={`template-card ${selectedTemplate?.id === template.id ? 'selected' : ''}`}
                   onClick={() => setSelectedTemplate(template)}
                 >
                   <h3>{template.name}</h3>
@@ -212,21 +231,77 @@ export default function AssetsManager() {
             </div>
           )}
 
-          {/* Field Editor Modal */}
-          {showFieldEditor && selectedTemplate && (
-            <div className="modal-overlay" onClick={closeFieldEditor}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <FieldEditor
-                  templateId={selectedTemplate.id}
-                  field={editingField}
-                  onSave={handleFieldSaved}
-                  onCancel={closeFieldEditor}
-                />
-              </div>
-            </div>
-          )}
+          {/* Create Template Modal (reusable Modal) */}
+          <Modal
+            open={showCreateTemplateModal}
+            title="Create template"
+            onClose={closeCreateTemplateModal}
+          >
+            {createTemplateError && (
+              <p className="error-message" style={{ marginTop: '0.5rem' }}>
+                {createTemplateError}
+              </p>
+            )}
 
-          {/* Fields List */}
+            <form
+              onSubmit={handleCreateTemplate}
+              style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <span>Name:</span>
+                  <input
+                    type="text"
+                    value={newTemplateName}
+                    onChange={(e) => setNewTemplateName(e.target.value)}
+                    placeholder="e.g. Laptop"
+                    autoFocus
+                  />
+                </label>
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <span>Description (optional):</span>
+                  <input
+                    type="text"
+                    value={newTemplateDescription}
+                    onChange={(e) => setNewTemplateDescription(e.target.value)}
+                    placeholder="Short description"
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={closeCreateTemplateModal}
+                  disabled={creatingTemplate}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={creatingTemplate}>
+                  {creatingTemplate ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </Modal>
+
+          {/* Field Editor Modal (reusable Modal) */}
+          <Modal
+            open={showFieldEditor && !!selectedTemplate}
+            title={editingField ? 'Edit field' : 'Add field'}
+            onClose={closeFieldEditor}
+          >
+            {selectedTemplate && (
+              <FieldEditor
+                templateId={selectedTemplate.id}
+                field={editingField}
+                onSave={handleFieldSaved}
+                onCancel={closeFieldEditor}
+              />
+            )}
+          </Modal>
+
           {selectedTemplate && (
             <div className="fields-section">
               <h3>Template Fields: {selectedTemplate.name}</h3>
@@ -249,17 +324,11 @@ export default function AssetsManager() {
                           )}
                         </div>
 
-                        <button
-                          className="btn-secondary btn-sm"
-                          onClick={() => handleEditField(field)}
-                        >
+                        <button className="btn-secondary btn-sm" onClick={() => handleEditField(field)}>
                           Edit
                         </button>
 
-                        <button
-                          className="btn-danger btn-sm"
-                          onClick={() => handleDeleteField(field.id)}
-                        >
+                        <button className="btn-danger btn-sm" onClick={() => handleDeleteField(field.id)}>
                           Delete
                         </button>
                       </div>
@@ -274,14 +343,10 @@ export default function AssetsManager() {
         </div>
       )}
 
-      {/* Assets View */}
       {activeView === 'assets' && (
         <div className="assets-section">
           <div className="section-header">
-            <h2>Assets</h2>
-            {selectedTemplate && (
-              <button className="btn-primary">+ New Asset from {selectedTemplate.name}</button>
-            )}
+            {selectedTemplate && <button className="btn-primary">+ New Asset from {selectedTemplate.name}</button>}
           </div>
 
           {!selectedTemplate ? (
